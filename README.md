@@ -4,6 +4,6 @@ Wastu membantu pemilik rumah membandingkan pilihan bahan dinding dan atap berdas
 
 Manut 
 
-Ketua Kelompok: <Dien Muhammad Scientivan Kurniapramono-24/533571/TK/59114>  
+Ketua Kelompok: <Dien Muhammad Scientivan Kurniapramono - 24/533571/TK/59114>  
 Anggota 1: Yohanes Anthony Saputra
-Anggota 2: Ramzi Alfito Rizky
+Anggota 2: <Ramzi Alfito Rizky - 24/540550/TK/60008>
