@@ -1,0 +1,103 @@
+<Window x:Class="ImplementasiClassDiagram.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Analisis Bangunan Ramah Iklim"
+        Width="920"
+        Height="640"
+        MinWidth="760"
+        MinHeight="540"
+        WindowStartupLocation="CenterScreen"
+        Background="#F1F5F9">
+    <Grid Margin="32">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="24" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel>
+            <TextBlock Text="Bangunan Ramah Iklim"
+                       FontSize="28"
+                       FontWeight="SemiBold"
+                       Foreground="#0F172A" />
+            <TextBlock Text="Kelola bangunan dan komponen yang akan dianalisis."
+                       Margin="0,6,0,0"
+                       FontSize="14"
+                       Foreground="{StaticResource MutedTextBrush}" />
+        </StackPanel>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="5*" />
+                <ColumnDefinition Width="24" />
+                <ColumnDefinition Width="4*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Padding="24"
+                    Background="{StaticResource SurfaceBrush}"
+                    CornerRadius="10">
+                <StackPanel>
+                    <TextBlock Text="Data bangunan"
+                               FontSize="18"
+                               FontWeight="SemiBold" />
+
+                    <TextBlock Margin="0,20,0,0" Text="Nama bangunan" />
+                    <TextBox x:Name="NamaBangunanTextBox" />
+
+                    <TextBlock Text="Kota" />
+                    <TextBox x:Name="KotaTextBox" />
+
+                    <Button Content="Simpan Bangunan"
+                            HorizontalAlignment="Left"
+                            Click="SimpanBangunan_Click" />
+
+                    <Separator Margin="0,24,0,20" />
+
+                    <TextBlock Text="Tambah komponen"
+                               FontSize="18"
+                               FontWeight="SemiBold" />
+
+                    <TextBlock Margin="0,20,0,0" Text="Jenis komponen" />
+                    <ComboBox x:Name="JenisKomponenComboBox" />
+
+                    <TextBlock Text="Luas komponen (m²)" />
+                    <TextBox x:Name="LuasTextBox" Text="1" />
+
+                    <Button Content="Tambah Komponen"
+                            HorizontalAlignment="Left"
+                            Click="TambahKomponen_Click" />
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="2"
+                    Padding="24"
+                    Background="{StaticResource SurfaceBrush}"
+                    CornerRadius="10">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Daftar komponen"
+                               FontSize="18"
+                               FontWeight="SemiBold" />
+                    <TextBlock Grid.Row="1"
+                               Margin="0,6,0,18"
+                               Text="Komponen yang dimiliki bangunan aktif."
+                               Foreground="{StaticResource MutedTextBrush}" />
+                    <ListBox x:Name="KomponenListBox"
+                             Grid.Row="2"
+                             BorderBrush="#E2E8F0" />
+                    <TextBlock x:Name="StatusTextBlock"
+                               Grid.Row="3"
+                               Margin="0,16,0,0"
+                               Foreground="{StaticResource MutedTextBrush}"
+                               TextWrapping="Wrap" />
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>
