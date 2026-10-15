@@ -6,16 +6,20 @@ namespace Wastu.Domain;
 /// </summary>
 public sealed record Komponen
 {
-    public Komponen(Guid id, JenisKomponen jenis, double luasM2)
+    public Komponen(Guid id, Guid proyekId, JenisKomponen jenis, double luasM2)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(luasM2);
 
         Id = id;
+        ProyekId = proyekId;
         Jenis = jenis;
         LuasM2 = luasM2;
     }
 
     public Guid Id { get; init; }
+
+    /// <summary>Proyek induk; dipakai untuk mencari profil iklim saat penilaian.</summary>
+    public Guid ProyekId { get; init; }
 
     public JenisKomponen Jenis { get; init; }
 

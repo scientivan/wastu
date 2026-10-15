@@ -15,6 +15,8 @@ public interface IProyekRepository
 
     Task<IReadOnlyList<Komponen>> ListKomponenAsync(Guid proyekId, CancellationToken ct = default);
 
+    Task<Komponen?> GetKomponenAsync(Guid id, CancellationToken ct = default);
+
     Task AddAsync(Proyek proyek, CancellationToken ct = default);
 
     Task<ProfilIklim?> GetProfilIklimAsync(Guid proyekId, CancellationToken ct = default);
