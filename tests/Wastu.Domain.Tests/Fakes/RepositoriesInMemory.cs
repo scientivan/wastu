@@ -28,6 +28,7 @@ internal sealed class MaterialRepositoryInMemory : IMaterialRepository
 
 internal sealed class ProyekRepositoryInMemory : IProyekRepository
 {
+    private readonly Dictionary<Guid, Proyek> _proyek = [];
     private readonly Dictionary<Guid, Komponen> _komponen = [];
     private readonly Dictionary<Guid, ProfilIklim> _profilIklim = [];
 
@@ -36,7 +37,7 @@ internal sealed class ProyekRepositoryInMemory : IProyekRepository
         _komponen[komponen.Id] = komponen;
         if (profil is not null)
         {
-            _profilIklim[profil.ProyekId] = profil;
+            _profilIklim[komponen.ProyekId] = profil;
         }
 
         return this;
@@ -50,16 +51,28 @@ internal sealed class ProyekRepositoryInMemory : IProyekRepository
             _komponen.Values.Where(k => k.ProyekId == proyekId).ToList());
 
     public Task<Proyek?> GetByIdAsync(Guid id, CancellationToken ct = default)
-        => Task.FromResult<Proyek?>(null);
+        => Task.FromResult(_proyek.GetValueOrDefault(id));
+
+    public Task UpdateAsync(Proyek proyek, CancellationToken ct = default)
+    {
+        _proyek[proyek.Id] = proyek;
+        return Task.CompletedTask;
+    }
+
+    public Task AddKomponenAsync(Komponen komponen, CancellationToken ct = default)
+    {
+        _komponen[komponen.Id] = komponen;
+        return Task.CompletedTask;
+    }
 
     public Task AddAsync(Proyek proyek, CancellationToken ct = default) => Task.CompletedTask;
 
     public Task<ProfilIklim?> GetProfilIklimAsync(Guid proyekId, CancellationToken ct = default)
         => Task.FromResult(_profilIklim.GetValueOrDefault(proyekId));
 
-    public Task SimpanProfilIklimAsync(ProfilIklim profil, CancellationToken ct = default)
+    public Task SimpanProfilIklimAsync(Guid proyekId, ProfilIklim profil, CancellationToken ct = default)
     {
-        _profilIklim[profil.ProyekId] = profil;
+        _profilIklim[proyekId] = profil;
         return Task.CompletedTask;
     }
 }

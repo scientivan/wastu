@@ -139,7 +139,7 @@ public class PerhitunganSkorTests
     public void SkorKorosi_MendekatiPesisir_SkorTurun()
     {
         double dari40km = PerhitunganSkor.SkorKorosi(
-            DataContoh.PanelGipsum(), new ProfilIklim(DataContoh.ProyekId, 2400, 82, 27.5, 40, TingkatKorosi.Sedang));
+            DataContoh.PanelGipsum(), new ProfilIklim(2400, 82, 27.5, 40, TingkatKorosi.Sedang));
         double dari3km = PerhitunganSkor.SkorKorosi(
             DataContoh.PanelGipsum(), DataContoh.IklimPesisirBandarLampung());
 

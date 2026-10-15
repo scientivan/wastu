@@ -1,18 +1,26 @@
 namespace Wastu.Domain;
 
 /// <summary>
-/// Profil iklim jangka panjang lokasi proyek (PRD §F3), hasil agregasi data
-/// historis Open-Meteo lewat <c>IHistoricalClimateClient</c> (§8.3).
+/// Profil iklim jangka panjang sebuah lokasi (PRD §F3), hasil agregasi data historis
+/// Open-Meteo lewat <c>IHistoricalClimateClient</c> (§8.3).
 /// </summary>
 /// <remarks>
+/// <para>
 /// Semua sub-skor kesesuaian (§11.1) dihitung dari objek ini, jadi inilah satu-satunya
 /// tempat iklim masuk ke perhitungan domain. Batas nilai meniru CHECK constraint
 /// tabel <c>profil_iklim</c>.
+/// </para>
+/// <para>
+/// Objek ini sengaja tidak membawa id proyek. Ia adalah hasil pengukuran pada
+/// koordinat tertentu, bukan baris tabel; kaitannya dengan proyek dibawa
+/// <c>IProyekRepository</c> yang sudah menerima <c>proyekId</c> sebagai argumen
+/// terpisah di kedua sisinya. Menyimpan id di dalam objek memaksa
+/// <c>IHistoricalClimateClient</c> mengarang nilai yang tidak dimilikinya.
+/// </para>
 /// </remarks>
 public sealed record ProfilIklim
 {
     public ProfilIklim(
-        Guid proyekId,
         double curahHujanTahunanMm,
         double kelembapanRataPct,
         double suhuRataC,
@@ -36,19 +44,12 @@ public sealed record ProfilIklim
                 "Suhu rata-rata harus -10 sampai 60 °C (profil_iklim.suhu_wajar CHECK).");
         }
 
-        ProyekId = proyekId;
         CurahHujanTahunanMm = curahHujanTahunanMm;
         KelembapanRataPct = kelembapanRataPct;
         SuhuRataC = suhuRataC;
         JarakPesisirKm = jarakPesisirKm;
         TingkatKorosi = tingkatKorosi;
     }
-
-    /// <summary>
-    /// Proyek yang profil iklim ini miliknya; cerminan primary key
-    /// <c>profil_iklim.bangunan_id</c>, sehingga satu proyek hanya punya satu profil.
-    /// </summary>
-    public Guid ProyekId { get; init; }
 
     /// <summary>Curah hujan tahunan, mm. Memakai sub-skor lembap (§11.1).</summary>
     public double CurahHujanTahunanMm { get; init; }

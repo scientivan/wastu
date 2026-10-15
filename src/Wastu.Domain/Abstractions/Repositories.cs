@@ -8,20 +8,34 @@ public interface IMaterialRepository
     Task<Bahan?> GetByIdAsync(Guid id, CancellationToken ct = default);
 }
 
-/// <summary>Sumber data proyek dan profil iklimnya (PRD §F1, §F3).</summary>
+/// <summary>Sumber data proyek, komponennya, dan profil iklimnya (PRD §F1, §F3).</summary>
 public interface IProyekRepository
 {
     Task<Proyek?> GetByIdAsync(Guid id, CancellationToken ct = default);
+
+    Task AddAsync(Proyek proyek, CancellationToken ct = default);
+
+    /// <summary>Mengganti proyek yang sudah ada, dipakai saat lokasi berubah (PRD §F1).</summary>
+    Task UpdateAsync(Proyek proyek, CancellationToken ct = default);
 
     Task<IReadOnlyList<Komponen>> ListKomponenAsync(Guid proyekId, CancellationToken ct = default);
 
     Task<Komponen?> GetKomponenAsync(Guid id, CancellationToken ct = default);
 
-    Task AddAsync(Proyek proyek, CancellationToken ct = default);
+    Task AddKomponenAsync(Komponen komponen, CancellationToken ct = default);
 
     Task<ProfilIklim?> GetProfilIklimAsync(Guid proyekId, CancellationToken ct = default);
 
-    Task SimpanProfilIklimAsync(ProfilIklim profil, CancellationToken ct = default);
+    /// <summary>
+    /// Menyimpan atau menimpa profil iklim milik sebuah proyek.
+    /// </summary>
+    /// <remarks>
+    /// <paramref name="proyekId"/> diterima terpisah, bukan dibaca dari
+    /// <paramref name="profil"/>, supaya sisi ambil dan sisi simpan memakai bentuk
+    /// argumen yang sama dan adapter dapat melakukan upsert pada kunci
+    /// <c>profil_iklim.bangunan_id</c> tanpa pernah mengarang nilai.
+    /// </remarks>
+    Task SimpanProfilIklimAsync(Guid proyekId, ProfilIklim profil, CancellationToken ct = default);
 }
 
 /// <summary>Penyimpanan hasil penilaian dan simulasi (PRD §F4, §F5).</summary>

@@ -107,7 +107,6 @@ public static class DataContoh
     /// mencapai maksimum, jadi kasus yang baik untuk menguji kedua sub-skor.
     /// </summary>
     public static ProfilIklim IklimPesisirBandarLampung() => new(
-        proyekId: ProyekId,
         curahHujanTahunanMm: 2400,
         kelembapanRataPct: 82,
         suhuRataC: 27.5,
@@ -116,7 +115,6 @@ public static class DataContoh
 
     /// <summary>Lokasi sejuk dan jauh dari laut, untuk menguji arah perubahan skor.</summary>
     public static ProfilIklim IklimDinginInland() => new(
-        proyekId: ProyekId,
         curahHujanTahunanMm: 800,
         kelembapanRataPct: 55,
         suhuRataC: 18,
@@ -131,7 +129,6 @@ public static class DataContoh
     {
         ProfilIklim asal = IklimPesisirBandarLampung();
         return new ProfilIklim(
-            asal.ProyekId,
             asal.CurahHujanTahunanMm,
             asal.KelembapanRataPct,
             suhuRataC,
