@@ -1,5 +1,5 @@
 using Wastu.Domain.Scoring;
-using Wastu.Domain.Tests.Fakes;
+using Wastu.InMemory;
 using Wastu.Domain.Tests.Fixtures;
 
 namespace Wastu.Domain.Tests.Scoring;
@@ -132,7 +132,17 @@ public class SuitabilityScoringServiceTests
     private static SuitabilityScoringService Service(params Bahan[] bahan)
         => Service(DataContoh.IklimPesisirBandarLampung(), bahan);
 
-    private static SuitabilityScoringService Service(ProfilIklim? profil, params Bahan[] bahan) => new(
-        new MaterialRepositoryInMemory(bahan),
-        new ProyekRepositoryInMemory().Add(DataContoh.Dinding(), profil));
+    private static SuitabilityScoringService Service(ProfilIklim? profil, params Bahan[] bahan)
+    {
+        var material = new MaterialRepositoryInMemory(bahan);
+        var proyek = new ProyekRepositoryInMemory();
+
+        proyek.AddKomponenAsync(DataContoh.Dinding());
+        if (profil is not null)
+        {
+            proyek.SimpanProfilIklimAsync(DataContoh.ProyekId, profil);
+        }
+
+        return new SuitabilityScoringService(material, proyek);
+    }
 }

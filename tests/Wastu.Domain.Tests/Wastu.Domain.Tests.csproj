@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/Wastu.Domain/Wastu.Domain.csproj" />
+    <ProjectReference Include="../../src/Wastu.InMemory/Wastu.InMemory.csproj" />
   </ItemGroup>
 
 </Project>

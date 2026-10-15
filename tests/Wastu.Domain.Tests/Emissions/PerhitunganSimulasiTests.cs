@@ -211,6 +211,7 @@ public class PerhitunganSimulasiTests
     }
 
     private static Evaluasi EvaluasiDengan(double Skor, double emisiAwal) => new(
+        Id: Guid.NewGuid(),
         BahanId: DataContoh.IdBetonBertulang,
         KomponenId: DataContoh.KomponenDindingId,
         SkorKesesuaian: Skor,

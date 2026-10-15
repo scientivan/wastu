@@ -49,6 +49,7 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
             SubSkorKesesuaian subSkor = PerhitunganSkor.HitungSubSkor(item, iklim);
 
             hasil.Add(new Evaluasi(
+                Id: Guid.NewGuid(),
                 BahanId: item.Id,
                 KomponenId: komponen.Id,
                 SkorKesesuaian: PerhitunganSkor.SkorKesesuaian(subSkor, bobotEfektif),
