@@ -12,6 +12,7 @@ namespace Wastu.Domain;
 public sealed record ProfilIklim
 {
     public ProfilIklim(
+        Guid proyekId,
         double curahHujanTahunanMm,
         double kelembapanRataPct,
         double suhuRataC,
@@ -35,6 +36,7 @@ public sealed record ProfilIklim
                 "Suhu rata-rata harus -10 sampai 60 °C (profil_iklim.suhu_wajar CHECK).");
         }
 
+        ProyekId = proyekId;
         CurahHujanTahunanMm = curahHujanTahunanMm;
         KelembapanRataPct = kelembapanRataPct;
         SuhuRataC = suhuRataC;
@@ -42,7 +44,13 @@ public sealed record ProfilIklim
         TingkatKorosi = tingkatKorosi;
     }
 
-    /// <summary>Curah hujan tahunan, mm. Memakai-sub-skor lembap (§11.1).</summary>
+    /// <summary>
+    /// Proyek yang profil iklim ini miliknya; cerminan primary key
+    /// <c>profil_iklim.bangunan_id</c>, sehingga satu proyek hanya punya satu profil.
+    /// </summary>
+    public Guid ProyekId { get; init; }
+
+    /// <summary>Curah hujan tahunan, mm. Memakai sub-skor lembap (§11.1).</summary>
     public double CurahHujanTahunanMm { get; init; }
 
     /// <summary>Kelembapan relatif rata-rata, %. Memakai sub-skor lembap (§11.1).</summary>

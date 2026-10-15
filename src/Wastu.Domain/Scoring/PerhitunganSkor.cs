@@ -64,7 +64,7 @@ public static class PerhitunganSkor
         ArgumentNullException.ThrowIfNull(bahan);
         ArgumentNullException.ThrowIfNull(iklim);
 
-        double beban = Kunci(
+        double beban = KunciNolSampaiSatu(
             iklim.CurahHujanTahunanMm / KonfigurasiSkoring.AcuanCurahHujan +
             iklim.KelembapanRataPct / 100);
 
@@ -216,4 +216,11 @@ public static class PerhitunganSkor
 
     /// <summary>Menjepit nilai ke rentang 0-100 supaya skor tidak pernah keluar dari skala tampilan.</summary>
     private static double Kunci(double nilai) => Math.Clamp(nilai, 0, 100);
+
+    /// <summary>
+    /// Menjepit nilai ke rentang 0-1. Terpisah dari <see cref="Kunci"/> karena keduanya
+    /// jenuh 100: memakai <see cref="Kunci"/> untuk besaran 0-1 akan membiarkan 1,62
+    /// lolos tanpa terpotong dan merusak perhitungan demand dihosokan.
+    /// </summary>
+    private static double KunciNolSampaiSatu(double nilai) => Math.Clamp(nilai, 0, 1);
 }
