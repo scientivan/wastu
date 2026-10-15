@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <!--
+    Lapisan domain murni (PRD §10, §11). Sengaja tanpa PackageReference apa pun:
+    aturan domain tidak boleh terikat EF Core, Npgsql, atau SDK WPF.
+    Persistence dipegang Wastu.Data sebagai adapter di luar repo ini.
+  -->
+
+</Project>

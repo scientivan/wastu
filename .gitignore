@@ -1,0 +1,21 @@
+## .NET
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+*.user
+*.suo
+*.userprefs
+
+## Visual Studio / Rider / VS Code
+.vs/
+.idea/
+.vscode/
+
+## Laporan hasil ekspor aplikasi (F7)
+*.pdf
+
+## OS
+.DS_Store
+Thumbs.db
