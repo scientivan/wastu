@@ -72,6 +72,29 @@ public static class DataContoh
         faktorEmisi: 110,
         sumberData: "ICE Database v3 (Bath) — perkiraan literatur (PRD §11.4)");
 
+    /// <summary>Bahan atap baja galvanis, kasus pembanding pada seed simulasi emisi.</summary>
+    public static readonly Guid IdBajaGalvanis = new("d0000000-0000-4000-8000-000000000021");
+
+    public static Bahan BajaGalvanis() => new(
+        id: IdBajaGalvanis,
+        nama: "Baja galvanis (trapezium)",
+        jenis: JenisKomponen.Atap,
+        konduktivitasTermal: 0.05,
+        ketahananLembap: 3,
+        ketahananKorosi: 2,
+        usiaPakaiNominalTahun: 15,
+        faktorEmisi: 90,
+        sumberData: "ICE Database v3 (Bath) — perkiraan literatur (PRD §11.4)");
+
+    /// <summary>
+    /// Skor kesesuaian yang tersimpan pada baris seed untuk beton bertulang. Seed
+    /// memakai angka ini untuk menurunkan usia efektif 50 menjadi 43 tahun.
+    /// </summary>
+    public const double SkorSeedBetonBertulang = 72;
+
+    /// <summary>Skor kesesuaian seed untuk baja galvanis, menurunkan 15 tahun menjadi 9,375.</summary>
+    public const double SkorSeedBajaGalvanis = 25;
+
     public static Komponen Dinding() =>
         new(KomponenDindingId, ProyekId, JenisKomponen.Dinding, LuasDinding);
 
