@@ -257,6 +257,6 @@ public partial class CreateProjectView : UserControl
 
         App.State.TambahProyek(name, city, lat, lon, wall, roof, coastal);
         App.State.Ubah();
-        _window.LeaveCreate();
+        _window.ShowShell("home");
     }
 }

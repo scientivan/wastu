@@ -1,0 +1,177 @@
+<p:PageBase x:Class="Wastu.Views.Pages.HomePage"
+            xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:c="clr-namespace:Wastu.Controls"
+            xmlns:p="clr-namespace:Wastu.Views.Pages">
+    <p:PageBase.Resources>
+        <Style x:Key="MetricLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="{StaticResource Muted}" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+        <Style x:Key="Metric" TargetType="Border" BasedOn="{StaticResource Card}">
+            <Setter Property="Padding" Value="{Binding MetricPadding}" />
+            <Setter Property="MinHeight" Value="{Binding MetricMinHeight}" />
+        </Style>
+        <Style x:Key="MetricValue" TargetType="c:TrackedText">
+            <Setter Property="FontSize" Value="{Binding MetricSize}" />
+            <Setter Property="FontWeight" Value="650" />
+            <Setter Property="Tracking" Value="-0.7" />
+            <Setter Property="SuffixFontSize" Value="16" />
+            <Setter Property="SuffixFontWeight" Value="500" />
+        </Style>
+        <Style x:Key="WorkflowTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="650" />
+        </Style>
+        <Style x:Key="WorkflowText" TargetType="c:CssText">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{StaticResource Muted}" />
+            <Setter Property="Leading" Value="1.55" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,6,0,0" />
+        </Style>
+    </p:PageBase.Resources>
+
+    <StackPanel>
+        <c:PageHeading Title="Beranda" Description="{Binding Summary}">
+            <Button Style="{StaticResource BtnLight}" Content="Kelola proyek" Tag="project" Click="Go_Click" />
+        </c:PageHeading>
+
+        <!-- .overview-metrics -->
+        <c:FlowGrid Columns="3" ColumnGap="16" Margin="0,0,0,28">
+            <Border Style="{StaticResource Metric}">
+                <Grid VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <c:Icon Data="{StaticResource IcoWall}" StrokeThickness="1.6" Width="31" Height="31" Margin="{Binding MetricIconMargin}" />
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <c:CssText Style="{StaticResource MetricLabel}" Text="Luas dinding" />
+                        <c:TrackedText Style="{StaticResource MetricValue}" Text="{Binding Wall}" Suffix="m²" LineHeight="{Binding MetricLineHeight}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <Border Style="{StaticResource Metric}">
+                <Grid VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <c:Icon Data="{StaticResource IcoRoof}" StrokeThickness="1.6" Width="31" Height="31" Margin="{Binding MetricIconMargin}" />
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <c:CssText Style="{StaticResource MetricLabel}" Text="Luas atap" />
+                        <c:TrackedText Style="{StaticResource MetricValue}" Text="{Binding Roof}" Suffix="m²" LineHeight="{Binding MetricLineHeight}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <Border Style="{StaticResource Metric}">
+                <Grid VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <c:Icon Data="{StaticResource IcoWeather}" Width="31" Height="31" Margin="{Binding MetricIconMargin}" />
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <c:CssText Style="{StaticResource MetricLabel}" Text="Pekerjaan terjadwal" />
+                        <c:TrackedText Style="{StaticResource MetricValue}" Text="{Binding Locked}" Suffix="{Binding LockedSuffix}" SuffixFontSize="12"
+                                       SuffixFontWeight="500" SuffixGap="8" SuffixForeground="{StaticResource Muted}" LineHeight="{Binding MetricLineHeight}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </c:FlowGrid>
+
+        <!-- .workbench-grid -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="LeftColumn" Width="1.2*" />
+                <ColumnDefinition x:Name="GapColumn" Width="30" />
+                <ColumnDefinition x:Name="RightColumn" Width="*" MinWidth="290" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel VerticalAlignment="Top">
+                <Grid Margin="0,0,0,17">
+                    <c:TrackedText Style="{StaticResource SectionTitle}" Text="Perbandingan aktif" HorizontalAlignment="Left" />
+                    <c:CssText Style="{StaticResource MutedLine}" Text="{Binding AreaLabel}" HorizontalAlignment="Right" />
+                </Grid>
+                <ItemsControl ItemsSource="{Binding Materials}" Focusable="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <c:FlowGrid Columns="2" ColumnGap="15" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <!-- .active-material -->
+                            <Border Style="{StaticResource Card}" Padding="12">
+                                <StackPanel>
+                                    <Border Height="{Binding ImageHeight}" CornerRadius="6" Background="{Binding Image}" />
+                                    <StackPanel Margin="3,16,3,5">
+                                        <c:TrackedText Text="{Binding Name}" FontSize="15" FontWeight="650" Tracking="-0.525" LineHeight="19.5" Wrap="True" Margin="0,0,0,20" />
+                                        <Border BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="0,17,0,0">
+                                            <StackPanel>
+                                                <Grid Margin="0,0,0,14">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    <c:CssText Text="Skor iklim" FontSize="12" Foreground="{StaticResource Muted}" VerticalAlignment="Bottom" Margin="0,0,0,1" />
+                                                    <c:TrackedText Grid.Row="{Binding ValueRow}" HorizontalAlignment="{Binding ValueAlign}" Margin="{Binding ValueMargin}"
+                                                                   Text="{Binding Score}" Suffix=" / 100" FontSize="{Binding ValueSize}" FontWeight="600" Tracking="-0.4" SuffixFontSize="{Binding SuffixSize}" />
+                                                </Grid>
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    <c:CssText Text="Emisi awal" FontSize="12" Foreground="{StaticResource Muted}" VerticalAlignment="Bottom" Margin="0,0,0,1" />
+                                                    <c:TrackedText Grid.Row="{Binding ValueRow}" HorizontalAlignment="{Binding ValueAlign}" Margin="{Binding ValueMargin}"
+                                                                   Text="{Binding Emission}" Suffix="kgCO₂e" FontSize="{Binding ValueSize}" FontWeight="600" Tracking="-0.4" SuffixFontSize="{Binding SuffixSize}" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Button Style="{StaticResource Btn}" Content="Lihat perbandingan" Tag="compare" Click="Go_Click" HorizontalAlignment="Stretch" Margin="0,15,0,0" />
+            </StackPanel>
+
+            <!-- .next-actions -->
+            <Border x:Name="NextActions" Grid.Column="2" VerticalAlignment="Top" BorderBrush="{StaticResource Line}" BorderThickness="1,0,0,0" Padding="28,0,0,0">
+                <StackPanel>
+                    <c:TrackedText Style="{StaticResource SectionTitle}" Text="Lanjutkan perencanaan" Margin="0,0,0,15" />
+                    <Button Style="{StaticResource WorkflowAction}" c:Ui.Icon="{StaticResource IcoProject}" Tag="project" Click="Go_Click" Padding="{Binding WorkflowPadding}">
+                        <StackPanel>
+                            <c:CssText Style="{StaticResource WorkflowTitle}" Text="Tinjau iklim lokasi" />
+                            <c:CssText Style="{StaticResource WorkflowText}" Text="{Binding ClimateHint}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource WorkflowAction}" c:Ui.Icon="{StaticResource IcoSim}" Tag="sim" Click="Go_Click" Padding="{Binding WorkflowPadding}">
+                        <StackPanel>
+                            <c:CssText Style="{StaticResource WorkflowTitle}" Text="Simulasikan emisi" />
+                            <c:CssText Style="{StaticResource WorkflowText}" Text="{Binding SimHint}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource WorkflowAction}" c:Ui.Icon="{StaticResource IcoWeather}" Tag="weather" Click="Go_Click" Padding="{Binding WorkflowPadding}">
+                        <StackPanel>
+                            <c:CssText Style="{StaticResource WorkflowTitle}" Text="Atur jadwal pekerjaan" />
+                            <c:CssText Style="{StaticResource WorkflowText}" Text="{Binding ScheduleHint}" />
+                        </StackPanel>
+                    </Button>
+                    <!-- .forecast-summary -->
+                    <Border Style="{StaticResource Card}" CornerRadius="9" Padding="17" Margin="0,22,0,0">
+                        <StackPanel>
+                            <c:TrackedText Text="{Binding ForecastTitle}" FontSize="14" FontWeight="650" Tracking="-0.49" Margin="0,0,0,7" />
+                            <c:CssText Text="{Binding ForecastText}" FontSize="12" Foreground="{StaticResource Muted}" Leading="1.6" TextWrapping="Wrap" Margin="0,0,0,13" />
+                            <Button Style="{StaticResource BtnLightSm}" Content="{Binding ForecastAction}" Click="Forecast_Click" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </StackPanel>
+</p:PageBase>
