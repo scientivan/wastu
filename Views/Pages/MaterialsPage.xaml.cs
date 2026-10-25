@@ -13,7 +13,7 @@ public partial class MaterialsPage : PageBase
 
     public MaterialsPage() => InitializeComponent();
 
-    public override void Refresh()
+    protected override void Refresh()
     {
         _refreshing = true;
         WallTab.IsChecked = S.Jenis == JenisKomponen.Dinding;
@@ -23,6 +23,16 @@ public partial class MaterialsPage : PageBase
 
         var area = S.Luas;
         _cards = S.Peringkat().Select(e => new MaterialCard(Katalog.Dari(e.Bahan), e, area)).ToList();
+        ApplyFilter();
+    }
+
+    // go() mengosongkan pencarian setiap pindah halaman.
+    protected override void OnRevisit()
+    {
+        if (SearchBox.Text == S.Cari) return;
+        _refreshing = true;
+        SearchBox.Text = S.Cari;
+        _refreshing = false;
         ApplyFilter();
     }
 

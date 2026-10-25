@@ -12,7 +12,7 @@ public partial class ReportPage : PageBase
 {
     public ReportPage() => InitializeComponent();
 
-    public override void Refresh() => DataContext = new ReportData(S);
+    protected override void Refresh() => DataContext = new ReportData(S);
 
     // window.print() + @media print: hanya isi laporan, A4 dengan margin 14 mm.
     private void Print_Click(object sender, RoutedEventArgs e)

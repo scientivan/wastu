@@ -12,7 +12,7 @@ public partial class SimulationPage : PageBase
 
     public SimulationPage() => InitializeComponent();
 
-    public override void Refresh()
+    protected override void Refresh()
     {
         _refreshing = true;
         KindBox.SelectedIndex = S.Jenis == JenisKomponen.Dinding ? 0 : 1;
