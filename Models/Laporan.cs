@@ -1,6 +1,7 @@
+using System.IO;
 using System.Text;
 
-namespace ImplementasiClassDiagram.Models;
+namespace Wastu.Models;
 
 public class Laporan
 {
