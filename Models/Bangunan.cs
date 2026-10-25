@@ -27,6 +27,18 @@ public class Bangunan
         _komponen.Add(k);
     }
 
+    public double LuasKomponen(JenisKomponen jenis) =>
+        _komponen.Find(k => k.Jenis == jenis)?.Luas ?? 0;
+
+    public void AturLuasKomponen(JenisKomponen jenis, double luas)
+    {
+        var komponen = _komponen.Find(k => k.Jenis == jenis);
+        if (komponen is null)
+            TambahKomponen(new Komponen { Jenis = jenis, Luas = luas });
+        else
+            komponen.Luas = luas;
+    }
+
     public void TambahLaporan(Laporan laporan)
     {
         ArgumentNullException.ThrowIfNull(laporan);
@@ -38,4 +50,6 @@ public class Bangunan
         ArgumentNullException.ThrowIfNull(pekerjaan);
         _pekerjaan.Add(pekerjaan);
     }
+
+    public bool HapusPekerjaan(Pekerjaan pekerjaan) => _pekerjaan.Remove(pekerjaan);
 }
