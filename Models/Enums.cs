@@ -1,4 +1,4 @@
-namespace ImplementasiClassDiagram.Models;
+namespace Wastu.Models;
 
 public enum JenisKomponen
 {

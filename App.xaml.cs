@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace ImplementasiClassDiagram;
+namespace Wastu;
 
 public partial class App : Application
 {

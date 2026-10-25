@@ -6,6 +6,6 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>ImplementasiClassDiagram</RootNamespace>
+    <RootNamespace>Wastu</RootNamespace>
   </PropertyGroup>
 </Project>

@@ -1,4 +1,4 @@
-namespace ImplementasiClassDiagram.Models;
+namespace Wastu.Models;
 
 public class Pekerjaan
 {
@@ -32,3 +32,4 @@ public class Pekerjaan
         Status = "Terjadwal";
         return true;
     }
+}

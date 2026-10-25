@@ -18,7 +18,7 @@ XAML, dan seluruh class hasil class diagram ditempatkan pada folder `Models`.
 ## Build
 
 ```bash
-dotnet build ImplementasiClassDiagram.csproj
+dotnet build Wastu.csproj
 ```
 
 Project menargetkan `net8.0-windows` dan dijalankan pada sistem operasi Windows dengan .NET 8 SDK.

@@ -1,8 +1,8 @@
 using System.Globalization;
 using System.Windows;
-using ImplementasiClassDiagram.Models;
+using Wastu.Models;
 
-namespace ImplementasiClassDiagram.Views;
+namespace Wastu.Views;
 
 public partial class MainWindow : Window
 {
