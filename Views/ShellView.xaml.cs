@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Wastu.Controls;
 using Wastu.Services;
 using Wastu.Views.Pages;
 
@@ -184,9 +185,10 @@ public partial class ShellView : UserControl
     private void Go_Click(object sender, RoutedEventArgs e) => Go((string)((FrameworkElement)sender).Tag);
 
     // Langkah gulir ~100 px per notch seperti Chromium (bawaan WPF 48 px).
+    // Gulir di atas peta diteruskan ke peta untuk zoom, bukan menggulir halaman.
     private void Scroller_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
-        if (e.Handled) return;
+        if (e.Handled || LocationMap.Contains(e.OriginalSource as DependencyObject)) return;
         Scroller.ScrollToVerticalOffset(Scroller.VerticalOffset - e.Delta * 100.0 / 120);
         e.Handled = true;
     }

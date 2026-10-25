@@ -34,6 +34,7 @@ public partial class CreateProjectView : UserControl
         BuildSteps();
         BuildBubble();
 
+        Map.Bind(LatBox, LonBox);
         foreach (var name in Katalog.NamaKota) CityBox.Items.Add(name);
         CityBox.Items.Add(Katalog.LokasiLain);
         CityBox.SelectedIndex = 0;
@@ -160,6 +161,28 @@ public partial class CreateProjectView : UserControl
         else
         {
             LatBox.Text = LonBox.Text = CoastalBox.Text = "";
+        }
+    }
+
+    private async void Gps_Click(object sender, RoutedEventArgs e)
+    {
+        HideBubble();
+        GpsButton.IsEnabled = false;
+        GpsLabel.Text = "Mendeteksi lokasi…";
+        try
+        {
+            var posisi = await Lokasi.DeteksiAsync();
+            Map.Place(posisi.Lintang, posisi.Bujur, 17);
+            MapHint.Text = $"Lokasi terdeteksi dengan akurasi ±{Format.Angka(Math.Round(posisi.AkurasiMeter))} m. Klik peta bila titiknya perlu digeser.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            ShowBubble(GpsButton, ex.Message);
+        }
+        finally
+        {
+            GpsButton.IsEnabled = true;
+            GpsLabel.Text = "Gunakan lokasi saya";
         }
     }
 
