@@ -22,6 +22,9 @@ public partial class MainWindow : Window
         Width = Math.Min(1440, area.Width * 0.92);
         Height = Math.Min(900, area.Height * 0.92);
         if (area.Width < 1180) WindowState = WindowState.Maximized;
+#if DEBUG || SNAPSHOT
+        DebugSnapshot.Prepare(this);
+#endif
 
         Root.SizeChanged += (_, e) => Viewport.Update(e.NewSize.Width);
         _toastTimer.Tick += (_, _) => HideToast();
@@ -40,6 +43,13 @@ public partial class MainWindow : Window
         await minimum;
         Splash.Dismiss(fade: !hasProject);
         _shell?.Prewarm();
+#if DEBUG || SNAPSHOT
+        if (DebugSnapshot.Requested)
+        {
+            Splash.Visibility = Visibility.Collapsed;
+            await DebugSnapshot.RunAsync(this);
+        }
+#endif
     }
 
     public void ShowWelcome()
