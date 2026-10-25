@@ -11,3 +11,10 @@ public enum JenisPekerjaan
     Pengecoran,
     Pengecatan
 }
+
+public enum StatusKelayakan
+{
+    Layak,
+    Waspada,
+    TidakLayak
+}

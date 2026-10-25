@@ -14,13 +14,19 @@ public class SimulasiEmisi
 
     public double Proyeksikan() => EmisiKumulatif;
 
-    public double Proyeksikan(double emisiAwal, double faktorEmisi)
+    // Setiap penggantian mengulang emisi produksi bahan dari awal (PRD §11.3).
+    public double Proyeksikan(double emisiAwal)
+    {
+        JumlahPenggantian = PenggantianHingga(HorizonTahun);
+        EmisiKumulatif = emisiAwal * (1 + JumlahPenggantian);
+        return EmisiKumulatif;
+    }
+
+    public int PenggantianHingga(int tahun)
     {
         if (UsiaPakaiEfektif <= 0)
             throw new InvalidOperationException("Usia pakai efektif harus lebih dari nol.");
 
-        JumlahPenggantian = Math.Max(0, (int)Math.Ceiling(HorizonTahun / UsiaPakaiEfektif) - 1);
-        EmisiKumulatif = emisiAwal + JumlahPenggantian * faktorEmisi;
-        return EmisiKumulatif;
+        return Math.Max(0, (int)Math.Ceiling(tahun / UsiaPakaiEfektif - 1e-9) - 1);
     }
 }
