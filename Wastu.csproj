@@ -23,6 +23,11 @@
     <DefaultItemExcludes>$(DefaultItemExcludes);docs\**</DefaultItemExcludes>
   </PropertyGroup>
 
+  <!-- dotnet build -c Release -p:Snapshot=true: sertakan alat verifikasi visual (Views/DebugSnapshot.cs). -->
+  <PropertyGroup Condition="'$(Snapshot)' == 'true'">
+    <DefineConstants>$(DefineConstants);SNAPSHOT</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <Resource Include="Assets\Fonts\*.ttf" />
     <Resource Include="Assets\wastu.ico" />
