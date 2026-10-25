@@ -1,0 +1,21 @@
+<UserControl x:Class="Wastu.Views.SplashView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Wastu.Controls"
+             Background="{StaticResource PaperEntry}">
+    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+            <Image Source="{StaticResource Logo}" Width="62" Height="62" />
+            <c:TrackedText Text="Wastu" FontSize="48" FontWeight="750" Tracking="-1.7" Margin="16,0,0,0" VerticalAlignment="Center" />
+        </StackPanel>
+        <!-- .loadtrack -->
+        <Border Width="150" Height="3" Margin="0,32,0,18" CornerRadius="3" ClipToBounds="True" Background="{StaticResource LoadTrack}">
+            <Border x:Name="Bar" Width="67.5" HorizontalAlignment="Left" CornerRadius="3" Background="{StaticResource Green}">
+                <Border.RenderTransform>
+                    <TranslateTransform x:Name="BarShift" X="-67.5" />
+                </Border.RenderTransform>
+            </Border>
+        </Border>
+        <c:CssText Text="Menyiapkan ruang kerja" FontSize="13" Foreground="{StaticResource MutedEntry}" HorizontalAlignment="Center" />
+    </StackPanel>
+</UserControl>

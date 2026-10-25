@@ -1,78 +1,71 @@
-using System.Globalization;
 using System.Windows;
-using Wastu.Models;
+using System.Windows.Threading;
+using Wastu.Services;
 
 namespace Wastu.Views;
 
+// Satu jendela untuk seluruh alur: splash → welcome/formulir.
 public partial class MainWindow : Window
 {
-    private Bangunan? _bangunan;
+    // Durasi minimum splash pada welcome.js.
+    private static readonly TimeSpan SplashMinimum = TimeSpan.FromMilliseconds(600);
+
+    private readonly DispatcherTimer _toastTimer = new() { Interval = TimeSpan.FromMilliseconds(2800) };
+    private WelcomeView? _welcome;
 
     public MainWindow()
     {
         InitializeComponent();
-        JenisKomponenComboBox.ItemsSource = Enum.GetValues<JenisKomponen>();
-        JenisKomponenComboBox.SelectedIndex = 0;
+        var area = SystemParameters.WorkArea;
+        Width = Math.Min(1440, area.Width * 0.92);
+        Height = Math.Min(900, area.Height * 0.92);
+        if (area.Width < 1180) WindowState = WindowState.Maximized;
+
+        Root.SizeChanged += (_, e) => Viewport.Update(e.NewSize.Width);
+        _toastTimer.Tick += (_, _) => HideToast();
     }
 
-    private void SimpanBangunan_Click(object sender, RoutedEventArgs e)
+    public async Task StartAsync(Task<AppState> state)
     {
-        if (string.IsNullOrWhiteSpace(NamaBangunanTextBox.Text)
-            || string.IsNullOrWhiteSpace(KotaTextBox.Text))
-        {
-            MessageBox.Show(
-                "Nama bangunan dan kota wajib diisi.",
-                "Validasi",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-            return;
-        }
+        var minimum = Task.Delay(SplashMinimum);
+        App.State = await state;
+        await ImageCache.PreloadAsync();
 
-        _bangunan = new Bangunan
-        {
-            Nama = NamaBangunanTextBox.Text.Trim(),
-            Kota = KotaTextBox.Text.Trim()
-        };
-
-        KomponenListBox.Items.Clear();
-        StatusTextBlock.Text = $"Bangunan '{_bangunan.Nama}' berhasil disimpan.";
+        // Tujuan dibangun di balik splash supaya tampil seketika saat splash ditutup.
+        ShowWelcome();
+        await minimum;
+        Splash.Dismiss(fade: true);
     }
 
-    private void TambahKomponen_Click(object sender, RoutedEventArgs e)
+    public void ShowWelcome()
     {
-        if (_bangunan is null)
-        {
-            MessageBox.Show(
-                "Simpan data bangunan terlebih dahulu.",
-                "Informasi",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
-            return;
-        }
+        HideToast();
+        _welcome ??= new WelcomeView(this);
+        Host.Child = _welcome;
+        Title = "Wastu";
+    }
 
-        if (!double.TryParse(
-                LuasTextBox.Text,
-                NumberStyles.Number,
-                CultureInfo.CurrentCulture,
-                out var luas)
-            || luas <= 0)
-        {
-            MessageBox.Show(
-                "Luas komponen harus berupa angka lebih dari nol.",
-                "Validasi",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-            return;
-        }
+    public void ShowCreate()
+    {
+        HideToast();
+        Host.Child = new CreateProjectView(this);
+        Title = "Proyek baru | Wastu";
+    }
 
-        var komponen = new Komponen
-        {
-            Jenis = (JenisKomponen)JenisKomponenComboBox.SelectedItem,
-            Luas = luas
-        };
+    public void LeaveCreate() => ShowWelcome();
 
-        _bangunan.TambahKomponen(komponen);
-        KomponenListBox.Items.Add($"{komponen.Jenis} — {komponen.Luas:N2} m²");
-        StatusTextBlock.Text = $"Total komponen: {_bangunan.Komponen.Count}";
+    // Toast milik satu halaman; berpindah ke welcome/formulir (halaman HTML lain) menghapusnya.
+    private void HideToast()
+    {
+        _toastTimer.Stop();
+        ToastBox.Visibility = Visibility.Collapsed;
+    }
+
+    public void Toast(string message)
+    {
+        ToastText.Text = message;
+        ToastBox.Visibility = Visibility.Visible;
+        _toastTimer.Stop();
+        _toastTimer.Start();
     }
 }

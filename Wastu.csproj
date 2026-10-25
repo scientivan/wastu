@@ -9,6 +9,7 @@
     <RootNamespace>Wastu</RootNamespace>
     <AssemblyName>Wastu</AssemblyName>
     <ApplicationIcon>Assets\wastu.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
 
     <!-- Dokumentasi bukan bagian dari build. -->
     <DefaultItemExcludes>$(DefaultItemExcludes);docs\**</DefaultItemExcludes>
