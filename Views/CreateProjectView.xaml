@@ -1,0 +1,193 @@
+<UserControl x:Class="Wastu.Views.CreateProjectView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Wastu.Controls"
+             Background="{StaticResource White}">
+    <UserControl.Resources>
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="550" />
+            <Setter Property="Foreground" Value="{StaticResource Ink}" />
+        </Style>
+        <Style x:Key="Unit" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="{StaticResource MutedEntry}" />
+            <Setter Property="Margin" Value="6,0,0,0" />
+            <Setter Property="VerticalAlignment" Value="Bottom" />
+        </Style>
+        <Style x:Key="Hint" TargetType="c:CssText">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{StaticResource MutedEntry}" />
+            <Setter Property="Leading" Value="1.6" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,10,0,0" />
+        </Style>
+        <!-- .fieldgroup: label, kontrol, gap 10, margin-bottom 23 -->
+        <Style x:Key="FieldGroup" TargetType="StackPanel">
+            <Setter Property="Margin" Value="0,0,0,23" />
+        </Style>
+        <Style x:Key="StepTitle" TargetType="c:TrackedText">
+            <Setter Property="FontWeight" Value="650" />
+            <Setter Property="Tracking" Value="-1.2" />
+            <Setter Property="Margin" Value="0,0,0,16" />
+        </Style>
+        <Style x:Key="StepDesc" TargetType="c:CssText">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="Foreground" Value="{StaticResource MutedEntry}" />
+            <Setter Property="Leading" Value="1.6" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,0,0,35" />
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Auto" CanContentScroll="False">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="84" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- .create-header -->
+            <Border BorderBrush="{StaticResource LineCreate}" BorderThickness="0,0,0,1" Padding="38,0">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <Image Source="{StaticResource Logo}" Width="44" Height="44" />
+                        <c:TrackedText Text="Wastu" FontSize="29" FontWeight="750" Tracking="-1.1" Margin="12,0,0,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <Button Style="{StaticResource TextAction}" Content="Tutup" HorizontalAlignment="Right" Click="Close_Click" />
+                </Grid>
+            </Border>
+
+            <Grid x:Name="Workspace" Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition x:Name="SidebarColumn" Width="280" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- .create-sidebar -->
+                <Grid Background="{StaticResource PaperEntry}" Margin="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <c:TrackedText Text="Proyek baru" FontSize="24" FontWeight="650" Tracking="-0.7" Margin="35,38,35,40" />
+                    <StackPanel x:Name="Steps" Grid.Row="1" Margin="35,0" />
+                    <Image x:Name="Illustration" Grid.Row="3" Stretch="Uniform" Margin="35,22,35,22" MaxHeight="240"
+                           RenderOptions.BitmapScalingMode="HighQuality" />
+                </Grid>
+
+                <!-- form.wizard -->
+                <Grid x:Name="Wizard" Grid.Column="1" SizeChanged="Wizard_SizeChanged">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <StackPanel x:Name="Body" HorizontalAlignment="Left" Margin="86,50">
+                        <c:TrackedText x:Name="StepCount" Text="LANGKAH 1 DARI 3" FontSize="11" FontWeight="650" Tracking="1.1"
+                                       Foreground="{StaticResource MutedEntry}" Margin="0,0,0,22" />
+
+                        <!-- Langkah 1: identitas -->
+                        <StackPanel x:Name="Step0">
+                            <c:TrackedText Style="{StaticResource StepTitle}" x:Name="Title0" Text="Beri nama proyek Anda" />
+                            <c:CssText Style="{StaticResource StepDesc}" Text="Gunakan nama yang mudah Anda kenali." />
+                            <StackPanel Style="{StaticResource FieldGroup}">
+                                <c:CssText Style="{StaticResource FieldLabel}" Text="Nama proyek" Margin="0,0,0,10" />
+                                <TextBox x:Name="NameBox" Style="{StaticResource EntryInput}" c:Ui.Placeholder="Contoh: Rumah Keluarga" MaxLength="90" />
+                                <c:CssText Style="{StaticResource Hint}" Text="Nama ini dapat diubah kapan saja." />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Langkah 2: lokasi -->
+                        <StackPanel x:Name="Step1" Visibility="Collapsed">
+                            <c:TrackedText Style="{StaticResource StepTitle}" x:Name="Title1" Text="Di mana rumah dibangun?" />
+                            <c:CssText Style="{StaticResource StepDesc}" Text="Lokasi digunakan untuk menyesuaikan analisis iklim." />
+                            <StackPanel Style="{StaticResource FieldGroup}">
+                                <c:CssText Style="{StaticResource FieldLabel}" Text="Kota atau kabupaten" Margin="0,0,0,10" />
+                                <ComboBox x:Name="CityBox" Style="{StaticResource EntrySelect}" SelectionChanged="City_Changed" />
+                            </StackPanel>
+                            <StackPanel x:Name="CustomCityGroup" Style="{StaticResource FieldGroup}" Visibility="Collapsed">
+                                <c:CssText Style="{StaticResource FieldLabel}" Text="Nama kota atau kabupaten" Margin="0,0,0,10" />
+                                <TextBox x:Name="CustomCityBox" Style="{StaticResource EntryInput}" c:Ui.Placeholder="Masukkan lokasi proyek" MaxLength="80" />
+                            </StackPanel>
+                            <c:FlowGrid Columns="2" ColumnGap="22">
+                                <StackPanel Style="{StaticResource FieldGroup}">
+                                    <c:CssText Style="{StaticResource FieldLabel}" Text="Lintang" Margin="0,0,0,10" />
+                                    <TextBox x:Name="LatBox" Style="{StaticResource EntryInput}" PreviewTextInput="Number_PreviewTextInput" />
+                                </StackPanel>
+                                <StackPanel Style="{StaticResource FieldGroup}">
+                                    <c:CssText Style="{StaticResource FieldLabel}" Text="Bujur" Margin="0,0,0,10" />
+                                    <TextBox x:Name="LonBox" Style="{StaticResource EntryInput}" PreviewTextInput="Number_PreviewTextInput" />
+                                </StackPanel>
+                            </c:FlowGrid>
+                            <StackPanel Style="{StaticResource FieldGroup}">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <c:CssText Style="{StaticResource FieldLabel}" Text="Perkiraan jarak ke pesisir" />
+                                    <c:CssText Style="{StaticResource Unit}" Text="km" />
+                                </StackPanel>
+                                <TextBox x:Name="CoastalBox" Style="{StaticResource EntryInput}" PreviewTextInput="Number_PreviewTextInput" />
+                                <c:CssText Style="{StaticResource Hint}" Text="Sesuaikan koordinat dan jarak dengan lokasi lahan Anda." />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Langkah 3: luas bidang -->
+                        <StackPanel x:Name="Step2" Visibility="Collapsed">
+                            <c:TrackedText Style="{StaticResource StepTitle}" x:Name="Title2" Text="Tentukan luas bidang" />
+                            <c:CssText Style="{StaticResource StepDesc}" Text="Luas dinding dan atap menjadi dasar perhitungan emisi material." />
+                            <c:FlowGrid Columns="2" ColumnGap="22">
+                                <StackPanel Style="{StaticResource FieldGroup}">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                        <c:CssText Style="{StaticResource FieldLabel}" Text="Luas dinding" />
+                                        <c:CssText Style="{StaticResource Unit}" Text="m²" />
+                                    </StackPanel>
+                                    <TextBox x:Name="WallBox" Style="{StaticResource EntryInput}" c:Ui.Placeholder="120" PreviewTextInput="Number_PreviewTextInput" />
+                                </StackPanel>
+                                <StackPanel Style="{StaticResource FieldGroup}">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                        <c:CssText Style="{StaticResource FieldLabel}" Text="Luas atap" />
+                                        <c:CssText Style="{StaticResource Unit}" Text="m²" />
+                                    </StackPanel>
+                                    <TextBox x:Name="RoofBox" Style="{StaticResource EntryInput}" c:Ui.Placeholder="90" PreviewTextInput="Number_PreviewTextInput" />
+                                </StackPanel>
+                            </c:FlowGrid>
+                            <!-- .project-summary -->
+                            <Border BorderBrush="{StaticResource LineEntry}" BorderThickness="0,1,0,0" Margin="0,27,0,0" Padding="0,24,0,0">
+                                <StackPanel>
+                                    <c:CssText Text="Ringkasan proyek" FontSize="15" FontWeight="700" Margin="0,0,0,19" />
+                                    <Grid Margin="0,0,0,14">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="150" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <c:CssText Text="Nama proyek" Foreground="{StaticResource MutedEntry}" />
+                                        <c:CssText x:Name="SummaryName" Grid.Column="1" TextWrapping="Wrap" />
+                                    </Grid>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="150" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <c:CssText Text="Lokasi" Foreground="{StaticResource MutedEntry}" />
+                                        <c:CssText x:Name="SummaryCity" Grid.Column="1" TextWrapping="Wrap" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <c:CssText x:Name="ErrorText" Foreground="{StaticResource ErrorInk}" FontSize="13" Leading="1.6" TextWrapping="Wrap" Visibility="Collapsed" />
+                    </StackPanel>
+
+                    <!-- .wizard-footer -->
+                    <Border x:Name="Footer" Grid.Row="1" BorderBrush="{StaticResource LineCreate}" BorderThickness="0,1,0,0" Padding="86,20">
+                        <Grid>
+                            <Button x:Name="BackButton" Style="{StaticResource TextAction}" Content="Batal" Click="Back_Click" />
+                            <Button x:Name="NextButton" Style="{StaticResource PrimaryAction}" Content="Lanjutkan" MinWidth="155"
+                                    HorizontalAlignment="Right" IsDefault="True" Click="Next_Click" />
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

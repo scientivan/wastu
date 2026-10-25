@@ -1,0 +1,79 @@
+<p:PageBase x:Class="Wastu.Views.Pages.SimulationPage"
+            xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:c="clr-namespace:Wastu.Controls"
+            xmlns:p="clr-namespace:Wastu.Views.Pages">
+    <StackPanel>
+        <c:PageHeading Title="Simulasi emisi" Description="Emisi awal ditambah produksi material pengganti ketika usia pakai efektif habis.">
+            <Button Style="{StaticResource BtnLight}" Content="Lihat laporan" Tag="report" Click="Go_Click" />
+        </c:PageHeading>
+
+        <c:FlowGrid Columns="2" ColumnGap="20" Stretch="False">
+            <Border Style="{StaticResource Panel}">
+                <StackPanel>
+                    <c:TrackedText Style="{StaticResource PanelTitle}" Text="Proyeksi emisi kumulatif" Margin="0,0,0,18" />
+                    <c:EmissionChart x:Name="Chart" />
+                    <!-- .legend -->
+                    <ItemsControl ItemsSource="{Binding Legend}" Focusable="False" Margin="0,10">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                                    <Border Width="9" Height="9" CornerRadius="2" Background="{Binding Brush}" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                    <c:CssText Text="{Binding Name}" FontSize="12" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <ItemsControl ItemsSource="{Binding Stats}" Focusable="False" Margin="0,6,0,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <c:FlowGrid Columns="2" ColumnGap="20" Stretch="False" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <!-- .mini-stat -->
+                                <Border Style="{StaticResource MiniStat}">
+                                    <StackPanel>
+                                        <c:CssText Text="{Binding Name}" Strut="14" FontSize="12" Foreground="{StaticResource Muted}" />
+                                        <c:TrackedText Text="{Binding Total}" Suffix="kgCO₂e" FontSize="23" FontWeight="650" Tracking="-0.805" Margin="0,8,0,0"
+                                                       SuffixFontSize="12" SuffixFontWeight="650" SuffixTracking="-0.805" SuffixForeground="{StaticResource Muted}" />
+                                        <c:CssText Style="{StaticResource MutedLine}" Text="{Binding Detail}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Panel}">
+                <StackPanel>
+                    <c:TrackedText Style="{StaticResource PanelTitle}" Text="Parameter simulasi" Margin="0,0,0,36" />
+                    <c:CssText Style="{StaticResource FormLabel}" Text="Jenis komponen" />
+                    <ComboBox x:Name="KindBox" Style="{StaticResource Select}" SelectionChanged="Kind_Changed">
+                        <ComboBoxItem Content="Dinding" Tag="Dinding" />
+                        <ComboBoxItem Content="Atap" Tag="Atap" />
+                    </ComboBox>
+                    <c:CssText Style="{StaticResource FormLabel}" Text="Horizon waktu" Margin="0,18,0,7" />
+                    <ComboBox x:Name="HorizonBox" Style="{StaticResource Select}" SelectionChanged="Horizon_Changed">
+                        <ComboBoxItem Content="20 tahun" Tag="20" />
+                        <ComboBoxItem Content="30 tahun" Tag="30" />
+                        <ComboBoxItem Content="50 tahun" Tag="50" />
+                    </ComboBox>
+                    <c:CssText Style="{StaticResource FormLabel}" Text="Luas bidang" Margin="0,18,0,7" />
+                    <!-- .chip -->
+                    <Border Background="{StaticResource ChipBg}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="8" Padding="13">
+                        <c:CssText Text="{Binding AreaChip}" FontSize="13" Foreground="{StaticResource ChipFg}" />
+                    </Border>
+                    <Button Style="{StaticResource Btn}" Content="Ubah pilihan material" Tag="compare" Click="Go_Click" HorizontalAlignment="Stretch" Margin="0,18,0,0" />
+                </StackPanel>
+            </Border>
+        </c:FlowGrid>
+    </StackPanel>
+</p:PageBase>

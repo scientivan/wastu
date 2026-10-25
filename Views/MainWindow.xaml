@@ -1,0 +1,35 @@
+<Window x:Class="Wastu.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="clr-namespace:Wastu.Controls"
+        xmlns:v="clr-namespace:Wastu.Views"
+        Title="Wastu"
+        Icon="pack://application:,,,/Assets/wastu.ico"
+        MinWidth="1024"
+        MinHeight="640"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource PaperEntry}"
+        Foreground="{StaticResource Ink}"
+        FontFamily="{StaticResource Inter}"
+        FontSize="14"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Ideal">
+    <Grid x:Name="Root">
+        <Decorator x:Name="Host" />
+
+        <!-- .toast: box-shadow 0 8px 30px dibuat dari beberapa lapisan transparan. DropShadowEffect
+             sengaja tidak dipakai karena memaksa driver GPU memuat kompiler shader (puluhan MB). -->
+        <Grid x:Name="ToastBox" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+              Margin="0,0,25,22" MaxWidth="420" IsHitTestVisible="False">
+            <Border Margin="-14,-6,-14,-22" CornerRadius="23" Background="#0617382C" />
+            <Border Margin="-9,-1,-9,-17" CornerRadius="18" Background="#0817382C" />
+            <Border Margin="-4,4,-4,-12" CornerRadius="13" Background="#0A17382C" />
+            <Border Margin="-1,7,-1,-9" CornerRadius="10" Background="#0C17382C" />
+            <Border Padding="20,15" CornerRadius="9" Background="{StaticResource Green}">
+                <c:CssText x:Name="ToastText" Foreground="{StaticResource White}" FontSize="13" TextWrapping="Wrap" Leading="1.6" />
+            </Border>
+        </Grid>
+
+        <v:SplashView x:Name="Splash" />
+    </Grid>
+</Window>

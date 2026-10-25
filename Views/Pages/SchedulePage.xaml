@@ -1,0 +1,180 @@
+<p:PageBase x:Class="Wastu.Views.Pages.SchedulePage"
+            xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:c="clr-namespace:Wastu.Controls"
+            xmlns:p="clr-namespace:Wastu.Views.Pages">
+    <p:PageBase.Resources>
+        <!-- .date-cell -->
+        <Style x:Key="DateCell" TargetType="Button">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusOutline}" />
+            <Setter Property="Foreground" Value="{StaticResource Ink}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Border Margin="-3" CornerRadius="10" BorderThickness="2" BorderBrush="{Binding Ring}" />
+                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"
+                                    CornerRadius="7" Padding="3,12" MinHeight="129" SnapsToDevicePixels="True">
+                                <ContentPresenter VerticalAlignment="Top" HorizontalAlignment="Center" RecognizesAccessKey="False" />
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="CellSmall" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Foreground" Value="{StaticResource Muted}" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,8,0,0" />
+        </Style>
+        <Style x:Key="Fact" TargetType="Grid">
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+    </p:PageBase.Resources>
+
+    <StackPanel>
+        <c:PageHeading Title="Jadwal pekerjaan" Description="Sesuaikan pengecoran dan pengecatan dengan prakiraan cuaca.">
+            <Button Style="{StaticResource BtnLight}" Content="Perbarui prakiraan" Click="Refresh_Click" />
+        </c:PageHeading>
+
+        <Grid x:Name="Layout">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="WeatherColumn" Width="1.25*" />
+                <ColumnDefinition x:Name="GapColumn" Width="20" />
+                <ColumnDefinition x:Name="PlanColumn" Width="*" MinWidth="310" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition x:Name="GapRow" Height="0" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Cuaca -->
+            <Border x:Name="WeatherPanel" Style="{StaticResource Panel}" VerticalAlignment="Top">
+                <StackPanel>
+                    <Grid Margin="0,0,0,18">
+                        <c:TrackedText Style="{StaticResource PanelTitle}" Text="{Binding Title}" HorizontalAlignment="Left" />
+                        <Border Style="{StaticResource Tag}" Background="{StaticResource TagPaleBg}" TextElement.Foreground="{StaticResource TagPaleFg}"
+                                HorizontalAlignment="Right" Visibility="{Binding HasForecast}">
+                            <c:CssText Text="Open-Meteo" Leading="1.4" />
+                        </Border>
+                    </Grid>
+                    <Border Style="{StaticResource Seg}" Margin="0,0,0,22">
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton x:Name="PaintTab" Style="{StaticResource SegItem}" Content="Pengecatan" Tag="Pengecatan" Click="Work_Click" Margin="0,0,4,0" />
+                            <RadioButton x:Name="CastTab" Style="{StaticResource SegItem}" Content="Pengecoran" Tag="Pengecoran" Click="Work_Click" />
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Visibility="{Binding HasForecast}">
+                        <ItemsControl ItemsSource="{Binding Days}" Focusable="False">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <c:FlowGrid Columns="7" ColumnGap="7" RowGap="7" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Style="{StaticResource DateCell}" Background="{Binding Background}" BorderBrush="{Binding Border}"
+                                            Tag="{Binding Key}" Click="Day_Click">
+                                        <StackPanel>
+                                            <c:CssText Text="{Binding Weekday}" FontSize="11" FontWeight="700" HorizontalAlignment="Center" />
+                                            <c:CssText Style="{StaticResource CellSmall}" Text="{Binding Date}" />
+                                            <TextBlock Text="{Binding Sky}" FontFamily="Segoe UI Symbol" FontSize="23" Height="31" HorizontalAlignment="Center" Margin="0,8,0,0" />
+                                            <c:CssText Style="{StaticResource CellSmall}" Text="{Binding Rain}" />
+                                            <c:CssText Text="{Binding Status}" FontSize="10" FontWeight="600" HorizontalAlignment="Center" Margin="0,8,0,0" />
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <!-- .day-detail -->
+                        <Border BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="0,20,0,0" Margin="0,22,0,0">
+                            <StackPanel>
+                                <c:TrackedText Text="{Binding DayTitle}" FontSize="14" FontWeight="650" Tracking="-0.49" LineHeight="19.6" Margin="0,0,0,9" />
+                                <c:CssText Text="{Binding DayText}" FontSize="12" Foreground="{StaticResource Muted}" Leading="1.6" TextWrapping="Wrap" />
+                                <StackPanel Visibility="{Binding HasDay}" Margin="0,17,0,0" TextElement.FontSize="12">
+                                    <Grid Style="{StaticResource Fact}">
+                                        <c:CssText Text="Curah hujan" Foreground="{StaticResource Muted}" />
+                                        <c:CssText Text="{Binding DayRain}" HorizontalAlignment="Right" />
+                                    </Grid>
+                                    <Grid Style="{StaticResource Fact}">
+                                        <c:CssText Text="Kelembapan" Foreground="{StaticResource Muted}" />
+                                        <c:CssText Text="{Binding DayHumidity}" HorizontalAlignment="Right" />
+                                    </Grid>
+                                    <Grid>
+                                        <c:CssText Text="Suhu" Foreground="{StaticResource Muted}" />
+                                        <c:CssText Text="{Binding DayTemperature}" HorizontalAlignment="Right" />
+                                    </Grid>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                        <c:CssText Text="{Binding Updated}" FontSize="11" Foreground="{StaticResource Muted}" Margin="{Binding UpdatedMargin}" />
+                    </StackPanel>
+
+                    <!-- .forecast-empty -->
+                    <StackPanel Visibility="{Binding NoForecast}" Margin="15,45,15,33" HorizontalAlignment="Center">
+                        <c:Icon Data="{StaticResource IcoWeather}" Width="40" Height="40" Foreground="{StaticResource Muted}" Margin="0,0,0,20" />
+                        <c:TrackedText Text="Prakiraan belum tersedia" FontSize="16" FontWeight="650" Tracking="-0.56" LineHeight="22.4"
+                                       HorizontalAlignment="Center" Margin="0,0,0,16" />
+                        <c:CssText Text="Perbarui prakiraan untuk memeriksa hari yang sesuai bagi pekerjaan Anda." FontSize="13" MaxWidth="320"
+                                   Foreground="{StaticResource Muted}" TextAlignment="Center" TextWrapping="Wrap" Leading="1.6" Margin="0,0,0,23" />
+                        <Button Style="{StaticResource BtnLight}" Content="Perbarui prakiraan" Click="Refresh_Click" HorizontalAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Rencana pekerjaan -->
+            <Border x:Name="PlanPanel" Grid.Column="2" Style="{StaticResource Panel}" VerticalAlignment="Top">
+                <StackPanel>
+                    <c:TrackedText Style="{StaticResource PanelTitle}" Text="Rencana pekerjaan" Margin="0,0,0,18" />
+                    <c:CssText Style="{StaticResource FormLabel}" Text="Nama pekerjaan" />
+                    <TextBox x:Name="JobName" Style="{StaticResource Input}" MaxLength="100" />
+                    <c:CssText Style="{StaticResource FormLabel}" Text="Jenis pekerjaan" Margin="0,18,0,7" />
+                    <ComboBox x:Name="JobKind" Style="{StaticResource Select}">
+                        <ComboBoxItem Content="Pengecatan" Tag="Pengecatan" />
+                        <ComboBoxItem Content="Pengecoran" Tag="Pengecoran" />
+                    </ComboBox>
+                    <c:FlowGrid Columns="2" ColumnGap="18" Margin="0,18,0,0">
+                        <StackPanel>
+                            <c:CssText Style="{StaticResource FormLabel}" Text="Rencana mulai" />
+                            <DatePicker x:Name="JobStart" Style="{StaticResource DateInput}" />
+                        </StackPanel>
+                        <StackPanel>
+                            <c:CssText Style="{StaticResource FormLabel}" Text="Rencana selesai" />
+                            <DatePicker x:Name="JobEnd" Style="{StaticResource DateInput}" />
+                        </StackPanel>
+                    </c:FlowGrid>
+                    <Button Style="{StaticResource Btn}" Content="Tambahkan pekerjaan" HorizontalAlignment="Stretch" Margin="0,18,0,0" Click="Add_Click" />
+
+                    <Grid Margin="0,25,0,16">
+                        <c:TrackedText Style="{StaticResource PanelTitle}" Text="Pekerjaan tersimpan" HorizontalAlignment="Left" />
+                        <c:CssText Style="{StaticResource MutedLine}" Text="{Binding JobCount}" HorizontalAlignment="Right" />
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding Jobs}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <!-- .task-row -->
+                                <Border BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="0,16">
+                                    <StackPanel>
+                                        <c:CssText Text="{Binding Name}" FontSize="14" FontWeight="700" TextWrapping="Wrap" Leading="1.5" />
+                                        <c:CssText Text="{Binding Range}" Style="{StaticResource Small}" Margin="0,7,0,0" Leading="1.5" />
+                                        <c:CssText Text="{Binding Locked}" Style="{StaticResource Small}" Margin="0,7,0,0" Leading="1.5" />
+                                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                            <Button Style="{StaticResource BtnLightSm}" Content="Kunci tanggal" Tag="{Binding Index}" IsEnabled="{Binding CanLock}"
+                                                    Click="Lock_Click" Margin="0,0,10,0" />
+                                            <Button Style="{StaticResource BtnWarnSm}" Content="Hapus" Tag="{Binding Index}" Click="Remove_Click" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <c:CssText Text="Belum ada pekerjaan tersimpan." Visibility="{Binding NoJobs}" FontSize="13" Leading="1.6" Foreground="{StaticResource Muted}" Margin="0,24" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </StackPanel>
+</p:PageBase>

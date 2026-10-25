@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Wastu</RootNamespace>
+    <AssemblyName>Wastu</AssemblyName>
+    <ApplicationIcon>Assets\wastu.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+
+    <!-- Performa startup: PGO dinamis dan kompilasi AOT parsial (ReadyToRun) saat publish. -->
+    <TieredPGO>true</TieredPGO>
+    <TieredCompilation>true</TieredCompilation>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <ServerGarbageCollector>false</ServerGarbageCollector>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+
+    <!-- Dokumentasi bukan bagian dari build. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);docs\**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <!-- dotnet build -c Release -p:Snapshot=true: sertakan alat verifikasi visual (Views/DebugSnapshot.cs). -->
+  <PropertyGroup Condition="'$(Snapshot)' == 'true'">
+    <DefineConstants>$(DefineConstants);SNAPSHOT</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\Fonts\*.ttf" />
+    <Resource Include="Assets\wastu.ico" />
+    <EmbeddedResource Include="Assets\*.jpg;Assets\*.png" LogicalName="Assets.%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>
