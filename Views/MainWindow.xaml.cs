@@ -4,7 +4,8 @@ using Wastu.Services;
 
 namespace Wastu.Views;
 
-// Satu jendela untuk seluruh alur: splash → welcome/formulir.
+// Satu jendela untuk seluruh alur: splash → welcome/formulir → ruang kerja.
+// Tampilan disimpan setelah dibuat sehingga perpindahan tidak membangun ulang pohon visual.
 public partial class MainWindow : Window
 {
     // Durasi minimum splash pada welcome.js.
@@ -12,6 +13,7 @@ public partial class MainWindow : Window
 
     private readonly DispatcherTimer _toastTimer = new() { Interval = TimeSpan.FromMilliseconds(2800) };
     private WelcomeView? _welcome;
+    private ShellView? _shell;
 
     public MainWindow()
     {
@@ -32,9 +34,11 @@ public partial class MainWindow : Window
         await ImageCache.PreloadAsync();
 
         // Tujuan dibangun di balik splash supaya tampil seketika saat splash ditutup.
-        ShowWelcome();
+        var hasProject = App.State.AdaProyek;
+        if (hasProject) ShowShell("home");
+        else ShowWelcome();
         await minimum;
-        Splash.Dismiss(fade: true);
+        Splash.Dismiss(fade: !hasProject);
     }
 
     public void ShowWelcome()
@@ -52,7 +56,19 @@ public partial class MainWindow : Window
         Title = "Proyek baru | Wastu";
     }
 
-    public void LeaveCreate() => ShowWelcome();
+    // Tutup formulir: kembali ke ruang kerja bila sudah ada proyek, selain itu ke welcome.
+    public void LeaveCreate()
+    {
+        if (App.State.AdaProyek) ShowShell("home");
+        else ShowWelcome();
+    }
+
+    public void ShowShell(string page)
+    {
+        _shell ??= new ShellView(this);
+        Host.Child = _shell;
+        _shell.Go(page);
+    }
 
     // Toast milik satu halaman; berpindah ke welcome/formulir (halaman HTML lain) menghapusnya.
     private void HideToast()

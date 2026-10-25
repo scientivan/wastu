@@ -1,0 +1,128 @@
+<p:PageBase x:Class="Wastu.Views.Pages.ComparePage"
+            xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:c="clr-namespace:Wastu.Controls"
+            xmlns:p="clr-namespace:Wastu.Views.Pages">
+    <p:PageBase.Resources>
+        <Style x:Key="Th" TargetType="c:CssText">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="600" />
+            <Setter Property="Foreground" Value="{StaticResource Muted}" />
+            <Setter Property="Margin" Value="12" />
+            <Setter Property="Leading" Value="1.5" />
+        </Style>
+    </p:PageBase.Resources>
+
+    <StackPanel>
+        <c:PageHeading Title="Bandingkan material" Description="Tinjau kesesuaian iklim dan emisi awal secara berdampingan.">
+            <Border Style="{StaticResource Seg}">
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton x:Name="WallTab" Style="{StaticResource SegItem}" Content="Dinding" Tag="Dinding" Click="Kind_Click" Margin="0,0,4,0" />
+                    <RadioButton x:Name="RoofTab" Style="{StaticResource SegItem}" Content="Atap" Tag="Atap" Click="Kind_Click" />
+                </StackPanel>
+            </Border>
+        </c:PageHeading>
+
+        <!-- .compare-controls -->
+        <c:FlowGrid Columns="2" ColumnGap="18" Margin="0,0,0,22">
+            <StackPanel>
+                <c:CssText Style="{StaticResource FormLabel}" Text="Material A" />
+                <ComboBox x:Name="SelectA" Style="{StaticResource Select}" Tag="0" SelectionChanged="Select_Changed" />
+            </StackPanel>
+            <StackPanel>
+                <c:CssText Style="{StaticResource FormLabel}" Text="Material B" />
+                <ComboBox x:Name="SelectB" Style="{StaticResource Select}" Tag="1" SelectionChanged="Select_Changed" />
+            </StackPanel>
+        </c:FlowGrid>
+
+        <ItemsControl ItemsSource="{Binding Cards}" Focusable="False">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <c:FlowGrid Columns="2" ColumnGap="20" Stretch="False" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <!-- .compare-card -->
+                    <Border Style="{StaticResource Panel}" Padding="20">
+                        <StackPanel>
+                            <!-- img inline: celah descender 3 px + margin 17 -->
+                            <Border Height="170" CornerRadius="7" Background="{Binding Image}" Margin="0,0,0,20" />
+                            <c:TrackedText Text="{Binding Name}" FontSize="18" FontWeight="650" Tracking="-0.63" Wrap="True" Margin="0,0,0,10" />
+                            <ContentPresenter Content="{Binding Tag}" ContentTemplate="{StaticResource TagTemplate}" HorizontalAlignment="Left" />
+                            <Border BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Margin="0,18" Padding="0,17,0,0">
+                                <c:FlowGrid Columns="2" ColumnGap="15">
+                                    <StackPanel>
+                                        <c:CssText Text="Skor iklim" Strut="14" FontSize="12" Foreground="{StaticResource Muted}" />
+                                        <c:TrackedText Text="{Binding Score}" Suffix=" / 100" FontSize="25" FontWeight="700" Tracking="-0.6" Margin="0,8,0,0"
+                                                       SuffixFontSize="12" SuffixFontWeight="700" SuffixTracking="-0.6" SuffixForeground="{StaticResource Muted}" />
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <c:CssText Text="Emisi awal" Strut="14" FontSize="12" Foreground="{StaticResource Muted}" />
+                                        <c:TrackedText Text="{Binding Emission}" Suffix="kgCO₂e" FontSize="25" FontWeight="700" Tracking="-0.6" Margin="0,8,0,0"
+                                                       SuffixFontSize="12" SuffixFontWeight="700" SuffixTracking="-0.6" SuffixForeground="{StaticResource Muted}" />
+                                    </StackPanel>
+                                </c:FlowGrid>
+                            </Border>
+                            <c:CssText Text="{Binding Reason}" FontSize="12" Foreground="{StaticResource ReasonInk}" Leading="1.75" TextWrapping="Wrap" Margin="0,0,0,12" />
+                            <c:CssText Text="{Binding Factor}" Strut="14" FontSize="12" Foreground="{StaticResource Muted}" />
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+            <Button Style="{StaticResource Btn}" Content="Simulasikan emisi" Tag="sim" Click="Go_Click" />
+            <c:CssText Style="{StaticResource MutedLine}" Text="{Binding AreaLabel}" Margin="10,0,0,0" />
+        </StackPanel>
+
+        <!-- .compare-table -->
+        <Border Style="{StaticResource Panel}" Margin="0,24,0,0">
+            <StackPanel>
+                <c:TrackedText Style="{StaticResource PanelTitle}" Text="Peringkat kesesuaian iklim" Margin="0,0,0,18" />
+                <Grid Background="{StaticResource TableHead}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="501*" />
+                        <ColumnDefinition Width="174*" />
+                        <ColumnDefinition Width="232*" />
+                        <ColumnDefinition Width="179*" />
+                    </Grid.ColumnDefinitions>
+                    <c:CssText Style="{StaticResource Th}" Text="Material" />
+                    <c:CssText Style="{StaticResource Th}" Grid.Column="1" Text="Skor iklim" />
+                    <c:CssText Style="{StaticResource Th}" Grid.Column="2" Text="Emisi awal" />
+                    <c:CssText Style="{StaticResource Th}" Grid.Column="3" Text="Kesesuaian" />
+                </Grid>
+                <ItemsControl ItemsSource="{Binding Rows}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border BorderBrush="{StaticResource Line}" BorderThickness="{Binding RowBorder}">
+                                <Grid TextElement.FontSize="13">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="501*" />
+                                        <ColumnDefinition Width="174*" />
+                                        <ColumnDefinition Width="232*" />
+                                        <ColumnDefinition Width="179*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Orientation="Horizontal" Margin="12,14" VerticalAlignment="Center">
+                                        <Border Width="48" Height="40" CornerRadius="5" Background="{Binding Thumb}" />
+                                        <c:CssText Text="{Binding Name}" Leading="1.5" FontWeight="700" Margin="10,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="12,14" VerticalAlignment="Center">
+                                        <c:CssText Text="{Binding Score}" Leading="1.5" FontWeight="650" Foreground="{Binding ScoreBrush}" />
+                                        <Border Width="65" Height="4" CornerRadius="3" Background="{StaticResource ScoreTrack}" HorizontalAlignment="Left" Margin="0,6,0,0">
+                                            <Border Width="{Binding BarWidth}" CornerRadius="3" Background="{StaticResource ScoreFill}" HorizontalAlignment="Left" />
+                                        </Border>
+                                    </StackPanel>
+                                    <c:CssText Grid.Column="2" Text="{Binding Emission}" Leading="1.5" Margin="12,14" VerticalAlignment="Center" />
+                                    <ContentPresenter Grid.Column="3" Content="{Binding Tag}" ContentTemplate="{StaticResource TagTemplate}"
+                                                      Margin="12,14" VerticalAlignment="Center" HorizontalAlignment="Left" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</p:PageBase>

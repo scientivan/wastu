@@ -1,0 +1,141 @@
+<p:PageBase x:Class="Wastu.Views.Pages.ProjectPage"
+            xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:c="clr-namespace:Wastu.Controls"
+            xmlns:p="clr-namespace:Wastu.Views.Pages">
+    <p:PageBase.Resources>
+        <!-- .project-pill -->
+        <Style x:Key="Pill" TargetType="Button">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusOutline}" />
+            <Setter Property="Foreground" Value="{StaticResource Ink}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="550" />
+            <Setter Property="Padding" Value="14,11" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="c:Ui.Radius" Value="8" />
+            <Setter Property="Template" Value="{StaticResource ButtonChrome}" />
+        </Style>
+        <Style x:Key="ClimateCell" TargetType="Border">
+            <Setter Property="BorderBrush" Value="{StaticResource Line}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="Padding" Value="0,13" />
+        </Style>
+        <Style x:Key="ClimateValue" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="21" />
+            <Setter Property="FontWeight" Value="600" />
+            <Setter Property="Margin" Value="0,7,0,0" />
+        </Style>
+    </p:PageBase.Resources>
+
+    <StackPanel>
+        <c:PageHeading Title="Profil proyek" Description="Atur lokasi dan luas komponen rumah.">
+            <Button Style="{StaticResource BtnLight}" Content="Proyek baru" Click="New_Click" />
+        </c:PageHeading>
+
+        <ItemsControl ItemsSource="{Binding Projects}" Focusable="False" Margin="0,0,-10,-10">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Button Style="{StaticResource Pill}" Content="{Binding Label}" Tag="{Binding Id}" Background="{Binding Background}"
+                            BorderBrush="{Binding Border}" Click="Project_Click" Margin="0,0,10,10" />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <c:FlowGrid Columns="2" ColumnGap="20" Stretch="False" Margin="0,16,0,0">
+            <!-- Informasi proyek -->
+            <Border Style="{StaticResource Panel}">
+                <StackPanel>
+                    <Grid Margin="0,0,0,18">
+                        <c:TrackedText Style="{StaticResource PanelTitle}" Text="Informasi proyek" HorizontalAlignment="Left" />
+                        <Border Style="{StaticResource Tag}" HorizontalAlignment="Right">
+                            <c:CssText Text="Aktif" Leading="1.4" />
+                        </Border>
+                    </Grid>
+                    <StackPanel>
+                        <c:CssText Style="{StaticResource FormLabel}" Text="Nama proyek" />
+                        <TextBox x:Name="NameBox" Style="{StaticResource Input}" />
+                    </StackPanel>
+                    <StackPanel Margin="0,18,0,0">
+                        <c:CssText Style="{StaticResource FormLabel}" Text="Kota proyek" />
+                        <ComboBox x:Name="CityBox" Style="{StaticResource Select}" />
+                    </StackPanel>
+                    <c:FlowGrid Columns="2" ColumnGap="18" RowGap="18" Margin="0,18,0,0">
+                        <StackPanel>
+                            <c:CssText Style="{StaticResource FormLabel}" Text="Lintang (latitude)" />
+                            <TextBox x:Name="LatBox" Style="{StaticResource Input}" />
+                        </StackPanel>
+                        <StackPanel>
+                            <c:CssText Style="{StaticResource FormLabel}" Text="Bujur (longitude)" />
+                            <TextBox x:Name="LonBox" Style="{StaticResource Input}" />
+                        </StackPanel>
+                        <StackPanel>
+                            <c:CssText Style="{StaticResource FormLabel}" Text="Luas dinding (m²)" />
+                            <TextBox x:Name="WallBox" Style="{StaticResource Input}" />
+                        </StackPanel>
+                        <StackPanel>
+                            <c:CssText Style="{StaticResource FormLabel}" Text="Luas atap (m²)" />
+                            <TextBox x:Name="RoofBox" Style="{StaticResource Input}" />
+                        </StackPanel>
+                    </c:FlowGrid>
+                    <StackPanel Margin="0,18,0,0">
+                        <c:CssText Style="{StaticResource FormLabel}" Text="Perkiraan jarak ke pesisir (km)" />
+                        <TextBox x:Name="CoastalBox" Style="{StaticResource Input}" />
+                    </StackPanel>
+                    <WrapPanel Margin="0,18,0,0">
+                        <Button Style="{StaticResource Btn}" Content="Simpan proyek" Click="Save_Click" IsDefault="True" Margin="0,0,10,0" />
+                        <Button Style="{StaticResource BtnLight}" Content="Perbarui iklim" Click="Climate_Click" Margin="0,0,10,0" />
+                        <Button Style="{StaticResource BtnWarn}" Content="Hapus" Click="Delete_Click" />
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- climateCard() -->
+            <Border Style="{StaticResource Panel}">
+                <Grid>
+                    <StackPanel Visibility="{Binding EmptyClimate}">
+                        <c:TrackedText Style="{StaticResource PanelTitle}" Text="Iklim lokasi" Margin="0,0,0,16" />
+                        <c:CssText Text="{Binding EmptyText}" FontSize="13" Foreground="{StaticResource Muted}" Leading="1.6" TextWrapping="Wrap" Margin="0,0,0,18" />
+                        <Button Style="{StaticResource BtnLight}" Content="Perbarui iklim" Click="Climate_Click" Margin="0,5,0,0" />
+                    </StackPanel>
+                    <StackPanel Visibility="{Binding HasClimate}">
+                        <c:TrackedText Style="{StaticResource PanelTitle}" Text="{Binding ClimateTitle}" Margin="0,0,0,18" />
+                        <c:FlowGrid Columns="2" ColumnGap="16" RowGap="16">
+                            <Border Style="{StaticResource ClimateCell}">
+                                <StackPanel>
+                                    <c:CssText Style="{StaticResource Small}" Strut="14" Text="Hujan per tahun" />
+                                    <c:CssText Style="{StaticResource ClimateValue}" Text="{Binding Rain}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource ClimateCell}">
+                                <StackPanel>
+                                    <c:CssText Style="{StaticResource Small}" Strut="14" Text="Kelembapan" />
+                                    <c:CssText Style="{StaticResource ClimateValue}" Text="{Binding Humidity}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource ClimateCell}">
+                                <StackPanel>
+                                    <c:CssText Style="{StaticResource Small}" Strut="14" Text="Suhu rata-rata" />
+                                    <c:CssText Style="{StaticResource ClimateValue}" Text="{Binding Temperature}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource ClimateCell}">
+                                <StackPanel>
+                                    <c:CssText Style="{StaticResource Small}" Strut="14" Text="Jarak ke pesisir" />
+                                    <c:CssText Style="{StaticResource ClimateValue}" Text="{Binding Coastal}" />
+                                </StackPanel>
+                            </Border>
+                        </c:FlowGrid>
+                        <c:CssText Text="{Binding Caption}" FontSize="11" Foreground="{StaticResource Muted}" Leading="1.6" TextWrapping="Wrap" Margin="0,15,0,14" />
+                        <Button Style="{StaticResource BtnLightSm}" Content="Perbarui iklim" Click="Climate_Click" Margin="0,5,0,0" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </c:FlowGrid>
+    </StackPanel>
+</p:PageBase>
