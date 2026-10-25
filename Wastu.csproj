@@ -7,5 +7,16 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Wastu</RootNamespace>
+    <AssemblyName>Wastu</AssemblyName>
+    <ApplicationIcon>Assets\wastu.ico</ApplicationIcon>
+
+    <!-- Dokumentasi bukan bagian dari build. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);docs\**</DefaultItemExcludes>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\Fonts\*.ttf" />
+    <Resource Include="Assets\wastu.ico" />
+    <EmbeddedResource Include="Assets\*.jpg;Assets\*.png" LogicalName="Assets.%(Filename)%(Extension)" />
+  </ItemGroup>
 </Project>
