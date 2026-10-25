@@ -10,6 +10,14 @@
     <AssemblyName>Wastu</AssemblyName>
     <ApplicationIcon>Assets\wastu.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+
+    <!-- Performa startup: PGO dinamis dan kompilasi AOT parsial (ReadyToRun) saat publish. -->
+    <TieredPGO>true</TieredPGO>
+    <TieredCompilation>true</TieredCompilation>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <ServerGarbageCollector>false</ServerGarbageCollector>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
 
     <!-- Dokumentasi bukan bagian dari build. -->
     <DefaultItemExcludes>$(DefaultItemExcludes);docs\**</DefaultItemExcludes>

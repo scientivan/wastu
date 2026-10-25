@@ -64,7 +64,8 @@
                 </Border>
                 <!-- .content -->
                 <Border x:Name="ContentArea" MaxWidth="1640" Padding="43,30,43,48">
-                    <Decorator x:Name="PageHost" />
+                    <!-- Halaman yang pernah dibuka tetap terpasang; hanya satu yang Visible. -->
+                    <Grid x:Name="PageHost" />
                 </Border>
             </StackPanel>
         </ScrollViewer>

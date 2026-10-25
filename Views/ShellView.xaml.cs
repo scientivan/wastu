@@ -10,7 +10,7 @@ using Wastu.Views.Pages;
 namespace Wastu.Views;
 
 // app.html: sidebar, topbar, dan halaman ruang kerja. Halaman dibuat sekali (lazy) lalu dipakai ulang;
-// render menyegarkan data halaman yang sedang tampil.
+// render hanya menyegarkan data halaman yang sedang tampil, dan hanya bila state berubah.
 public partial class ShellView : UserControl
 {
     private static readonly Dictionary<string, string> Titles = new()
@@ -39,9 +39,12 @@ public partial class ShellView : UserControl
         CurrentPage = Titles.ContainsKey(page) ? page : "home";
         App.State.Cari = "";
         var view = Page(CurrentPage);
+        // Menukar Visibility jauh lebih murah daripada melepas-pasang halaman: subtree yang
+        // Collapsed tidak di-layout atau dirender, dan cache layout-nya tetap valid.
+        if (_page is not null && _page != view) _page.Visibility = Visibility.Collapsed;
+        view.Visibility = Visibility.Visible;
         _page = view;
-        PageHost.Child = view;
-        Show();
+        Show(force: false);
         Scroller.ScrollToTop();
     }
 
@@ -59,18 +62,36 @@ public partial class ShellView : UserControl
             _ => new HomePage()
         };
         view.Shell = this;
+        view.Visibility = Visibility.Collapsed;
         _pages[key] = view;
+        PageHost.Children.Add(view);
         return view;
+    }
+
+    // Halaman yang belum dibuka dibangun saat aplikasi menganggur (satu halaman per giliran,
+    // tidak mendahului input pengguna) sehingga kunjungan pertama pun tidak perlu membangun apa pun.
+    public void Prewarm()
+    {
+        foreach (var key in Titles.Keys)
+            Dispatcher.InvokeAsync(() =>
+            {
+                if (!App.State.AdaProyek || _pages.ContainsKey(key)) return;
+                var view = Page(key);
+                view.Visibility = Visibility.Hidden;
+                view.Show(force: true);
+                view.UpdateLayout();
+                if (view != _page) view.Visibility = Visibility.Collapsed;
+            }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
     }
 
     // Dipanggil setelah state berubah.
     public void Render()
     {
         App.State.Ubah();
-        Show();
+        Show(force: false);
     }
 
-    private void Show()
+    private void Show(bool force)
     {
         var state = App.State;
         if (!state.AdaProyek) return;
@@ -82,7 +103,7 @@ public partial class ShellView : UserControl
         Context.Text = project.Nama;
         LocationText.Text = project.Kota;
         _window.Title = Titles[CurrentPage] + " | Wastu";
-        _page?.Refresh();
+        _page?.Show(force);
     }
 
     public void Toast(string message) => _window.Toast(message);
@@ -155,7 +176,7 @@ public partial class ShellView : UserControl
         var tier = (Viewport.Width <= 1200, wide);
         if (tier == _tier) return;
         _tier = tier;
-        _page?.Refresh();
+        _page?.Show(force: true);
     }
 
     private void Nav_Click(object sender, RoutedEventArgs e) => Go((string)((FrameworkElement)sender).Tag);

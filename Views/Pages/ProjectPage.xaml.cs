@@ -9,7 +9,7 @@ public partial class ProjectPage : PageBase
 {
     public ProjectPage() => InitializeComponent();
 
-    public override void Refresh()
+    protected override void Refresh()
     {
         var p = S.Aktif;
         DataContext = new ProjectData(S);

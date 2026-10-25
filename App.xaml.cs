@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.IO;
+using System.Runtime;
 using System.Windows;
 using System.Windows.Markup;
 using Wastu.Services;
@@ -12,6 +14,11 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // Multicore JIT: profil startup direkam sekali lalu dipakai untuk mengompilasi paralel.
+        Directory.CreateDirectory(StateStore.ProfileFolder);
+        ProfileOptimization.SetProfileRoot(StateStore.ProfileFolder);
+        ProfileOptimization.StartProfile("startup.jitprofile");
+
         CultureInfo.DefaultThreadCurrentCulture = Format.Id;
         CultureInfo.DefaultThreadCurrentUICulture = Format.Id;
         CultureInfo.CurrentCulture = Format.Id;

@@ -39,6 +39,7 @@ public partial class MainWindow : Window
         else ShowWelcome();
         await minimum;
         Splash.Dismiss(fade: !hasProject);
+        _shell?.Prewarm();
     }
 
     public void ShowWelcome()
@@ -65,9 +66,11 @@ public partial class MainWindow : Window
 
     public void ShowShell(string page)
     {
+        var first = _shell is null;
         _shell ??= new ShellView(this);
         Host.Child = _shell;
         _shell.Go(page);
+        if (first && Splash.Visibility != Visibility.Visible) _shell.Prewarm();
     }
 
     // Toast milik satu halaman; berpindah ke welcome/formulir (halaman HTML lain) menghapusnya.

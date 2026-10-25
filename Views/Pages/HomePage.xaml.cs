@@ -9,7 +9,7 @@ public partial class HomePage : PageBase
 {
     public HomePage() => InitializeComponent();
 
-    public override void Refresh()
+    protected override void Refresh()
     {
         var compact = Viewport.Width <= 1200;
         var wide = Viewport.Width >= 1700;

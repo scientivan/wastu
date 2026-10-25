@@ -10,7 +10,7 @@ public partial class SchedulePage : PageBase
 {
     public SchedulePage() => InitializeComponent();
 
-    public override void Refresh()
+    protected override void Refresh()
     {
         // ≤1200 px: .scheduler-grid menjadi satu kolom.
         var stacked = Viewport.Width <= 1200;

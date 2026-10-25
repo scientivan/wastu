@@ -12,7 +12,7 @@ public partial class ComparePage : PageBase
 
     public ComparePage() => InitializeComponent();
 
-    public override void Refresh()
+    protected override void Refresh()
     {
         var ranked = S.Peringkat();
         var selected = S.Terpilih();
