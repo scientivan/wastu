@@ -74,6 +74,15 @@ internal static class DebugSnapshot
     private static void Click(System.Windows.Controls.Primitives.ButtonBase button) =>
         button.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, button));
 
+    // Pasangan tunnel/bubble seperti yang dikirim InputManager untuk satu event roda.
+    private static void Wheel(UIElement target, int delta)
+    {
+        var preview = new System.Windows.Input.MouseWheelEventArgs(System.Windows.Input.Mouse.PrimaryDevice, Environment.TickCount, delta) { RoutedEvent = UIElement.PreviewMouseWheelEvent };
+        target.RaiseEvent(preview);
+        if (!preview.Handled)
+            target.RaiseEvent(new System.Windows.Input.MouseWheelEventArgs(System.Windows.Input.Mouse.PrimaryDevice, Environment.TickCount, delta) { RoutedEvent = UIElement.MouseWheelEvent });
+    }
+
     private static T Named<T>(string name) where T : FrameworkElement =>
         All<T>(_root!).First(e => e.Name == name);
 
@@ -99,6 +108,11 @@ internal static class DebugSnapshot
             Named<TextBox>("NameBox").Text = "Rumah Uji"; Click(Named<Button>("NextButton")); await Shot("create-lokasi");
             Named<ComboBox>("CityBox").SelectedItem = "Lokasi lain"; await Shot("create-lokasi-lain");
             Named<ComboBox>("CityBox").SelectedItem = "Bandung";
+            // Jalur yang sama dengan tombol GPS: penanda dipasang di peta lalu isian lintang/bujur ikut terisi.
+            Named<Controls.LocationMap>("Map").Place(-6.914744, 107.609811, 16);
+            if (Named<TextBox>("LatBox").Text != "-6,914744" || Named<TextBox>("LonBox").Text != "107,609811")
+                throw new InvalidOperationException("Peta tidak mengisi koordinat: " + Named<TextBox>("LatBox").Text + " " + Named<TextBox>("LonBox").Text);
+            await Task.Delay(2500); await Shot("create-lokasi-peta");
             Click(Named<Button>("NextButton")); await Shot("create-luas");
             Click(Named<Button>("NextButton")); await Shot("create-luas-invalid");
             Named<TextBox>("WallBox").Text = "150"; Named<TextBox>("RoofBox").Text = "100,5";
@@ -115,6 +129,17 @@ internal static class DebugSnapshot
             Click(Named<RadioButton>("CastTab")); await Shot("weather-pengecoran");
             Click(All<RadioButton>(_root!).First(r => (r.Tag as string) == "report")); await Shot("report");
             Click(All<RadioButton>(_root!).First(r => (r.Tag as string) == "project")); await Shot("project");
+            // Gulir ala trackpad di atas peta: peta zoom out dua level, halaman tidak ikut tergulir.
+            var scroller = Named<ScrollViewer>("Scroller");
+            var before = scroller.VerticalOffset;
+            foreach (var delta in new[] { -30, -30, -30, -30, -120 }) Wheel(Named<Controls.LocationMap>("Map"), delta);
+            scroller.UpdateLayout();
+            if (scroller.VerticalOffset != before) throw new InvalidOperationException("Gulir di atas peta ikut menggulir halaman.");
+            Wheel(Named<TextBox>("NameBox"), -120);
+            scroller.UpdateLayout();
+            if (scroller.VerticalOffset == before) throw new InvalidOperationException("Gulir di luar peta tidak menggulir halaman.");
+            scroller.ScrollToTop();
+            await Task.Delay(2500); await Shot("project-peta-zoom");
             Named<TextBox>("NameBox").Text = "Rumah Uji Dua"; Click(Labeled("Simpan proyek")); await Shot("project-simpan");
             Named<TextBox>("LatBox").Text = "20"; Click(Labeled("Simpan proyek")); await Shot("project-koordinat-salah");
             Click(Labeled("Proyek baru")); await Shot("create-dari-proyek");

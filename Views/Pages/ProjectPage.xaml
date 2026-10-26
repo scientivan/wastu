@@ -74,6 +74,22 @@
                             <c:CssText Style="{StaticResource FormLabel}" Text="Bujur (longitude)" />
                             <TextBox x:Name="LonBox" Style="{StaticResource Input}" />
                         </StackPanel>
+                    </c:FlowGrid>
+                    <StackPanel Margin="0,18,0,0">
+                        <Grid Margin="0,0,0,8">
+                            <c:CssText Style="{StaticResource FormLabel}" Text="Titik lokasi" VerticalAlignment="Center" Margin="0" />
+                            <Button x:Name="GpsButton" Style="{StaticResource BtnLightSm}" HorizontalAlignment="Right" Click="Gps_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <c:Icon Data="{StaticResource IcoPin}" StrokeThickness="1.8" Width="14" Height="14" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="GpsLabel" Text="Gunakan lokasi saya" Margin="6,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                        <c:LocationMap x:Name="Map" Height="240" />
+                        <c:CssText Text="Klik peta untuk menandai lokasi. Seret untuk menggeser, gulir untuk memperbesar." FontSize="11"
+                                   Foreground="{StaticResource Muted}" Leading="1.6" TextWrapping="Wrap" Margin="0,8,0,0" />
+                    </StackPanel>
+                    <c:FlowGrid Columns="2" ColumnGap="18" RowGap="18" Margin="0,18,0,0">
                         <StackPanel>
                             <c:CssText Style="{StaticResource FormLabel}" Text="Luas dinding (m²)" />
                             <TextBox x:Name="WallBox" Style="{StaticResource Input}" />

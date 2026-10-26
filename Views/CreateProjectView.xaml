@@ -122,6 +122,19 @@
                                 </StackPanel>
                             </c:FlowGrid>
                             <StackPanel Style="{StaticResource FieldGroup}">
+                                <Grid Margin="0,0,0,10">
+                                    <c:CssText Style="{StaticResource FieldLabel}" Text="Titik lokasi" VerticalAlignment="Center" />
+                                    <Button x:Name="GpsButton" Style="{StaticResource BtnLightSm}" HorizontalAlignment="Right" Click="Gps_Click">
+                                        <StackPanel Orientation="Horizontal">
+                                            <c:Icon Data="{StaticResource IcoPin}" StrokeThickness="1.8" Width="15" Height="15" VerticalAlignment="Center" />
+                                            <TextBlock x:Name="GpsLabel" Text="Gunakan lokasi saya" Margin="7,0,0,0" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+                                <c:LocationMap x:Name="Map" Height="300" />
+                                <c:CssText x:Name="MapHint" Style="{StaticResource Hint}" Text="Klik peta untuk menandai lokasi lahan. Seret untuk menggeser, gulir untuk memperbesar." />
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource FieldGroup}">
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                     <c:CssText Style="{StaticResource FieldLabel}" Text="Perkiraan jarak ke pesisir" />
                                     <c:CssText Style="{StaticResource Unit}" Text="km" />
