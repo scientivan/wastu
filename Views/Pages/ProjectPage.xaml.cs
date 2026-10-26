@@ -7,7 +7,11 @@ namespace Wastu.Views.Pages;
 
 public partial class ProjectPage : PageBase
 {
-    public ProjectPage() => InitializeComponent();
+    public ProjectPage()
+    {
+        InitializeComponent();
+        Map.Bind(LatBox, LonBox);
+    }
 
     protected override void Refresh()
     {
@@ -31,6 +35,27 @@ public partial class ProjectPage : PageBase
     {
         S.PilihProyek((int)((FrameworkElement)sender).Tag);
         Shell.Render();
+    }
+
+    private async void Gps_Click(object sender, RoutedEventArgs e)
+    {
+        GpsButton.IsEnabled = false;
+        GpsLabel.Text = "Mendeteksi lokasi…";
+        try
+        {
+            var posisi = await Lokasi.DeteksiAsync();
+            Map.Place(posisi.Lintang, posisi.Bujur, 17);
+            Shell.Toast($"Lokasi terdeteksi (akurasi ±{Format.Angka(Math.Round(posisi.AkurasiMeter))} m). Simpan proyek untuk menerapkan.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            Shell.Toast(ex.Message);
+        }
+        finally
+        {
+            GpsButton.IsEnabled = true;
+            GpsLabel.Text = "Gunakan lokasi saya";
+        }
     }
 
     private async void Climate_Click(object sender, RoutedEventArgs e) => await Shell.RefreshClimateAsync();
