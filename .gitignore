@@ -19,3 +19,6 @@ artifacts/
 ## OS
 .DS_Store
 Thumbs.db
+
+## Konfigurasi lokal berisi rahasia (connection string db, dsb.)
+appsettings*.json
