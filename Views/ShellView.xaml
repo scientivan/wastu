@@ -1,0 +1,73 @@
+<UserControl x:Class="Wastu.Views.ShellView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Wastu.Controls"
+             Background="{StaticResource Paper}">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="222" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- .side -->
+        <Border Background="{StaticResource White}" BorderBrush="{StaticResource Line}" BorderThickness="0,0,1,0" Padding="16,28,16,22">
+            <DockPanel LastChildFill="True">
+                <StackPanel DockPanel.Dock="Top">
+                    <StackPanel Orientation="Horizontal" Margin="10,0,10,33">
+                        <Image Source="{StaticResource Logo}" Width="43" Height="43" />
+                        <c:TrackedText Text="Wastu" FontSize="26" FontWeight="700" Tracking="-1" Margin="10,0,0,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <c:TrackedText Text="RUANG KERJA" FontSize="10" Tracking="1.2" Foreground="{StaticResource SideLabel}" Margin="13,0,13,14" />
+                    <StackPanel x:Name="Nav">
+                        <RadioButton Style="{StaticResource NavItem}" Tag="home" Content="Beranda" c:Ui.Icon="{StaticResource IcoHome}" Click="Nav_Click" Margin="0,0,0,6" />
+                        <RadioButton Style="{StaticResource NavItem}" Tag="project" Content="Profil Proyek" c:Ui.Icon="{StaticResource IcoProject}" Click="Nav_Click" Margin="0,0,0,6" />
+                        <RadioButton Style="{StaticResource NavItem}" Tag="material" Content="Eksplor Material" c:Ui.Icon="{StaticResource IcoMaterial}" Click="Nav_Click" Margin="0,0,0,6" />
+                        <RadioButton Style="{StaticResource NavItem}" Tag="compare" Content="Bandingkan" c:Ui.Icon="{StaticResource IcoCompare}" Click="Nav_Click" Margin="0,0,0,6" />
+                        <RadioButton Style="{StaticResource NavItem}" Tag="sim" Content="Simulasi Emisi" c:Ui.Icon="{StaticResource IcoSim}" Click="Nav_Click" Margin="0,0,0,6" />
+                        <RadioButton Style="{StaticResource NavItem}" Tag="weather" Content="Jadwal Pekerjaan" c:Ui.Icon="{StaticResource IcoWeather}" Click="Nav_Click" Margin="0,0,0,6" />
+                        <RadioButton Style="{StaticResource NavItem}" Tag="report" Content="Laporan" c:Ui.Icon="{StaticResource IcoReport}" Click="Nav_Click" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- .workspace-status -->
+                <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="12,19,12,0" Margin="0,30,0,0">
+                    <StackPanel>
+                        <c:TrackedText Text="PROYEK AKTIF" FontSize="10" FontWeight="600" Tracking="1" Foreground="{StaticResource StatusLabel}" />
+                        <c:CssText x:Name="StatusName" FontSize="13" FontWeight="600" Leading="1.5"
+                                   TextWrapping="Wrap" Margin="0,8,0,0" />
+                        <c:CssText x:Name="StatusCity" FontSize="12" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                        <Button Style="{StaticResource BareButton}" Tag="project" Click="Go_Click" Margin="0,14,0,0">
+                            <c:CssText Text="Kelola proyek" FontSize="12" FontWeight="600" Foreground="{StaticResource Green}" />
+                        </Button>
+                    </StackPanel>
+                </Border>
+                <Border />
+            </DockPanel>
+        </Border>
+
+        <!-- .main -->
+        <ScrollViewer x:Name="Scroller" Grid.Column="1" VerticalScrollBarVisibility="Auto" CanContentScroll="False"
+                      PreviewMouseWheel="Scroller_PreviewMouseWheel">
+            <StackPanel>
+                <!-- .top -->
+                <Border Height="62" Padding="36,0" Background="{StaticResource White}" BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <c:CssText x:Name="Context" FontSize="13" FontWeight="550" Foreground="{StaticResource ContextInk}"
+                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,20,0" />
+                        <Button Style="{StaticResource BareButton}" Tag="project" Click="Go_Click" HorizontalAlignment="Right" VerticalAlignment="Center" Padding="0,8">
+                            <StackPanel Orientation="Horizontal" TextElement.Foreground="{StaticResource LocationInk}">
+                                <c:Icon Data="{StaticResource IcoPin}" StrokeThickness="1.6" Width="17" Height="17" />
+                                <c:CssText x:Name="LocationText" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </Border>
+                <!-- .content -->
+                <Border x:Name="ContentArea" MaxWidth="1640" Padding="43,30,43,48">
+                    <!-- Halaman yang pernah dibuka tetap terpasang; hanya satu yang Visible. -->
+                    <Grid x:Name="PageHost" />
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

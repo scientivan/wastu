@@ -1,0 +1,136 @@
+<p:PageBase x:Class="Wastu.Views.Pages.ReportPage"
+            xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:c="clr-namespace:Wastu.Controls"
+            xmlns:p="clr-namespace:Wastu.Views.Pages">
+    <p:PageBase.Resources>
+        <Style x:Key="ReportTitle" TargetType="c:TrackedText">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="650" />
+            <Setter Property="Tracking" Value="-0.56" />
+            <Setter Property="LineHeight" Value="22.4" />
+            <Setter Property="Margin" Value="0,22,0,16" />
+        </Style>
+        <Style x:Key="Th" TargetType="c:CssText">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="600" />
+            <Setter Property="Foreground" Value="{StaticResource Muted}" />
+            <Setter Property="Margin" Value="12" />
+            <Setter Property="Leading" Value="1.5" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="Td" TargetType="c:CssText">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Margin" Value="12,14" />
+            <Setter Property="Leading" Value="1.5" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="Body" TargetType="c:CssText">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Leading" Value="1.6" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+    </p:PageBase.Resources>
+
+    <StackPanel>
+        <c:PageHeading x:Name="Heading" Title="Laporan proyek" Description="Ringkasan proyek, profil iklim, material, proyeksi emisi, dan tanggal terkunci.">
+            <Button Style="{StaticResource Btn}" Content="Simpan PDF" Click="Print_Click" />
+        </c:PageHeading>
+
+        <!-- #report -->
+        <Border x:Name="Report" Style="{StaticResource Panel}">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+                    <Image Source="{StaticResource Logo}" Width="43" Height="43" />
+                    <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                        <c:TrackedText Text="Laporan Rekomendasi Wastu" FontSize="21" FontWeight="650" Tracking="-0.735" />
+                        <c:CssText Text="{Binding Subtitle}" Style="{StaticResource Small}" Strut="14" />
+                    </StackPanel>
+                </StackPanel>
+
+                <c:FlowGrid Columns="2" ColumnGap="20" Stretch="False">
+                    <Border Style="{StaticResource MiniStat}">
+                        <StackPanel>
+                            <c:CssText Text="Lokasi" FontWeight="700" />
+                            <c:CssText Style="{StaticResource Body}" Text="{Binding Location}" />
+                            <c:CssText Style="{StaticResource Small}" Strut="14" Text="{Binding Areas}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource MiniStat}">
+                        <StackPanel>
+                            <c:CssText Text="Iklim" FontWeight="700" />
+                            <c:CssText Style="{StaticResource Body}" Text="{Binding Climate}" />
+                            <c:CssText Style="{StaticResource Small}" Strut="14" Text="{Binding ClimateDetail}" Visibility="{Binding HasClimate}" />
+                        </StackPanel>
+                    </Border>
+                </c:FlowGrid>
+
+                <c:TrackedText Style="{StaticResource ReportTitle}" Text="{Binding RankingTitle}" />
+                <Grid Background="{StaticResource TableHead}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="157*" />
+                        <ColumnDefinition Width="67*" />
+                        <ColumnDefinition Width="94*" />
+                        <ColumnDefinition Width="768*" />
+                    </Grid.ColumnDefinitions>
+                    <c:CssText Style="{StaticResource Th}" Text="Material" />
+                    <c:CssText Style="{StaticResource Th}" Grid.Column="1" Text="Skor" />
+                    <c:CssText Style="{StaticResource Th}" Grid.Column="2" Text="kgCO₂e awal" />
+                    <c:CssText Style="{StaticResource Th}" Grid.Column="3" Text="Alasan" />
+                </Grid>
+                <ItemsControl ItemsSource="{Binding Rows}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border BorderBrush="{StaticResource Line}" BorderThickness="{Binding RowBorder}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="157*" />
+                                        <ColumnDefinition Width="67*" />
+                                        <ColumnDefinition Width="94*" />
+                                        <ColumnDefinition Width="768*" />
+                                    </Grid.ColumnDefinitions>
+                                    <c:CssText Style="{StaticResource Td}" Text="{Binding Name}" />
+                                    <c:CssText Style="{StaticResource Td}" Grid.Column="1" Text="{Binding Score}" />
+                                    <c:CssText Style="{StaticResource Td}" Grid.Column="2" Text="{Binding Emission}" />
+                                    <c:CssText Style="{StaticResource Td}" Grid.Column="3" Text="{Binding Reason}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <c:TrackedText Style="{StaticResource ReportTitle}" Text="{Binding SimulationTitle}" Margin="0,18,0,16" />
+                <ItemsControl ItemsSource="{Binding Simulations}" Focusable="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <c:FlowGrid Columns="2" ColumnGap="20" Stretch="False" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource MiniStat}">
+                                <StackPanel>
+                                    <c:CssText Text="{Binding Name}" FontWeight="700" />
+                                    <c:TrackedText Text="{Binding Total}" FontSize="16" FontWeight="650" Tracking="-0.56" LineHeight="22.4" Margin="0,7" />
+                                    <c:CssText Style="{StaticResource Small}" Strut="14" Text="{Binding Detail}" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <c:TrackedText Style="{StaticResource ReportTitle}" Text="Jadwal terkunci" Margin="0,18,0,16" />
+                <ItemsControl ItemsSource="{Binding Locked}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <c:CssText Style="{StaticResource Body}" Text="{Binding}" Margin="0,0,0,14" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <c:CssText Style="{StaticResource MutedLine}" Text="Belum ada tanggal terkunci." Visibility="{Binding NoLocked}" Margin="0,0,0,12" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</p:PageBase>

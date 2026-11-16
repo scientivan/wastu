@@ -1,0 +1,80 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                    xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
+                    mc:Ignorable="po">
+
+    <!-- Variabel :root pada style.css dan entry.css. Semua brush dibekukan agar bebas biaya notifikasi. -->
+    <FontFamily x:Key="Inter">pack://application:,,,/Assets/Fonts/#Inter, Segoe UI</FontFamily>
+
+    <SolidColorBrush x:Key="Ink" Color="#17382C" po:Freeze="True" />
+    <SolidColorBrush x:Key="Green" Color="#194F38" po:Freeze="True" />
+    <SolidColorBrush x:Key="GreenHover" Color="#103F2A" po:Freeze="True" />
+    <SolidColorBrush x:Key="GreenHoverEntry" Color="#103C29" po:Freeze="True" />
+    <SolidColorBrush x:Key="Lime" Color="#E3EFCE" po:Freeze="True" />
+    <SolidColorBrush x:Key="Paper" Color="#F7F7F2" po:Freeze="True" />
+    <SolidColorBrush x:Key="PaperEntry" Color="#F6F5EF" po:Freeze="True" />
+    <SolidColorBrush x:Key="Muted" Color="#6B786F" po:Freeze="True" />
+    <SolidColorBrush x:Key="MutedEntry" Color="#66756D" po:Freeze="True" />
+    <SolidColorBrush x:Key="Line" Color="#DFE5DB" po:Freeze="True" />
+    <SolidColorBrush x:Key="LineEntry" Color="#DCE2D8" po:Freeze="True" />
+    <SolidColorBrush x:Key="LineCreate" Color="#E4E8E0" po:Freeze="True" />
+    <SolidColorBrush x:Key="Red" Color="#A8493B" po:Freeze="True" />
+    <SolidColorBrush x:Key="White" Color="#FFFFFF" po:Freeze="True" />
+    <SolidColorBrush x:Key="Clear" Color="Transparent" po:Freeze="True" />
+
+    <SolidColorBrush x:Key="MutedLineInk" Color="#768479" po:Freeze="True" />
+    <SolidColorBrush x:Key="LabelInk" Color="#4C6352" po:Freeze="True" />
+    <SolidColorBrush x:Key="InputBorder" Color="#CFD9CB" po:Freeze="True" />
+    <SolidColorBrush x:Key="InputBorderEntry" Color="#CED8CE" po:Freeze="True" />
+    <SolidColorBrush x:Key="FocusBorder" Color="#82A575" po:Freeze="True" />
+    <SolidColorBrush x:Key="FocusBorderEntry" Color="#598268" po:Freeze="True" />
+    <SolidColorBrush x:Key="FocusRing" Color="#E4EFD9" po:Freeze="True" />
+    <SolidColorBrush x:Key="FocusRingEntry" Color="#E6EFDE" po:Freeze="True" />
+    <SolidColorBrush x:Key="FocusOutlineBrush" Color="#8DAA72" po:Freeze="True" />
+    <SolidColorBrush x:Key="FocusOutlineEntryBrush" Color="#8CA96D" po:Freeze="True" />
+    <SolidColorBrush x:Key="Placeholder" Color="#879688" po:Freeze="True" />
+    <SolidColorBrush x:Key="PlaceholderEntry" Color="#87958A" po:Freeze="True" />
+    <SolidColorBrush x:Key="Selection" Color="#B5CDA5" po:Freeze="True" />
+
+    <SolidColorBrush x:Key="LightBorder" Color="#CDD9C9" po:Freeze="True" />
+    <SolidColorBrush x:Key="LightHover" Color="#F0F5E9" po:Freeze="True" />
+    <SolidColorBrush x:Key="WarnBg" Color="#FFF5F0" po:Freeze="True" />
+    <SolidColorBrush x:Key="WarnBorder" Color="#EDCFC5" po:Freeze="True" />
+
+    <SolidColorBrush x:Key="TagBg" Color="#E8F2DD" po:Freeze="True" />
+    <SolidColorBrush x:Key="TagFg" Color="#3B6A3B" po:Freeze="True" />
+    <SolidColorBrush x:Key="TagGoldBg" Color="#FFF2D6" po:Freeze="True" />
+    <SolidColorBrush x:Key="TagGoldFg" Color="#92681F" po:Freeze="True" />
+    <SolidColorBrush x:Key="TagPaleBg" Color="#F1F3EF" po:Freeze="True" />
+    <SolidColorBrush x:Key="TagPaleFg" Color="#718071" po:Freeze="True" />
+
+    <SolidColorBrush x:Key="SegBg" Color="#EDF1E7" po:Freeze="True" />
+    <SolidColorBrush x:Key="SegFg" Color="#63725F" po:Freeze="True" />
+    <SolidColorBrush x:Key="NavFg" Color="#4B5E50" po:Freeze="True" />
+    <SolidColorBrush x:Key="NavHover" Color="#F3F6EE" po:Freeze="True" />
+    <SolidColorBrush x:Key="SideLabel" Color="#7D8C7F" po:Freeze="True" />
+    <SolidColorBrush x:Key="StatusLabel" Color="#7B8B7D" po:Freeze="True" />
+    <SolidColorBrush x:Key="ContextInk" Color="#566B5D" po:Freeze="True" />
+    <SolidColorBrush x:Key="LocationInk" Color="#5F7464" po:Freeze="True" />
+    <SolidColorBrush x:Key="Score" Color="#3F783D" po:Freeze="True" />
+    <SolidColorBrush x:Key="MiniStatBg" Color="#F3F6ED" po:Freeze="True" />
+    <SolidColorBrush x:Key="ChipBg" Color="#F6F8F2" po:Freeze="True" />
+    <SolidColorBrush x:Key="ChipFg" Color="#53694E" po:Freeze="True" />
+    <SolidColorBrush x:Key="TableHead" Color="#F7F9F3" po:Freeze="True" />
+    <SolidColorBrush x:Key="ScoreTrack" Color="#ECF0E7" po:Freeze="True" />
+    <SolidColorBrush x:Key="ScoreFill" Color="#84A96B" po:Freeze="True" />
+    <SolidColorBrush x:Key="ReasonInk" Color="#61735F" po:Freeze="True" />
+    <SolidColorBrush x:Key="WorkflowHover" Color="#F0F3E9" po:Freeze="True" />
+    <SolidColorBrush x:Key="MediaBg" Color="#EEECE3" po:Freeze="True" />
+    <SolidColorBrush x:Key="MaterialImageBg" Color="#EEE7DB" po:Freeze="True" />
+    <SolidColorBrush x:Key="StepLine" Color="#D5DDD0" po:Freeze="True" />
+    <SolidColorBrush x:Key="StepBorder" Color="#BAC6BA" po:Freeze="True" />
+    <SolidColorBrush x:Key="StepInk" Color="#748077" po:Freeze="True" />
+    <SolidColorBrush x:Key="StepDoneBg" Color="#E1EBD8" po:Freeze="True" />
+    <SolidColorBrush x:Key="StepDoneBorder" Color="#C9D9BF" po:Freeze="True" />
+    <SolidColorBrush x:Key="ErrorInk" Color="#A83F31" po:Freeze="True" />
+    <SolidColorBrush x:Key="LoadTrack" Color="#D5DFD0" po:Freeze="True" />
+    <SolidColorBrush x:Key="ScrollThumbBg" Color="#C3CCC0" po:Freeze="True" />
+    <SolidColorBrush x:Key="ScrollThumbHover" Color="#9EAA9B" po:Freeze="True" />
+</ResourceDictionary>

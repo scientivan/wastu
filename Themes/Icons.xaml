@@ -1,0 +1,48 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                    xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
+                    mc:Ignorable="po">
+
+    <!-- Path SVG ikon referensi (viewBox 24×24); rect dan circle dikonversi menjadi path. -->
+    <StreamGeometry x:Key="IcoHome" po:Freeze="True">M3 10 L12 3 L21 10 V20 A1 1 0 0 1 20 21 H4 A1 1 0 0 1 3 20 Z M9 21 V13 H15 V21</StreamGeometry>
+    <StreamGeometry x:Key="IcoProject" po:Freeze="True">M5 5 H19 A2 2 0 0 1 21 7 V19 A2 2 0 0 1 19 21 H5 A2 2 0 0 1 3 19 V7 A2 2 0 0 1 5 5 Z M8 5 V3 H16 V5 M3 11 H21 M8 16 H16</StreamGeometry>
+    <StreamGeometry x:Key="IcoMaterial" po:Freeze="True">M4 3 H9 A1 1 0 0 1 10 4 V9 A1 1 0 0 1 9 10 H4 A1 1 0 0 1 3 9 V4 A1 1 0 0 1 4 3 Z M15 3 H20 A1 1 0 0 1 21 4 V9 A1 1 0 0 1 20 10 H15 A1 1 0 0 1 14 9 V4 A1 1 0 0 1 15 3 Z M4 14 H9 A1 1 0 0 1 10 15 V20 A1 1 0 0 1 9 21 H4 A1 1 0 0 1 3 20 V15 A1 1 0 0 1 4 14 Z M15 14 H20 A1 1 0 0 1 21 15 V20 A1 1 0 0 1 20 21 H15 A1 1 0 0 1 14 20 V15 A1 1 0 0 1 15 14 Z</StreamGeometry>
+    <StreamGeometry x:Key="IcoCompare" po:Freeze="True">M3 3 V21 M21 3 V21 M7 7 H17 M7 12 H17 M7 17 H17 M9 5 L7 7 L9 9 M15 10 L17 12 L15 14</StreamGeometry>
+    <StreamGeometry x:Key="IcoSim" po:Freeze="True">M3 3 V21 H21 M6 17 L11 11 L15 14 L20 6 M17 6 H20 V9</StreamGeometry>
+    <StreamGeometry x:Key="IcoWeather" po:Freeze="True">M5 5 H19 A2 2 0 0 1 21 7 V19 A2 2 0 0 1 19 21 H5 A2 2 0 0 1 3 19 V7 A2 2 0 0 1 5 5 Z M7 3 V7 M17 3 V7 M3 10 H21 M8 16 L10 18 L15 13</StreamGeometry>
+    <StreamGeometry x:Key="IcoReport" po:Freeze="True">M14 2 H6 A2 2 0 0 0 4 4 V20 A2 2 0 0 0 6 22 H18 A2 2 0 0 0 20 20 V8 Z M14 2 V8 H20 M8 13 H16 M8 17 H16</StreamGeometry>
+    <StreamGeometry x:Key="IcoWall" po:Freeze="True">M3 8 H21 V20 H3 Z M3 14 H21 M9 8 V14 M16 14 V20 M3 3 H13 V8</StreamGeometry>
+    <StreamGeometry x:Key="IcoRoof" po:Freeze="True">M3 19 L12 4 L21 19 H16 L9.5 8 M3 19 H8 L14.5 8</StreamGeometry>
+    <StreamGeometry x:Key="IcoPin" po:Freeze="True">M20 10 C20 16 12 22 12 22 C12 22 4 16 4 10 A8 8 0 1 1 20 10 Z M9.5 10 A2.5 2.5 0 1 0 14.5 10 A2.5 2.5 0 1 0 9.5 10 Z</StreamGeometry>
+    <StreamGeometry x:Key="IcoChevron" po:Freeze="True">M0 0 L4.5 4.5 L9 0</StreamGeometry>
+    <StreamGeometry x:Key="IcoCalendar" po:Freeze="True">M1.5 3 H14.5 V15 H1.5 Z M1.5 6.5 H14.5 M4.5 1 V4 M11.5 1 V4</StreamGeometry>
+
+    <!-- assets/logo.svg sebagai vektor WPF (tanpa dekode raster). -->
+    <DrawingImage x:Key="Logo" po:Freeze="True">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Brush="#F0F5E4">
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="0,0,96,96" RadiusX="24" RadiusY="24" />
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Geometry="M16 46 L47 17 L79 45">
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="#D6A83C" Thickness="10" StartLineCap="Round" EndLineCap="Round" LineJoin="Round" />
+                    </GeometryDrawing.Pen>
+                </GeometryDrawing>
+                <GeometryDrawing Geometry="M20 45 V74 Q20 81 27 81 H70 Q78 81 78 73 V45 L48 23 Z">
+                    <GeometryDrawing.Brush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#174F32" Offset="0" />
+                            <GradientStop Color="#0B362A" Offset="1" />
+                        </LinearGradientBrush>
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+                <GeometryDrawing Brush="#E7F0D9" Geometry="M31 58 A19 19 0 0 1 65 47 L56 54 A8 8 0 1 0 50 67 L46 60 L56 54 L70 77 H47 A19 19 0 0 1 31 58" />
+                <GeometryDrawing Brush="#B1DB57" Geometry="M66 48 Q76 53 75 65 Q63 64 61 54" />
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+</ResourceDictionary>

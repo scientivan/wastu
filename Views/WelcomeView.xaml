@@ -1,0 +1,37 @@
+<UserControl x:Class="Wastu.Views.WelcomeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Wastu.Controls"
+             Background="{StaticResource PaperEntry}">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="44*" />
+            <ColumnDefinition Width="56*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- .welcome-copy -->
+        <Grid x:Name="Copy" Margin="66,38">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <Image Source="{StaticResource Logo}" Width="44" Height="44" />
+                <c:TrackedText Text="Wastu" FontSize="29" FontWeight="750" Tracking="-1.1" Margin="12,0,0,0" VerticalAlignment="Center" />
+            </StackPanel>
+            <StackPanel x:Name="Intro" Grid.Row="1" VerticalAlignment="Center" Margin="0,45,0,65">
+                <c:TrackedText Text="SELAMAT DATANG" FontSize="12" FontWeight="650" Tracking="1.92" Foreground="{StaticResource MutedEntry}" Margin="0,0,0,24" />
+                <c:TrackedText x:Name="Headline" Text="Rumah Anda,&#10;dimulai di sini." FontWeight="750" Margin="0,0,0,27" />
+                <c:CssText Text="Tentukan lokasi dan luas rumah untuk mulai membandingkan material." MaxWidth="420" HorizontalAlignment="Left"
+                           FontSize="17" Leading="1.65" TextWrapping="Wrap"
+                           Foreground="{StaticResource MutedEntry}" Margin="0,0,0,32" />
+                <Button Style="{StaticResource PrimaryAction}" Content="Buat proyek baru" Click="Create_Click" />
+            </StackPanel>
+        </Grid>
+
+        <!-- .welcome-media -->
+        <Border x:Name="Media" Grid.Column="1" Background="{StaticResource MediaBg}" Padding="29">
+            <Image x:Name="Architecture" Stretch="Uniform" MaxWidth="1400" RenderOptions.BitmapScalingMode="HighQuality" />
+        </Border>
+    </Grid>
+</UserControl>
