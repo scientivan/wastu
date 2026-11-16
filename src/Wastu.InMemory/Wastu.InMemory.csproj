@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <!--
+    Adapter in-memory untuk port repository di Wastu.Domain. Berdampingan dengan
+    Wastu.Data yang memakai EF Core + Npgsql, dan tidak menggantikannya: yang ini
+    supaya alur F1 sampai F4 bisa dijalankan dan diuji tanpa database.
+
+    Tetap tanpa PackageReference. Kalau suatu saat butuh LINQ atau collection
+    package, itu tanda adapter ini sudah tumbuh melebihi batasannya.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="../Wastu.Domain/Wastu.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
