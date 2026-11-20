@@ -20,14 +20,14 @@ public sealed record Proyek
         ArgumentException.ThrowIfNullOrWhiteSpace(nama);
         ArgumentException.ThrowIfNullOrWhiteSpace(kota);
 
-        if (latitude is < LatitudeMin or > LatitudeMaks)
+        if (!double.IsFinite(latitude) || latitude is < LatitudeMin or > LatitudeMaks)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(latitude), latitude,
                 $"Lintang harus {LatitudeMin} sampai {LatitudeMaks}° agar berada di wilayah Indonesia.");
         }
 
-        if (longitude is < LongitudeMin or > LongitudeMaks)
+        if (!double.IsFinite(longitude) || longitude is < LongitudeMin or > LongitudeMaks)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(longitude), longitude,

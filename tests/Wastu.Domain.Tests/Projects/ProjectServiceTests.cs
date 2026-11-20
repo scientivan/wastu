@@ -8,6 +8,25 @@ namespace Wastu.Domain.Tests.Projects;
 public class ProjectServiceTests
 {
     [Fact]
+    public async Task UpdateLocation_GagalMengambilIklim_TidakMemakaiProfilLokasiLama()
+    {
+        var repo = new ProyekRepositoryInMemory();
+        var klien = new HistoricalClimateClientStub();
+        var iklim = new Wastu.Domain.Climate.ClimateAnalysisService(repo, klien);
+        var service = new ProjectService(repo, iklim);
+        Proyek proyek = await service.CreateProjectAsync("Rumah", "Bandar Lampung", -5.45, 105.26);
+        await iklim.GetOrFetchProfileAsync(proyek.Id);
+        klien.Gagal = true;
+
+        var galat = await Assert.ThrowsAsync<GagalMemperbaruiProfilIklimException>(
+            () => service.UpdateLocationAsync(proyek.Id, -6.20, 106.82));
+
+        Assert.Null(galat.ProfilTersimpan);
+        Assert.Null(await repo.GetProfilIklimAsync(proyek.Id));
+        Assert.Equal(-6.20, (await repo.GetByIdAsync(proyek.Id))!.Latitude);
+    }
+
+    [Fact]
     public async Task CreateProject_MenyimpanDanMengembalikanProyek()
     {
         (ProjectService service, ProyekRepositoryInMemory repo, _) = Setup();

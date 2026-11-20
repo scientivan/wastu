@@ -27,7 +27,7 @@ internal static class Pemetaan
         e.KelembapanRataPct,
         e.SuhuRataC,
         e.JarakPesisirKm,
-        e.TingkatKorosi);
+        e.TingkatKorosi) { DiambilPada = e.DiambilPada };
 
     internal static Evaluasi KeDomain(EvaluasiEntity e) => new(
         e.Id,

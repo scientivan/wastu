@@ -11,12 +11,16 @@ public interface IMaterialRepository
 /// <summary>Sumber data proyek, komponennya, dan profil iklimnya (PRD §F1, §F3).</summary>
 public interface IProyekRepository
 {
+    Task<IReadOnlyList<Proyek>> ListAsync(CancellationToken ct = default);
+
     Task<Proyek?> GetByIdAsync(Guid id, CancellationToken ct = default);
 
-    Task AddAsync(Proyek proyek, CancellationToken ct = default);
+    Task AddAsync(Proyek proyek, CancellationToken ct = default, IReadOnlyList<Komponen>? komponen = null);
 
-    /// <summary>Mengganti proyek yang sudah ada, dipakai saat lokasi berubah (PRD §F1).</summary>
-    Task UpdateAsync(Proyek proyek, CancellationToken ct = default);
+    /// <summary>Menyimpan perubahan proyek dan menghapus profil iklim bila koordinat berubah.</summary>
+    Task UpdateAsync(Proyek proyek, CancellationToken ct = default, IReadOnlyList<Komponen>? komponen = null);
+
+    Task DeleteAsync(Guid id, CancellationToken ct = default);
 
     Task<IReadOnlyList<Komponen>> ListKomponenAsync(Guid proyekId, CancellationToken ct = default);
 
@@ -35,7 +39,7 @@ public interface IProyekRepository
     /// argumen yang sama dan adapter dapat melakukan upsert pada kunci
     /// <c>profil_iklim.bangunan_id</c> tanpa pernah mengarang nilai.
     /// </remarks>
-    Task SimpanProfilIklimAsync(Guid proyekId, ProfilIklim profil, CancellationToken ct = default);
+    Task SimpanProfilIklimAsync(Guid proyekId, ProfilIklim profil, CancellationToken ct = default, Proyek? lokasi = null);
 }
 
 /// <summary>Penyimpanan hasil penilaian dan simulasi (PRD §F4, §F5).</summary>

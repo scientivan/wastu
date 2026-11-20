@@ -8,7 +8,8 @@ public sealed record Komponen
 {
     public Komponen(Guid id, Guid proyekId, JenisKomponen jenis, double luasM2)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(luasM2);
+        if (!double.IsFinite(luasM2) || luasM2 <= 0)
+            throw new ArgumentOutOfRangeException(nameof(luasM2));
 
         Id = id;
         ProyekId = proyekId;

@@ -68,4 +68,6 @@ public sealed record ProfilIklim
 
     /// <summary>Tingkat risiko korosi yang telah diklasifikasikan di lokasi.</summary>
     public TingkatKorosi TingkatKorosi { get; init; }
+
+    public DateTimeOffset? DiambilPada { get; init; }
 }

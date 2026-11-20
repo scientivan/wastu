@@ -53,7 +53,7 @@ public sealed class ClimateAnalysisService : IClimateAnalysisService
         }
 
         ProfilIklim baru = await AmbilDariKlienAsync(proyek, ct).ConfigureAwait(false);
-        await _proyek.SimpanProfilIklimAsync(proyekId, baru, ct).ConfigureAwait(false);
+        await _proyek.SimpanProfilIklimAsync(proyekId, baru, ct, proyek).ConfigureAwait(false);
 
         return baru;
     }
@@ -92,7 +92,7 @@ public sealed class ClimateAnalysisService : IClimateAnalysisService
                 galat);
         }
 
-        await _proyek.SimpanProfilIklimAsync(proyekId, baru, ct).ConfigureAwait(false);
+        await _proyek.SimpanProfilIklimAsync(proyekId, baru, ct, proyek).ConfigureAwait(false);
 
         return baru;
     }

@@ -15,6 +15,14 @@ public sealed class ProyekRepositoryEf : IProyekRepository
         _pabrik = pabrik;
     }
 
+    public async Task<IReadOnlyList<Proyek>> ListAsync(CancellationToken ct = default)
+    {
+        await using var db = await _pabrik.CreateDbContextAsync(ct).ConfigureAwait(false);
+        var proyek = await db.Bangunan.AsNoTracking().OrderBy(p => p.Nama).ThenBy(p => p.Id)
+            .ToListAsync(ct).ConfigureAwait(false);
+        return proyek.Select(Pemetaan.KeDomain).ToArray();
+    }
+
     public async Task<Proyek?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         await using WastuDbContext db = await _pabrik.CreateDbContextAsync(ct).ConfigureAwait(false);
@@ -26,7 +34,7 @@ public sealed class ProyekRepositoryEf : IProyekRepository
         return baris is null ? null : Pemetaan.KeDomain(baris);
     }
 
-    public async Task AddAsync(Proyek proyek, CancellationToken ct = default)
+    public async Task AddAsync(Proyek proyek, CancellationToken ct = default, IReadOnlyList<Komponen>? komponen = null)
     {
         await using WastuDbContext db = await _pabrik.CreateDbContextAsync(ct).ConfigureAwait(false);
 
@@ -40,24 +48,51 @@ public sealed class ProyekRepositoryEf : IProyekRepository
             DibuatPada = DateTimeOffset.UtcNow
         });
 
+        if (komponen is not null)
+            db.Komponen.AddRange(komponen.Select(KomponenBaru));
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
     }
 
-    public async Task UpdateAsync(Proyek proyek, CancellationToken ct = default)
+    public async Task UpdateAsync(Proyek proyek, CancellationToken ct = default, IReadOnlyList<Komponen>? komponen = null)
     {
         await using WastuDbContext db = await _pabrik.CreateDbContextAsync(ct).ConfigureAwait(false);
 
-        ProyekEntity baris = await db.Bangunan
-            .FirstOrDefaultAsync(x => x.Id == proyek.Id, ct)
-            .ConfigureAwait(false)
+        await using var transaksi = await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
+        ProyekEntity baris = await KunciProyekAsync(db, proyek.Id, ct).ConfigureAwait(false)
             ?? throw new KeyNotFoundException($"Proyek {proyek.Id} tidak ditemukan.");
+
+        if (baris.Latitude != proyek.Latitude || baris.Longitude != proyek.Longitude)
+        {
+            var profil = await db.ProfilIklim.FindAsync([proyek.Id], ct).ConfigureAwait(false);
+            if (profil is not null)
+                db.ProfilIklim.Remove(profil);
+        }
 
         baris.Nama = proyek.Nama;
         baris.Kota = proyek.Kota;
         baris.Latitude = proyek.Latitude;
         baris.Longitude = proyek.Longitude;
 
+        if (komponen is not null)
+        {
+            var tersimpan = await db.Komponen.Where(k => k.BangunanId == proyek.Id)
+                .ToDictionaryAsync(k => k.Id, ct).ConfigureAwait(false);
+            foreach (var item in komponen)
+            {
+                if (tersimpan.TryGetValue(item.Id, out var lama))
+                    lama.LuasM2 = item.LuasM2;
+                else
+                    db.Komponen.Add(KomponenBaru(item));
+            }
+        }
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await transaksi.CommitAsync(ct).ConfigureAwait(false);
+    }
+
+    public async Task DeleteAsync(Guid id, CancellationToken ct = default)
+    {
+        await using var db = await _pabrik.CreateDbContextAsync(ct).ConfigureAwait(false);
+        await db.Bangunan.Where(p => p.Id == id).ExecuteDeleteAsync(ct).ConfigureAwait(false);
     }
 
     public async Task<IReadOnlyList<Komponen>> ListKomponenAsync(
@@ -89,16 +124,17 @@ public sealed class ProyekRepositoryEf : IProyekRepository
     {
         await using WastuDbContext db = await _pabrik.CreateDbContextAsync(ct).ConfigureAwait(false);
 
-        db.Komponen.Add(new KomponenEntity
-        {
-            Id = komponen.Id,
-            BangunanId = komponen.ProyekId,
-            Jenis = komponen.Jenis,
-            LuasM2 = komponen.LuasM2
-        });
-
+        db.Komponen.Add(KomponenBaru(komponen));
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
     }
+
+    private static KomponenEntity KomponenBaru(Komponen komponen) => new()
+    {
+        Id = komponen.Id,
+        BangunanId = komponen.ProyekId,
+        Jenis = komponen.Jenis,
+        LuasM2 = komponen.LuasM2
+    };
 
     public async Task<ProfilIklim?> GetProfilIklimAsync(Guid proyekId, CancellationToken ct = default)
     {
@@ -112,11 +148,16 @@ public sealed class ProyekRepositoryEf : IProyekRepository
     }
 
     public async Task SimpanProfilIklimAsync(
-        Guid proyekId, ProfilIklim profil, CancellationToken ct = default)
+        Guid proyekId, ProfilIklim profil, CancellationToken ct = default, Proyek? lokasi = null)
     {
         ArgumentNullException.ThrowIfNull(profil);
 
         await using WastuDbContext db = await _pabrik.CreateDbContextAsync(ct).ConfigureAwait(false);
+        await using var transaksi = await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
+        var proyek = await KunciProyekAsync(db, proyekId, ct).ConfigureAwait(false)
+            ?? throw new KeyNotFoundException($"Proyek {proyekId} tidak ditemukan.");
+        if (lokasi is not null && (proyek.Latitude != lokasi.Latitude || proyek.Longitude != lokasi.Longitude))
+            throw new InvalidOperationException("Lokasi proyek berubah saat data iklim diambil.");
 
         ProfilIklimEntity baris = await db.ProfilIklim
             .FirstOrDefaultAsync(x => x.BangunanId == proyekId, ct)
@@ -128,10 +169,15 @@ public sealed class ProyekRepositoryEf : IProyekRepository
         baris.SuhuRataC = profil.SuhuRataC;
         baris.JarakPesisirKm = profil.JarakPesisirKm;
         baris.TingkatKorosi = profil.TingkatKorosi;
-        baris.DiambilPada = DateTimeOffset.UtcNow;
+        baris.DiambilPada = profil.DiambilPada ?? DateTimeOffset.UtcNow;
 
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await transaksi.CommitAsync(ct).ConfigureAwait(false);
     }
+
+    // Satu kunci untuk perubahan koordinat dan penulisan profil iklimnya.
+    private static Task<ProyekEntity?> KunciProyekAsync(WastuDbContext db, Guid id, CancellationToken ct) =>
+        db.Bangunan.FromSqlInterpolated($"SELECT * FROM bangunan WHERE id = {id} FOR UPDATE").SingleOrDefaultAsync(ct);
 
     private static ProfilIklimEntity TambahProfil(WastuDbContext db, Guid proyekId)
     {

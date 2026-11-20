@@ -11,7 +11,17 @@ public interface IMaterialService
 /// <summary>Manajemen profil proyek dan komponennya (PRD §F1, §10).</summary>
 public interface IProjectService
 {
+    Task<IReadOnlyList<Proyek>> ListAsync(CancellationToken ct = default);
+
     Task<Proyek> CreateProjectAsync(string nama, string kota, double latitude, double longitude, CancellationToken ct = default);
+
+    Task<Proyek> CreateProjectAsync(string nama, string kota, double latitude, double longitude,
+        double luasDinding, double luasAtap, CancellationToken ct = default);
+
+    Task<ProfilIklim?> UpdateProjectAsync(Guid proyekId, string nama, string kota, double latitude, double longitude,
+        double luasDinding, double luasAtap, CancellationToken ct = default);
+
+    Task DeleteAsync(Guid proyekId, CancellationToken ct = default);
 
     /// <summary>Perubahan lokasi memicu pengambilan ulang profil iklim (PRD §F1).</summary>
     Task UpdateLocationAsync(Guid proyekId, double latitude, double longitude, CancellationToken ct = default);

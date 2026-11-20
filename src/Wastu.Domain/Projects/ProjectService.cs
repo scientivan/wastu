@@ -26,6 +26,10 @@ public sealed class ProjectService : IProjectService
         _iklim = iklim;
     }
 
+    public Task<IReadOnlyList<Proyek>> ListAsync(CancellationToken ct = default) => _proyek.ListAsync(ct);
+
+    public Task DeleteAsync(Guid proyekId, CancellationToken ct = default) => _proyek.DeleteAsync(proyekId, ct);
+
     public async Task<Proyek> CreateProjectAsync(
         string nama, string kota, double latitude, double longitude, CancellationToken ct = default)
     {
@@ -36,6 +40,24 @@ public sealed class ProjectService : IProjectService
         await _proyek.AddAsync(proyek, ct).ConfigureAwait(false);
 
         return proyek;
+    }
+
+    public async Task<Proyek> CreateProjectAsync(string nama, string kota, double latitude, double longitude,
+        double luasDinding, double luasAtap, CancellationToken ct = default)
+    {
+        var proyek = new Proyek(Guid.NewGuid(), nama, kota, latitude, longitude);
+        await _proyek.AddAsync(proyek, ct, Bidang(proyek.Id, [], luasDinding, luasAtap)).ConfigureAwait(false);
+        return proyek;
+    }
+
+    public async Task<ProfilIklim?> UpdateProjectAsync(Guid proyekId, string nama, string kota, double latitude, double longitude,
+        double luasDinding, double luasAtap, CancellationToken ct = default)
+    {
+        Proyek lama = await AmbilAsync(proyekId, ct).ConfigureAwait(false);
+        var baru = new Proyek(proyekId, nama, kota, latitude, longitude);
+        var komponen = await _proyek.ListKomponenAsync(proyekId, ct).ConfigureAwait(false);
+        return await SimpanPerubahanAsync(lama, baru, Bidang(proyekId, komponen, luasDinding, luasAtap), ct)
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -49,8 +71,7 @@ public sealed class ProjectService : IProjectService
     public async Task UpdateLocationAsync(
         Guid proyekId, double latitude, double longitude, CancellationToken ct = default)
     {
-        Proyek lama = await _proyek.GetByIdAsync(proyekId, ct).ConfigureAwait(false)
-            ?? throw new KeyNotFoundException($"Proyek {proyekId} tidak ditemukan.");
+        Proyek lama = await AmbilAsync(proyekId, ct).ConfigureAwait(false);
 
         // Sengaja membuat Proyek baru lewat konstruktor, bukan memakai ekspresi with.
         // Ekspresi with pada record menyalin field apa adanya dan TIDAK menjalankan
@@ -58,9 +79,37 @@ public sealed class ProjectService : IProjectService
         // tanpa diperiksa setiap kali lokasi diubah.
         Proyek baru = new(lama.Id, lama.Nama, lama.Kota, latitude, longitude);
 
-        await _proyek.UpdateAsync(baru, ct).ConfigureAwait(false);
-        await _iklim.RefreshProfileAsync(proyekId, ct).ConfigureAwait(false);
+        await SimpanPerubahanAsync(lama, baru, null, ct).ConfigureAwait(false);
     }
+
+    private async Task<ProfilIklim?> SimpanPerubahanAsync(Proyek lama, Proyek baru, IReadOnlyList<Komponen>? komponen,
+        CancellationToken ct)
+    {
+        await _proyek.UpdateAsync(baru, ct, komponen).ConfigureAwait(false);
+        if (lama.Latitude == baru.Latitude && lama.Longitude == baru.Longitude)
+            return null;
+
+        try
+        {
+            return await _iklim.RefreshProfileAsync(baru.Id, ct).ConfigureAwait(false);
+        }
+        catch (Exception e) when (e is not (OperationCanceledException or GagalMemperbaruiProfilIklimException))
+        {
+            throw new GagalMemperbaruiProfilIklimException("Profil iklim lokasi baru belum dapat disimpan.", null, e);
+        }
+    }
+
+    private async Task<Proyek> AmbilAsync(Guid proyekId, CancellationToken ct) =>
+        await _proyek.GetByIdAsync(proyekId, ct).ConfigureAwait(false)
+        ?? throw new KeyNotFoundException($"Proyek {proyekId} tidak ditemukan.");
+
+    private static Komponen[] Bidang(Guid proyekId, IReadOnlyList<Komponen> lama, double dinding, double atap) =>
+    [
+        new(lama.FirstOrDefault(k => k.Jenis == JenisKomponen.Dinding)?.Id ?? Guid.NewGuid(),
+            proyekId, JenisKomponen.Dinding, dinding),
+        new(lama.FirstOrDefault(k => k.Jenis == JenisKomponen.Atap)?.Id ?? Guid.NewGuid(),
+            proyekId, JenisKomponen.Atap, atap)
+    ];
 
     public async Task AddComponentAsync(
         Guid proyekId, JenisKomponen jenis, double luasM2, CancellationToken ct = default)

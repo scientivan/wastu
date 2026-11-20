@@ -33,11 +33,13 @@ public class AlurSupabaseTests
         {
             // F1
             Proyek rumah = await proyekService.CreateProjectAsync(
-                $"Uji Supabase {Guid.NewGuid():N}", "Bandar Lampung", -5.45, 105.26);
+                $"Uji Supabase {Guid.NewGuid():N}", "Bandar Lampung", -5.45, 105.26, 120, 90);
             proyekId = rumah.Id;
 
-            await proyekService.AddComponentAsync(rumah.Id, JenisKomponen.Dinding, luasM2: 120);
-            Komponen dinding = Assert.Single(await proyekRepo.ListKomponenAsync(rumah.Id));
+            Assert.Contains(await proyekService.ListAsync(), p => p.Id == rumah.Id);
+            Komponen dinding = Assert.Single(await proyekRepo.ListKomponenAsync(rumah.Id),
+                k => k.Jenis == JenisKomponen.Dinding);
+            Assert.Equal(120, dinding.LuasM2);
 
             // F3
             ProfilIklim profil = await iklim.GetOrFetchProfileAsync(rumah.Id);
@@ -72,6 +74,21 @@ public class AlurSupabaseTests
 
             Assert.NotNull(baris);
             Assert.Equal(hasil.EmisiKumulatifKg, baris!.EmisiKumulatifKg, 6);
+
+            var profilBaru = await proyekService.UpdateProjectAsync(rumah.Id, "Rumah Baru", "Jakarta",
+                -6.20, 106.82, 150, 100);
+            Assert.NotNull(profilBaru);
+            Proyek? diedit = await proyekRepo.GetByIdAsync(rumah.Id);
+            Assert.Equal("Rumah Baru", diedit!.Nama);
+            Assert.Equal("Jakarta", diedit.Kota);
+            Assert.Equal(150, (await proyekRepo.GetKomponenAsync(dinding.Id))!.LuasM2);
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => proyekRepo.SimpanProfilIklimAsync(rumah.Id, profil, lokasi: rumah));
+
+            await proyekService.DeleteAsync(rumah.Id);
+            Assert.DoesNotContain(await proyekService.ListAsync(), p => p.Id == rumah.Id);
+            Assert.Empty(await proyekRepo.ListKomponenAsync(rumah.Id));
+            Assert.Null(await proyekRepo.GetProfilIklimAsync(rumah.Id));
         }
         finally
         {
