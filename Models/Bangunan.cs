@@ -12,6 +12,7 @@ public class Bangunan
     private readonly List<Pekerjaan> _pekerjaan = [];
 
     public int Id { get => _id; set => _id = value; }
+    public Guid? DatabaseId { get; init; }
     public string Nama { get => _nama; set => _nama = value; }
     public string Kota { get => _kota; set => _kota = value; }
     public double Latitude { get => _latitude; set => _latitude = value; }

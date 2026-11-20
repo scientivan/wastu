@@ -27,6 +27,7 @@ public partial class ProjectPage : PageBase
         WallBox.Text = Format.Masukan(p.LuasKomponen(JenisKomponen.Dinding));
         RoofBox.Text = Format.Masukan(p.LuasKomponen(JenisKomponen.Atap));
         CoastalBox.Text = Format.Masukan(S.Iklim.JarakPesisirKm);
+        CoastalBox.IsReadOnly = S.PostgreSql;
     }
 
     private void New_Click(object sender, RoutedEventArgs e) => Shell.NewProject();
@@ -60,7 +61,7 @@ public partial class ProjectPage : PageBase
 
     private async void Climate_Click(object sender, RoutedEventArgs e) => await Shell.RefreshClimateAsync();
 
-    private void Save_Click(object sender, RoutedEventArgs e)
+    private async void Save_Click(object sender, RoutedEventArgs e)
     {
         // Validasi bawaan form (required, type=number) sebelum handler submit referensi.
         if (new[] { NameBox, LatBox, LonBox, WallBox, RoofBox, CoastalBox }.FirstOrDefault(f => f.Text.Length == 0) is { } empty)
@@ -77,47 +78,36 @@ public partial class ProjectPage : PageBase
             return;
         }
 
-        if (lat < -11 || lat > 6 || lon < 95 || lon > 141) { Shell.Toast("Koordinat di luar bounding box wilayah Indonesia."); return; }
+        if (lat < -11 || lat > 6 || lon < 94 || lon > 142) { Shell.Toast("Koordinat di luar bounding box wilayah Indonesia."); return; }
         if (NameBox.Text.Trim().Length == 0) { Shell.Toast("Masukkan nama proyek."); return; }
         if (coastal < 0) { Shell.Toast("Jarak pesisir tidak boleh negatif."); return; }
         if (wall <= 0 || roof <= 0) { Shell.Toast("Luas bidang harus lebih dari nol."); return; }
 
-        var p = S.Aktif;
         var city = (string)CityBox.SelectedItem;
-        var changed = p.Latitude != lat || p.Longitude != lon || p.Kota != city;
-        p.Nama = NameBox.Text.Trim();
-        p.Kota = city;
-        p.Latitude = lat;
-        p.Longitude = lon;
-        p.AturLuasKomponen(JenisKomponen.Dinding, wall);
-        p.AturLuasKomponen(JenisKomponen.Atap, roof);
-        if (changed)
+        await Shell.RunProjectChangeAsync(async () =>
         {
-            // Lokasi berubah: profil iklim kembali ke nilai bawaan kota sampai diperbarui.
-            p.ProfilIklim = Katalog.ProfilBawaan(city, coastal);
-            S.ResetPrakiraan();
-        }
-        else
-        {
-            S.Iklim.JarakPesisirKm = coastal;
-        }
-        Shell.Render();
-        Shell.Toast("Proyek disimpan." + (changed ? " Profil iklim perlu diperbarui." : ""));
+            var pesan = await S.UbahProyekAsync(NameBox.Text.Trim(), city, lat, lon, wall, roof, coastal);
+            Shell.Render();
+            Shell.Toast(pesan is null ? "Proyek disimpan." : $"Proyek disimpan. {pesan}");
+        });
     }
 
-    private void Delete_Click(object sender, RoutedEventArgs e)
+    private async void Delete_Click(object sender, RoutedEventArgs e)
     {
         if (MessageBox.Show(Window.GetWindow(this)!, "Hapus proyek aktif beserta jadwal terkait?", "Wastu",
                 MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK)
             return;
-        S.HapusProyekAktif();
-        if (!S.AdaProyek)
+        await Shell.RunProjectChangeAsync(async () =>
         {
-            S.Ubah();
-            Shell.ProjectsEmptied();
-            return;
-        }
-        Shell.Render();
+            await S.HapusProyekAktifAsync();
+            if (S.AdaProyek)
+                Shell.Render();
+            else
+            {
+                S.Ubah();
+                Shell.ProjectsEmptied();
+            }
+        });
     }
 }
 
@@ -137,7 +127,7 @@ public sealed class ProjectData : ViewData
         Humidity = Format.Angka(climate.KelembapanRata) + "%";
         Temperature = Format.Angka(climate.SuhuRata) + "°C";
         Coastal = Format.Angka(climate.JarakPesisirKm) + " km";
-        Caption = "Open-Meteo. Diperbarui " + climate.DiperbaruiPada;
+        Caption = climate.Sumber + ". Diperbarui " + climate.DiperbaruiPada;
     }
 
     public List<ProjectPill> Projects { get; }

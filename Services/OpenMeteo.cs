@@ -2,13 +2,12 @@ using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Text.Json;
+using Wastu.Domain.Abstractions;
 using Wastu.Models;
 
 namespace Wastu.Services;
 
-public sealed record IklimHistoris(double CurahHujan, double Suhu, double Kelembapan);
-
-public static class OpenMeteo
+public sealed class OpenMeteo : IHistoricalClimateClient
 {
     private static readonly HttpClient Http = new(new SocketsHttpHandler
     {
@@ -19,14 +18,22 @@ public static class OpenMeteo
 
     private static string Num(double v) => v.ToString(CultureInfo.InvariantCulture);
 
-    public static async Task<IklimHistoris> AmbilIklimAsync(double lintang, double bujur)
+    public async Task<Domain.ProfilIklim> GetAnnualProfileAsync(double lat, double lon, CancellationToken ct = default)
     {
-        var akhir = DateTime.Today.AddYears(-1);
+        var akhir = new DateTime(DateTime.UtcNow.AddDays(-7).Year, 1, 1).AddDays(-1);
         var mulai = new DateTime(akhir.Year - 9, 1, 1);
-        var url = $"https://archive-api.open-meteo.com/v1/archive?latitude={Num(lintang)}&longitude={Num(bujur)}" +
+        var url = $"https://archive-api.open-meteo.com/v1/archive?latitude={Num(lat)}&longitude={Num(lon)}" +
                   $"&start_date={Format.Iso(mulai)}&end_date={Format.Iso(akhir)}" +
                   "&daily=precipitation_sum,temperature_2m_mean&hourly=relative_humidity_2m&timezone=auto";
-        var bytes = await Http.GetByteArrayAsync(url).ConfigureAwait(false);
+        byte[] bytes;
+        try
+        {
+            bytes = await Http.GetByteArrayAsync(url, ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException ex) when (!ct.IsCancellationRequested)
+        {
+            throw new TimeoutException("Open-Meteo belum menjawab permintaan profil iklim.", ex);
+        }
 
         // Arsip 10 tahun berisi ~90 ribu nilai per jam; dibaca streaming tanpa membangun DOM.
         return await Task.Run(() =>
@@ -35,7 +42,7 @@ public static class OpenMeteo
             string? induk = null, properti = null;
             int kedalaman = 0;
             double hujan = 0, suhu = 0, lembap = 0;
-            int nSuhu = 0, nLembap = 0;
+            int nHujan = 0, nSuhu = 0, nLembap = 0;
             while (reader.Read())
             {
                 switch (reader.TokenType)
@@ -48,16 +55,25 @@ public static class OpenMeteo
                         break;
                     case JsonTokenType.Number when kedalaman == 2:
                         var v = reader.GetDouble();
-                        if (induk == "daily" && properti == "precipitation_sum") hujan += v;
+                        if (induk == "daily" && properti == "precipitation_sum") { hujan += v; nHujan++; }
                         else if (induk == "daily" && properti == "temperature_2m_mean") { suhu += v; nSuhu++; }
                         else if (induk == "hourly" && properti == "relative_humidity_2m") { lembap += v; nLembap++; }
                         break;
                 }
             }
-            if (nSuhu == 0 || nLembap == 0) throw new InvalidDataException("Data iklim belum lengkap");
-            var tahun = (akhir - mulai).TotalDays / 365.2425;
-            return new IklimHistoris(Math.Floor(hujan / tahun + 0.5), suhu / nSuhu, lembap / nLembap);
-        }).ConfigureAwait(false);
+            var hari = (akhir - mulai).Days + 1;
+            if (nHujan != hari || nSuhu != hari || nLembap != hari * 24)
+                throw new InvalidDataException("Data iklim belum lengkap.");
+
+            double pesisir = JarakPesisir.HitungKm(lat, lon);
+            var korosi = pesisir < 10 ? Domain.TingkatKorosi.Tinggi
+                : pesisir < 35 ? Domain.TingkatKorosi.Sedang
+                : Domain.TingkatKorosi.Rendah;
+            return new Domain.ProfilIklim(hujan / 10, lembap / nLembap, suhu / nSuhu, pesisir, korosi)
+            {
+                DiambilPada = DateTimeOffset.UtcNow
+            };
+        }, ct).ConfigureAwait(false);
     }
 
     public static async Task<List<PrakiraanCuaca>> AmbilPrakiraanAsync(double lintang, double bujur)

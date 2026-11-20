@@ -33,7 +33,18 @@ public partial class MainWindow : Window
     public async Task StartAsync(Task<AppState> state)
     {
         var minimum = Task.Delay(SplashMinimum);
-        App.State = await state;
+        try
+        {
+            App.State = await state;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+            MessageBox.Show(this, "Data proyek tidak dapat dimuat. Periksa koneksi PostgreSQL dan skema Wastu.",
+                "Wastu", MessageBoxButton.OK, MessageBoxImage.Error);
+            Close();
+            return;
+        }
         await ImageCache.PreloadAsync();
 
         // Tujuan dibangun di balik splash supaya tampil seketika saat splash ditutup.

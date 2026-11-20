@@ -28,6 +28,7 @@ public partial class CreateProjectView : UserControl
     {
         _window = window;
         InitializeComponent();
+        if (App.State.PostgreSql) CoastalGroup.Visibility = Visibility.Collapsed;
         _sections = [Step0, Step1, Step2];
         _titles = [Title0, Title1, Title2];
         Illustration.Source = ImageCache.Planning;
@@ -204,8 +205,8 @@ public partial class CreateProjectView : UserControl
             1 => [
                 (CustomCityBox, () => IsCustomCity && CustomCityBox.Text.Trim().Length == 0 ? "Masukkan kota atau kabupaten." : null),
                 (LatBox, () => Range(LatBox.Text, -11, 6)),
-                (LonBox, () => Range(LonBox.Text, 95, 141)),
-                (CoastalBox, () => Range(CoastalBox.Text, 0, null))
+                (LonBox, () => Range(LonBox.Text, 94, 142)),
+                (CoastalBox, () => App.State.PostgreSql ? null : Range(CoastalBox.Text, 0, null))
             ],
             _ => [
                 (WallBox, () => Range(WallBox.Text, 0.1, null)),
@@ -256,7 +257,7 @@ public partial class CreateProjectView : UserControl
 
     private void Close_Click(object sender, RoutedEventArgs e) => _window.LeaveCreate();
 
-    private void Next_Click(object sender, RoutedEventArgs e)
+    private async void Next_Click(object sender, RoutedEventArgs e)
     {
         if (!ValidStep()) return;
         if (_step < 2)
@@ -267,19 +268,36 @@ public partial class CreateProjectView : UserControl
 
         var name = NameBox.Text.Trim();
         var city = IsCustomCity ? CustomCityBox.Text.Trim() : (string)CityBox.SelectedItem;
+        double coastal = 0;
         if (name.Length == 0 || city.Length == 0 ||
             !Format.CobaBaca(LatBox.Text, out var lat) || !Format.CobaBaca(LonBox.Text, out var lon) ||
             !Format.CobaBaca(WallBox.Text, out var wall) || !Format.CobaBaca(RoofBox.Text, out var roof) ||
-            !Format.CobaBaca(CoastalBox.Text, out var coastal) ||
-            lat < -11 || lat > 6 || lon < 95 || lon > 141 || wall <= 0 || roof <= 0 || coastal < 0)
+            (!App.State.PostgreSql && !Format.CobaBaca(CoastalBox.Text, out coastal)) ||
+            lat < -11 || lat > 6 || lon < 94 || lon > 142 || wall <= 0 || roof <= 0 || coastal < 0)
         {
             ErrorText.Text = "Periksa kembali data proyek sebelum menyimpan.";
             ErrorText.Visibility = Visibility.Visible;
             return;
         }
 
-        App.State.TambahProyek(name, city, lat, lon, wall, roof, coastal);
-        App.State.Ubah();
-        _window.ShowShell("home");
+        IsEnabled = false;
+        if (App.State.PostgreSql) _window.Toast("Menyimpan proyek dan mengambil profil iklim…");
+        try
+        {
+            var pesan = await App.State.TambahProyekAsync(name, city, lat, lon, wall, roof, coastal);
+            App.State.Ubah();
+            _window.ShowShell("home");
+            if (pesan is not null) _window.Toast(pesan);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+            ErrorText.Text = "Proyek belum dapat disimpan. Periksa koneksi database dan coba lagi.";
+            ErrorText.Visibility = Visibility.Visible;
+        }
+        finally
+        {
+            IsEnabled = true;
+        }
     }
 }

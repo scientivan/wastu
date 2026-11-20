@@ -23,6 +23,7 @@ public sealed class StateDto
 public sealed class ProyekDto
 {
     public int Id { get; set; }
+    public Guid? DatabaseId { get; set; }
     public string Nama { get; set; } = "";
     public string Kota { get; set; } = "";
     public double Lintang { get; set; }
@@ -73,16 +74,17 @@ public static class StateStore
         ? custom
         : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Wastu");
 
-    public static readonly string FilePath = Path.Combine(Folder, "state.json");
+    private static string FilePath(bool postgreSql) => Path.Combine(Folder, postgreSql ? "state-postgres.json" : "state.json");
 
     public static string ProfileFolder => Folder;
 
-    public static StateDto? Load()
+    public static StateDto? Load(bool postgreSql)
     {
         try
         {
-            if (!File.Exists(FilePath)) return null;
-            using var stream = File.OpenRead(FilePath);
+            var path = FilePath(postgreSql);
+            if (!File.Exists(path)) return null;
+            using var stream = File.OpenRead(path);
             return JsonSerializer.Deserialize(stream, StateJson.Default.StateDto);
         }
         catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException)
@@ -91,12 +93,13 @@ public static class StateStore
         }
     }
 
-    public static void Save(StateDto state)
+    public static void Save(StateDto state, bool postgreSql)
     {
         Directory.CreateDirectory(Folder);
-        var temp = FilePath + ".tmp";
+        var path = FilePath(postgreSql);
+        var temp = path + ".tmp";
         using (var stream = File.Create(temp))
             JsonSerializer.Serialize(stream, state, StateJson.Default.StateDto);
-        File.Move(temp, FilePath, overwrite: true);
+        File.Move(temp, path, overwrite: true);
     }
 }

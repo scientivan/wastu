@@ -27,7 +27,7 @@ public partial class App : Application
             new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(Format.Id.IetfLanguageTag)));
 
         // Berjalan paralel dengan parsing XAML jendela utama.
-        var state = Task.Run(AppState.Muat);
+        var state = Task.Run(AppState.MuatAsync);
         ImageCache.PreloadAsync();
 
         // MessageBox menjalankan message loop sendiri; tanpa penjaga ini exception yang berulang

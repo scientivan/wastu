@@ -136,33 +136,30 @@ public partial class ShellView : UserControl
         }
     }
 
-    // getClimate() pada app.js
-    public async Task RefreshClimateAsync()
+    public Task RefreshClimateAsync() => RunProjectChangeAsync(async () =>
     {
-        var project = App.State.Aktif;
         Toast("Mengambil data iklim historis…");
+        var pesan = await App.State.PerbaruiIklimAsync(App.State.Aktif);
+        Render();
+        Toast(pesan ?? "Profil iklim diperbarui dari Open-Meteo.");
+    });
+
+    public async Task RunProjectChangeAsync(Func<Task> action)
+    {
+        if (!IsEnabled) return;
+        IsEnabled = false;
         try
         {
-            var climate = await OpenMeteo.AmbilIklimAsync(project.Latitude, project.Longitude);
-            var profile = project.ProfilIklim ??= Katalog.ProfilBawaan(project.Kota, 30);
-            profile.CurahHujanTahunan = climate.CurahHujan;
-            profile.SuhuRata = climate.Suhu;
-            profile.KelembapanRata = climate.Kelembapan;
-            profile.Sumber = "Open-Meteo Historical Weather API (arsip model/reanalisis), jarak pesisir input manual";
-            profile.DiperbaruiPada = Format.WaktuLokal(DateTime.Now);
-            Render();
-            Toast("Profil iklim diperbarui dari Open-Meteo.");
+            await action();
         }
-        catch (Exception e) when (e is HttpRequestException or TaskCanceledException or InvalidDataException or JsonException)
+        catch (Exception ex)
         {
-            var reason = e switch
-            {
-                TaskCanceledException => "signal timed out",
-                HttpRequestException { StatusCode: { } code } => "HTTP " + (int)code,
-                HttpRequestException => "Failed to fetch",
-                _ => e.Message
-            };
-            Toast("Gagal mengambil iklim: " + reason + ". Data sebelumnya tetap tersedia.");
+            System.Diagnostics.Debug.WriteLine(ex);
+            Toast("Perubahan proyek belum dapat diterapkan. Periksa koneksi dan coba lagi.");
+        }
+        finally
+        {
+            IsEnabled = true;
         }
     }
 
