@@ -114,11 +114,13 @@ public partial class ShellView : UserControl
     {
         var state = App.State;
         var project = state.Aktif;
+        double lintang = project.Latitude;
+        double bujur = project.Longitude;
         Toast("Mengambil prakiraan Open-Meteo…");
         try
         {
-            var incoming = await OpenMeteo.AmbilPrakiraanAsync(project.Latitude, project.Longitude);
-            if (!state.AdaProyek || state.Aktif != project) return;
+            var incoming = await OpenMeteo.AmbilPrakiraanAsync(lintang, bujur);
+            if (!state.AdaProyek || state.Aktif != project || project.Latitude != lintang || project.Longitude != bujur) return;
             state.Prakiraan = incoming;
             state.PrakiraanProyekId = project.Id;
             state.PrakiraanDiperbarui = Format.WaktuLokal(DateTime.Now);
