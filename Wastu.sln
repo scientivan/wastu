@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wastu.Data", "src\Wastu.Dat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wastu.Data.Tests", "tests\Wastu.Data.Tests\Wastu.Data.Tests.csproj", "{B959FFB7-F5BE-4CAD-AFC4-2B816157D6C2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wastu", "Wastu.csproj", "{D6141E19-7AAF-44E1-A432-7300D8CFA25F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -46,6 +48,10 @@ Global
 		{B959FFB7-F5BE-4CAD-AFC4-2B816157D6C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B959FFB7-F5BE-4CAD-AFC4-2B816157D6C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B959FFB7-F5BE-4CAD-AFC4-2B816157D6C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6141E19-7AAF-44E1-A432-7300D8CFA25F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6141E19-7AAF-44E1-A432-7300D8CFA25F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6141E19-7AAF-44E1-A432-7300D8CFA25F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6141E19-7AAF-44E1-A432-7300D8CFA25F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{CEB22A51-934B-48DC-A534-909EEDED091D} = {131F734D-9595-4660-82C7-C6B992778373}

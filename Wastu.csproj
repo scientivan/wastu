@@ -21,8 +21,7 @@
     <ServerGarbageCollector>false</ServerGarbageCollector>
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
 
-    <!-- Dokumentasi bukan bagian dari build. -->
-    <DefaultItemExcludes>$(DefaultItemExcludes);docs\**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);docs/**;src/**;tests/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <!-- dotnet build -c Release -p:Snapshot=true: sertakan alat verifikasi visual (Views/DebugSnapshot.cs). -->
@@ -34,5 +33,7 @@
     <Resource Include="Assets\Fonts\*.ttf" />
     <Resource Include="Assets\wastu.ico" />
     <EmbeddedResource Include="Assets\*.jpg;Assets\*.png" LogicalName="Assets.%(Filename)%(Extension)" />
+    <ProjectReference Include="src/Wastu.Domain/Wastu.Domain.csproj" />
+    <ProjectReference Include="src/Wastu.Data/Wastu.Data.csproj" />
   </ItemGroup>
 </Project>
