@@ -60,6 +60,17 @@ Wastu menjawab masalah itu dengan tiga prinsip:
 
 Aplikasi desktop Windows berbasis WPF (.NET 8, C#) dengan data cuaca dan iklim dari Open-Meteo.
 
+## Menjalankan dengan PostgreSQL
+
+1. Buat database lokal dengan `database/01_create_database.sql` atau gunakan database PostgreSQL yang sudah tersedia.
+2. Jalankan `database/02_schema.sql` dan `database/03_seed_supabase.sql` pada database tersebut.
+3. Isi variabel lingkungan `WASTU_CONNECTION_STRING` dengan connection string Npgsql. Untuk Supabase, gunakan koneksi langsung atau session pooler.
+4. Jalankan `dotnet run --project Wastu.csproj` di Windows dengan .NET 8 SDK. Uji backend dapat dijalankan dengan `dotnet test Wastu.sln`.
+
+Dengan koneksi PostgreSQL, proyek, luas bidang, profil iklim, dan katalog dibaca dari database. Katalog dimuat saat aplikasi dibuka. Jadwal dan preferensi tampilan disimpan di `state-postgres.json`. Saat variabel koneksi kosong, aplikasi membuka proyek dan katalog lokal seperti biasa. Proyek lama tetap dapat dibuka di mode lokal melalui `state.json`.
+
+Dalam mode PostgreSQL, profil iklim memakai 10 tahun data historis Open-Meteo. Jarak pesisir diestimasi dari segmen garis pantai regional [Natural Earth 1:10m](https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-coastline/). Resolusi garis pantai membatasi akurasi jarak pada pulau kecil.
+
 ## Batasan
 
 Properti bahan, faktor emisi, dan profil iklim bawaan masih berupa estimasi awal dari referensi literatur

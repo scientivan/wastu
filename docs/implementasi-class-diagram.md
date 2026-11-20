@@ -22,8 +22,8 @@ pada jadwal pekerjaan.
 Rumus pada model diselaraskan dengan PRD dan prototipe antarmuka HTML Wastu (`app.js`), lalu diverifikasi
 menghasilkan angka yang identik:
 
-- `Evaluasi.HitungSkor` memakai rata-rata empat sub-skor (termal, lembap, korosi, usia pakai relatif
-  terhadap bahan sejenis) dan menyusun `Alasan` (PRD §11.1). Overload `HitungSkor(ProfilIklim)` tetap ada.
+- Halaman peringkat memakai `SuitabilityScoringService`, termasuk normalisasi usia pakai terhadap
+  minimum dan maksimum bahan sejenis. `Evaluasi.HitungSkor` memakai perhitungan yang sama (PRD §11.1).
 - `Evaluasi.ProyeksikanEmisi` menurunkan usia pakai efektif dengan `0,5 + 0,5 × skor/100` (PRD §11.3).
 - `SimulasiEmisi.Proyeksikan(emisiAwal)` menghitung `emisi_awal × (1 + jumlah_penggantian)`;
   `PenggantianHingga(tahun)` dipakai grafik emisi kumulatif.
