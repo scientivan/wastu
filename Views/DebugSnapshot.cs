@@ -220,7 +220,7 @@ internal static class DebugSnapshot
                     state.Horizon = horizon;
                     foreach (var e in state.Peringkat())
                     {
-                        var item = Services.Katalog.Dari(e.Bahan);
+                        var item = state.Item(e.Bahan);
                         var sim = state.Simulasikan(item).SimulasiEmisi!;
                         lines.Add(string.Join('|', sc.City, kind.ToString().ToLowerInvariant(), horizon, item.Kode, e.SkorKesesuaian,
                             Math.Round(e.EmisiAwal * 1000) / 1000, sim.JumlahPenggantian, Math.Round(sim.UsiaPakaiEfektif * 1e6) / 1e6,

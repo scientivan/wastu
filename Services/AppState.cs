@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using Wastu.Domain.Scoring;
 using Wastu.Models;
 
 namespace Wastu.Services;
@@ -10,6 +11,7 @@ public sealed class AppState
     private readonly object _gate = new();
     private StateDto? _antrean;
     private bool _menulis;
+    private IReadOnlyList<ItemKatalog> _katalog = Katalog.Semua;
 
     public List<Bangunan> Proyek { get; } = [];
     public int ProyekAktifId { get; set; }
@@ -31,13 +33,9 @@ public sealed class AppState
     public ProfilIklim Iklim => Aktif.ProfilIklim ??= Katalog.ProfilBawaan(Aktif.Kota, 30);
     public double Luas => Aktif.LuasKomponen(Jenis);
 
-    public Evaluasi Nilai(ItemKatalog item)
-    {
-        var (min, max) = RentangUsia(item.Jenis);
-        var evaluasi = new Evaluasi(item.Bahan) { EmisiAwal = item.Bahan.FaktorEmisi * Aktif.LuasKomponen(item.Jenis) };
-        evaluasi.HitungSkor(Iklim, min, max);
-        return evaluasi;
-    }
+    public ItemKatalog Item(Bahan bahan) => _katalog[bahan.Id];
+
+    public Evaluasi Nilai(ItemKatalog item) => Peringkat(item.Jenis).First(e => e.Bahan == item.Bahan);
 
     public Evaluasi Simulasikan(ItemKatalog item)
     {
@@ -46,37 +44,39 @@ public sealed class AppState
         return evaluasi;
     }
 
-    public Evaluasi[] Peringkat()
+    public Evaluasi[] Peringkat() => Peringkat(Jenis);
+
+    private Evaluasi[] Peringkat(JenisKomponen jenis)
     {
-        var komponen = new Komponen { Jenis = Jenis, Luas = Luas };
-        foreach (var item in Katalog.Semua)
-            if (item.Jenis == Jenis)
-                komponen.TambahEvaluasi(Nilai(item));
-        return komponen.BandingkanBahan();
+        double luas = Aktif.LuasKomponen(jenis);
+        if (!double.IsFinite(luas) || luas <= 0)
+            return [];
+
+        var komponen = new Domain.Komponen(Guid.Empty, Guid.Empty, (Domain.JenisKomponen)jenis, luas);
+        var bahan = _katalog.Where(item => item.Jenis == jenis).ToDictionary(item => item.DataDomain.Id);
+        return SuitabilityScoringService.Rank(komponen, Iklim.KeDomain(),
+                bahan.Values.Select(item => item.DataDomain).ToArray())
+            .Select(e => new Evaluasi(bahan[e.BahanId].Bahan, e)).ToArray();
     }
 
     public List<ItemKatalog> Terpilih()
     {
-        var hasil = new List<ItemKatalog>(2);
-        foreach (var kode in Dipilih)
-            if (Katalog.Cari(kode) is { } item && item.Jenis == Jenis)
-                hasil.Add(item);
-        if (hasil.Count == 0)
-            foreach (var e in Peringkat().Take(2))
-                hasil.Add(Katalog.Dari(e.Bahan));
-        return hasil;
+        if (Luas <= 0) return [];
+        var hasil = Dipilih.Select(kode => _katalog.FirstOrDefault(item => item.Kode == kode && item.Jenis == Jenis))
+            .OfType<ItemKatalog>().Distinct().Take(2).ToList();
+        return hasil.Count > 0 ? hasil : Peringkat().Take(2).Select(e => Item(e.Bahan)).ToList();
     }
 
     public void AturJenis(JenisKomponen jenis)
     {
         Jenis = jenis;
-        Dipilih = Peringkat().Take(2).Select(e => Katalog.Dari(e.Bahan).Kode).ToArray();
+        Dipilih = Peringkat().Take(2).Select(e => Item(e.Bahan).Kode).ToArray();
     }
 
     public void PilihUntukBanding(string kode)
     {
-        var lain = Peringkat().First(e => Katalog.Dari(e.Bahan).Kode != kode);
-        Dipilih = [kode, Katalog.Dari(lain.Bahan).Kode];
+        var lain = Peringkat().Select(e => Item(e.Bahan).Kode).FirstOrDefault(k => k != kode);
+        Dipilih = lain is null ? [kode] : [kode, lain];
     }
 
     public List<PrakiraanCuaca> PrakiraanAktif()
@@ -302,12 +302,4 @@ public sealed class AppState
         }
     }
 
-    private static readonly Dictionary<JenisKomponen, (int, int)> _rentang = new();
-
-    private static (int Min, int Max) RentangUsia(JenisKomponen jenis)
-    {
-        if (_rentang.TryGetValue(jenis, out var r)) return r;
-        var usia = Katalog.Semua.Where(i => i.Jenis == jenis).Select(i => i.Bahan.UsiaPakaiTahun).ToArray();
-        return _rentang[jenis] = (usia.Min(), usia.Max());
-    }
 }

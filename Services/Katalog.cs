@@ -2,9 +2,29 @@ using Wastu.Models;
 
 namespace Wastu.Services;
 
-public sealed record ItemKatalog(Bahan Bahan, JenisKomponen Jenis, string Gambar)
+public sealed record ItemKatalog(Bahan Bahan, JenisKomponen Jenis, string Gambar, Guid? DatabaseId = null)
 {
-    public string Kode => "m" + Bahan.Id;
+    public string Kode => DatabaseId?.ToString("D") ?? "m" + Bahan.Id;
+
+    internal Domain.Bahan DataDomain { get; } = new(DatabaseId ?? Guid.NewGuid(), Bahan.Nama,
+        (Domain.JenisKomponen)Jenis, Bahan.KonduktivitasTermal, Bahan.KetahananLembap,
+        Bahan.KetahananKorosi, Bahan.UsiaPakaiTahun, Bahan.FaktorEmisi, Bahan.DataSource);
+
+    internal static ItemKatalog DariDomain(Domain.Bahan data, int index)
+    {
+        var jenis = (JenisKomponen)data.Jenis;
+        return new ItemKatalog(new Bahan
+        {
+            Id = index,
+            Nama = data.Nama,
+            KonduktivitasTermal = data.KonduktivitasTermal,
+            KetahananLembap = data.KetahananLembap,
+            KetahananKorosi = data.KetahananKorosi,
+            UsiaPakaiTahun = data.UsiaPakaiNominalTahun,
+            FaktorEmisi = data.FaktorEmisi,
+            DataSource = data.SumberData
+        }, jenis, jenis == JenisKomponen.Atap ? "tile" : "concrete", data.Id);
+    }
 }
 
 public sealed record KotaBawaan(double Lintang, double Bujur, double CurahHujan, double Kelembapan, double Suhu, double JarakPesisir);
@@ -28,11 +48,6 @@ public static class Katalog
 
     public static readonly IReadOnlyList<ItemKatalog> Semua = Bangun();
 
-    public static ItemKatalog? Cari(string kode) =>
-        kode.Length > 1 && int.TryParse(kode.AsSpan(1), out var i) && (uint)i < (uint)Semua.Count ? Semua[i] : null;
-
-    public static ItemKatalog Dari(Bahan bahan) => Semua[bahan.Id];
-
     public static ProfilIklim ProfilBawaan(string kota, double jarakPesisir)
     {
         Kota.TryGetValue(kota, out var k);
@@ -42,7 +57,7 @@ public static class Katalog
             KelembapanRata = k?.Kelembapan ?? 80,
             SuhuRata = k?.Suhu ?? 28,
             JarakPesisirKm = jarakPesisir,
-            Sumber = "Profil lokasi"
+            Sumber = "Estimasi iklim bawaan"
         };
     }
 

@@ -14,7 +14,7 @@
     </p:PageBase.Resources>
 
     <StackPanel>
-        <c:PageHeading Title="Bandingkan material" Description="Tinjau kesesuaian iklim dan emisi awal secara berdampingan.">
+        <c:PageHeading Title="Bandingkan material" Description="{Binding Description}">
             <Border Style="{StaticResource Seg}">
                 <StackPanel Orientation="Horizontal">
                     <RadioButton x:Name="WallTab" Style="{StaticResource SegItem}" Content="Dinding" Tag="Dinding" Click="Kind_Click" Margin="0,0,4,0" />

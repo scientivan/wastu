@@ -7,7 +7,7 @@ public class Bahan
     private double _konduktivitasTermal;
     private int _ketahananLembap;
     private int _ketahananKorosi;
-    private int _usiaPakaiTahun;
+    private double _usiaPakaiTahun;
     private double _faktorEmisi;
     private string _dataSource = string.Empty;
 
@@ -16,7 +16,7 @@ public class Bahan
     public double KonduktivitasTermal { get => _konduktivitasTermal; set => _konduktivitasTermal = value; }
     public int KetahananLembap { get => _ketahananLembap; set => _ketahananLembap = value; }
     public int KetahananKorosi { get => _ketahananKorosi; set => _ketahananKorosi = value; }
-    public int UsiaPakaiTahun { get => _usiaPakaiTahun; set => _usiaPakaiTahun = value; }
+    public double UsiaPakaiTahun { get => _usiaPakaiTahun; set => _usiaPakaiTahun = value; }
     public double FaktorEmisi { get => _faktorEmisi; set => _faktorEmisi = value; }
     public string DataSource { get => _dataSource; set => _dataSource = value; }
 }

@@ -22,7 +22,7 @@ public partial class MaterialsPage : PageBase
         _refreshing = false;
 
         var area = S.Luas;
-        _cards = S.Peringkat().Select(e => new MaterialCard(Katalog.Dari(e.Bahan), e, area)).ToList();
+        _cards = S.Peringkat().Select(e => new MaterialCard(S.Item(e.Bahan), e, area)).ToList();
         ApplyFilter();
     }
 
@@ -76,7 +76,8 @@ public sealed class MaterialCard : ViewData
         Kind = item.Jenis == JenisKomponen.Atap ? "MATERIAL ATAP" : "MATERIAL DINDING";
         Name = item.Bahan.Nama;
         Tag = TagData.Kesesuaian(e.SkorKesesuaian);
-        Reason = e.Alasan.Split('.')[0] + ".";
+        Reason = e.Alasan.Split(';')[0].TrimEnd('.') + ".";
+        Source = item.Bahan.DataSource;
         Score = Format.Angka(e.SkorKesesuaian) + "/100";
         ScoreBrush = e.SkorKesesuaian < 55 ? Palette.Red : Palette.Score;
         Emission = Format.Angka(e.EmisiAwal);
@@ -89,6 +90,7 @@ public sealed class MaterialCard : ViewData
     public string Name { get; }
     public TagData Tag { get; }
     public string Reason { get; }
+    public string Source { get; }
     public string Score { get; }
     public Brush ScoreBrush { get; }
     public string Emission { get; }

@@ -25,12 +25,12 @@ public partial class ComparePage : PageBase
         DataContext = new CompareData(S, ranked, selected);
     }
 
-    private static void Fill(ComboBox box, Evaluasi[] ranked, ItemKatalog? selected)
+    private void Fill(ComboBox box, Evaluasi[] ranked, ItemKatalog? selected)
     {
         box.Items.Clear();
         foreach (var e in ranked)
         {
-            var item = Katalog.Dari(e.Bahan);
+            var item = S.Item(e.Bahan);
             var option = new ComboBoxItem { Content = item.Bahan.Nama, Tag = item.Kode };
             box.Items.Add(option);
             if (item == selected) box.SelectedItem = option;
@@ -61,12 +61,16 @@ public sealed class CompareData : ViewData
 {
     public CompareData(AppState s, Evaluasi[] ranked, List<ItemKatalog> selected)
     {
+        Description = s.Iklim.SudahDiperbarui
+            ? "Tinjau kesesuaian iklim dan emisi awal secara berdampingan."
+            : "Peringkat memakai estimasi iklim. Perbarui profil iklim di halaman proyek.";
         Cards = selected.ConvertAll(item => new CompareCard(item, s.Nilai(item)));
         AreaLabel = "Luas " + Format.Angka(s.Luas) + " m²";
-        Rows = ranked.Select((e, i) => new RankRow(Katalog.Dari(e.Bahan), e, i, ranked.Length)).ToList();
+        Rows = ranked.Select((e, i) => new RankRow(s.Item(e.Bahan), e, i, ranked.Length)).ToList();
     }
 
     public List<CompareCard> Cards { get; }
+    public string Description { get; }
     public string AreaLabel { get; }
     public List<RankRow> Rows { get; }
 }

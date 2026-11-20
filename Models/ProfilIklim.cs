@@ -28,4 +28,8 @@ public class ProfilIklim
     // Null selama profil masih memakai nilai bawaan kota, belum diambil dari layanan iklim.
     public string? DiperbaruiPada { get => _diperbaruiPada; set => _diperbaruiPada = value; }
     public bool SudahDiperbarui => _diperbaruiPada is not null;
+
+    internal Domain.ProfilIklim KeDomain() => new(CurahHujanTahunan, KelembapanRata, SuhuRata, JarakPesisirKm,
+        JarakPesisirKm < 10 ? Domain.TingkatKorosi.Tinggi
+            : JarakPesisirKm < 35 ? Domain.TingkatKorosi.Sedang : Domain.TingkatKorosi.Rendah);
 }
