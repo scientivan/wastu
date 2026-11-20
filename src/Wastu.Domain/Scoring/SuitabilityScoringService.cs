@@ -39,14 +39,25 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
                 $"Proyek {komponen.ProyekId} belum memiliki profil iklim. Jalankan analisis iklim lebih dulu (PRD §F3).");
 
         IReadOnlyList<Bahan> bahan = await _material.ListByKindAsync(komponen.Jenis, ct).ConfigureAwait(false);
+        return Rank(komponen, iklim, bahan, bobot);
+    }
 
+    public static IReadOnlyList<Evaluasi> Rank(Komponen komponen, ProfilIklim iklim, IReadOnlyList<Bahan> katalog,
+        KriteriaBobot? bobot = null)
+    {
+        Bahan[] bahan = katalog.Where(item => item.Jenis == komponen.Jenis).ToArray();
+        if (bahan.Length == 0)
+            return [];
+
+        double usiaMin = bahan.Min(item => item.UsiaPakaiNominalTahun);
+        double usiaMaks = bahan.Max(item => item.UsiaPakaiNominalTahun);
         KriteriaBobot bobotEfektif = bobot ?? KriteriaBobot.Default;
 
-        var hasil = new List<Evaluasi>(bahan.Count);
+        var hasil = new List<Evaluasi>(bahan.Length);
 
         foreach (Bahan item in bahan)
         {
-            SubSkorKesesuaian subSkor = PerhitunganSkor.HitungSubSkor(item, iklim);
+            SubSkorKesesuaian subSkor = PerhitunganSkor.HitungSubSkor(item, iklim, usiaMin, usiaMaks);
 
             hasil.Add(new Evaluasi(
                 Id: Guid.NewGuid(),

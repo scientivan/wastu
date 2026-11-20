@@ -72,18 +72,4 @@ public static class KonfigurasiSkoring
     /// </summary>
     public const double AcuanJarakPesisir = 50;
 
-    /// <summary>
-    /// Usia pakai, tahun, yang dianggap penuh; dipakai sebagai pembagi sub-skor usia.
-    /// </summary>
-    /// <remarks>
-    /// PRD §11.1 menulis "dinormalisasi relatif terhadap bahan lain di kategori yang
-    /// sama", yang dibaca sebagai min-max. Min-max ditolak karena skornya jadi
-    /// bergantung pada isi katalog: bahan terburuk selalu tepat 0 dan terbaik
-    /// selalu tepat 100, sehingga menambah satu bahan baru menggeser skor semua bahan
-    /// lain. Karena skor usia ikut masuk ke usia pakai efektif di §11.3, itu membuat
-    /// angka karbon yang jadi sorotan utama aplikasi bergantung pada katalog, bukan
-    /// pada bahannya, dan merusak argumen inti Wastu. Nilai hasil tetap monoton dan
-    /// sebanding dengan rentang 0-100 yang ditampilkan ke pengguna.
-    /// </remarks>
-    public const double AcuanUsiaPakai = 60;
 }

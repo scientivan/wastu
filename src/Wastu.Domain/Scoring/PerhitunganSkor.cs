@@ -91,17 +91,13 @@ public static class PerhitunganSkor
         return Kunci(100 * bahan.KetahananKorosi / demand);
     }
 
-    /// <summary>
-    /// Sub-skor usia: usia pakai nominal dinormalkan terhadap acuan 60 tahun.
-    /// </summary>
-    /// <remarks>
-    /// Alasan memakai acuan absolut dan bukan min-max dijelaskan panjang pada
-    /// <see cref="KonfigurasiSkoring.AcuanUsiaPakai"/>.
-    /// </remarks>
-    public static double SkorUsia(Bahan bahan)
+    /// <summary>Normalisasi usia pakai nominal terhadap rentang usia bahan sejenis (PRD §11.1).</summary>
+    public static double SkorUsia(Bahan bahan, double usiaMin, double usiaMaks)
     {
         ArgumentNullException.ThrowIfNull(bahan);
-        return Kunci(100 * bahan.UsiaPakaiNominalTahun / KonfigurasiSkoring.AcuanUsiaPakai);
+        return usiaMin == usiaMaks
+            ? 100
+            : Kunci(100 * (bahan.UsiaPakaiNominalTahun - usiaMin) / (usiaMaks - usiaMin));
     }
 
     /// <summary>Menjumlahkan keempat sub-skor dengan bobot yang diberikan (PRD §11.1).</summary>
@@ -127,13 +123,13 @@ public static class PerhitunganSkor
     }
 
     /// <summary>Keempat sub-skor sekaligus; dipakai orkestrasi dan ditampilkan ke pengguna.</summary>
-    public static SubSkorKesesuaian HitungSubSkor(Bahan bahan, ProfilIklim iklim)
+    public static SubSkorKesesuaian HitungSubSkor(Bahan bahan, ProfilIklim iklim, double usiaMin, double usiaMaks)
     {
         return new SubSkorKesesuaian(
             SkorTermal(bahan, iklim),
             SkorLembap(bahan, iklim),
             SkorKorosi(bahan, iklim),
-            SkorUsia(bahan));
+            SkorUsia(bahan, usiaMin, usiaMaks));
     }
 
     /// <summary>
@@ -178,8 +174,8 @@ public static class PerhitunganSkor
         if (subSkor.Usia < AmbangAdequat)
         {
             alasan.Add(string.Format(budaya,
-                "Usia pakai nominal {0} tahun lebih pendek dari acuan {1} tahun sehingga bahan perlu diganti lebih sering",
-                bahan.UsiaPakaiNominalTahun, KonfigurasiSkoring.AcuanUsiaPakai));
+                "Usia pakai nominal {0} tahun relatif pendek untuk kategori bahan ini",
+                bahan.UsiaPakaiNominalTahun));
         }
 
         if (alasan.Count == 0)

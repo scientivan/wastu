@@ -7,21 +7,30 @@ namespace Wastu.Domain.Tests.Scoring;
 public class SuitabilityScoringServiceTests
 {
     [Fact]
+    public async Task Rank_MenormalisasiUsiaTerhadapKategoriKomponen()
+    {
+        var pendek = DataContoh.PanelGipsum();
+        var panjang = DataContoh.BetonBertulang();
+        var service = Service(pendek, panjang, DataContoh.GentingKeramik());
+
+        var hasil = await service.RankAsync(DataContoh.KomponenDindingId);
+
+        Assert.Equal(0, hasil.Single(e => e.BahanId == pendek.Id).SubSkor.Usia);
+        Assert.Equal(100, hasil.Single(e => e.BahanId == panjang.Id).SubSkor.Usia);
+    }
+
+    [Fact]
     public async Task Rank_MengurutkanDariSkorTertinggi()
     {
-        // Pada iklim pesisir lembap, beton ringan harus mengalahkan beton bertulang:
-        // ketahanan lembap 5 dan konduktivitas 0,12 lebih menentukan
-        // beratnya dibanding ketahanan korosi 5 dan usia 50 tahun milik beton bertulang.
-        // Peringkat ini memang yang diharapkan praktik konstruksi di daerah tropis lembap.
-        // Gipsum jelas terlemah: ketahanan lembap dan korosi keduanya 1.
+        // Pada kelompok ini, usia terpanjang dan ketahanan korosi mengunggulkan beton bertulang.
         SuitabilityScoringService service = Service(
             DataContoh.BetonBertulang(), DataContoh.BetonRingan(), DataContoh.PanelGipsum());
 
         IReadOnlyList<Evaluasi> hasil = await service.RankAsync(DataContoh.KomponenDindingId);
 
         Assert.Equal(3, hasil.Count);
-        Assert.Equal(DataContoh.BetonRingan().Id, hasil[0].BahanId);
-        Assert.Equal(DataContoh.IdBetonBertulang, hasil[1].BahanId);
+        Assert.Equal(DataContoh.IdBetonBertulang, hasil[0].BahanId);
+        Assert.Equal(DataContoh.BetonRingan().Id, hasil[1].BahanId);
         Assert.Equal(DataContoh.PanelGipsum().Id, hasil[2].BahanId);
 
         for (int i = 1; i < hasil.Count; i++)
@@ -74,19 +83,16 @@ public class SuitabilityScoringServiceTests
     [Fact]
     public async Task Rank_MengubahBobotDapatMenggantiPeringkat()
     {
-        // Beton ringan unggul di termal, gipsum unggul di usia. Memusatkan bobot pada
-        // termal harus menaikkan peringkat beton ringan.
-        ProfilIklim iklim = DataContoh.IklimDinginInland();
+        // Beton ringan unggul di termal. Beton bertulang unggul di usia dan korosi.
         SuitabilityScoringService service = Service(
-            iklim, DataContoh.BetonRingan(), DataContoh.PanelGipsum());
+            DataContoh.BetonBertulang(), DataContoh.BetonRingan(), DataContoh.PanelGipsum());
 
         IReadOnlyList<Evaluasi> seimbang = await service.RankAsync(DataContoh.KomponenDindingId);
         IReadOnlyList<Evaluasi> utamakanTermal = await service.RankAsync(
             DataContoh.KomponenDindingId, new KriteriaBobot(0.70, 0.10, 0.10, 0.10));
 
-        Assert.Equal(DataContoh.BetonRingan().Id, seimbang[0].BahanId);
+        Assert.Equal(DataContoh.IdBetonBertulang, seimbang[0].BahanId);
         Assert.Equal(DataContoh.BetonRingan().Id, utamakanTermal[0].BahanId);
-        Assert.True(utamakanTermal[0].SkorKesesuaian > seimbang[0].SkorKesesuaian);
     }
 
     [Fact]

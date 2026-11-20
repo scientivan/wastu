@@ -150,19 +150,17 @@ public class PerhitunganSkorTests
     // ---------------------------------------------------------------- sub-skor usia
 
     [Fact]
-    public void SkorUsia_DinormalkanTerhadapAcuan()
+    public void SkorUsia_DinormalkanTerhadapRentangKategori()
     {
-        Assert.Equal(83.333333, PerhitunganSkor.SkorUsia(DataContoh.BetonBertulang()), Presisi);
-        Assert.Equal(58.333333, PerhitunganSkor.SkorUsia(DataContoh.GentingKeramik()), Presisi);
-        Assert.Equal(50, PerhitunganSkor.SkorUsia(DataContoh.BetonRingan()), Presisi);
+        Assert.Equal(100, PerhitunganSkor.SkorUsia(DataContoh.BetonBertulang(), 20, 50), Presisi);
+        Assert.Equal(50, PerhitunganSkor.SkorUsia(DataContoh.GentingKeramik(), 20, 50), Presisi);
+        Assert.Equal(33.333333, PerhitunganSkor.SkorUsia(DataContoh.BetonRingan(), 20, 50), Presisi);
     }
 
     [Fact]
-    public void SkorUsia_DiAtasAcuan_TidakMelebihiSeratus()
+    public void SkorUsia_JikaUsiaSemuaBahanSama_MengembalikanSeratus()
     {
-        // Tidak ada bahan seed yang melewati 60 tahun, tetapi admin boleh menambah bahan
-        // baru lewat basis data tanpa mengubah kode (PRD §F2).
-        double skor = PerhitunganSkor.SkorUsia(BahanDengan(0.30, 3, 3, 120, 40));
+        double skor = PerhitunganSkor.SkorUsia(BahanDengan(0.30, 3, 3, 120, 40), 120, 120);
 
         Assert.Equal(100, skor, Presisi);
     }
@@ -170,9 +168,9 @@ public class PerhitunganSkorTests
     [Fact]
     public void SkorUsia_MonotonDenganUsiaPakai()
     {
-        double skor15 = PerhitunganSkor.SkorUsia(BahanDengan(0.30, 3, 3, 15, 40));
-        double skor30 = PerhitunganSkor.SkorUsia(BahanDengan(0.30, 3, 3, 30, 40));
-        double skor45 = PerhitunganSkor.SkorUsia(BahanDengan(0.30, 3, 3, 45, 40));
+        double skor15 = PerhitunganSkor.SkorUsia(BahanDengan(0.30, 3, 3, 15, 40), 15, 45);
+        double skor30 = PerhitunganSkor.SkorUsia(BahanDengan(0.30, 3, 3, 30, 40), 15, 45);
+        double skor45 = PerhitunganSkor.SkorUsia(BahanDengan(0.30, 3, 3, 45, 40), 15, 45);
 
         Assert.True(skor15 < skor30, $"15 tahun ({skor15}) harus di bawah 30 tahun ({skor30}).");
         Assert.True(skor30 < skor45, $"30 tahun ({skor30}) harus di bawah 45 tahun ({skor45}).");
@@ -247,12 +245,12 @@ public class PerhitunganSkorTests
     public void HitungSubSkor_MengembalikanKeempatAspekSekaligus()
     {
         SubSkorKesesuaian sub = PerhitunganSkor.HitungSubSkor(
-            DataContoh.BetonBertulang(), DataContoh.IklimPesisirBandarLampung());
+            DataContoh.BetonBertulang(), DataContoh.IklimPesisirBandarLampung(), 20, 50);
 
         Assert.Equal(37.5, sub.Termal, Presisi);
         Assert.Equal(80, sub.Lembap, Presisi);
         Assert.Equal(100, sub.Korosi, Presisi);
-        Assert.Equal(83.333333, sub.Usia, Presisi);
+        Assert.Equal(100, sub.Usia, Presisi);
     }
 
     // ------------------------------------------------------------------ alasan tekstual
@@ -262,11 +260,11 @@ public class PerhitunganSkorTests
     {
         ProfilIklim iklim = DataContoh.IklimPesisirBandarLampung();
         Bahan bahan = DataContoh.BetonBertulang();
-        SubSkorKesesuaian sub = PerhitunganSkor.HitungSubSkor(bahan, iklim);
+        SubSkorKesesuaian sub = PerhitunganSkor.HitungSubSkor(bahan, iklim, 20, 50);
 
         string alasan = PerhitunganSkor.SusunAlasan(bahan, iklim, sub);
 
-        // Termal 37,5 dan usia 83,3; satu-satunya di bawah ambang 60 adalah termal.
+        // Termal 37,5 adalah satu-satunya sub-skor di bawah ambang 60.
         Assert.Contains("Konduktivitas termal", alasan, StringComparison.Ordinal);
         Assert.DoesNotContain("Ketahanan korosi", alasan, StringComparison.Ordinal);
         Assert.EndsWith(".", alasan, StringComparison.Ordinal);
