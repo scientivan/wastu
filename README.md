@@ -64,10 +64,13 @@ Aplikasi desktop Windows berbasis WPF (.NET 8, C#) dengan data cuaca dan iklim d
 
 1. Buat database lokal dengan `database/01_create_database.sql` atau gunakan database PostgreSQL yang sudah tersedia.
 2. Jalankan `database/02_schema.sql` dan `database/03_seed_supabase.sql` pada database tersebut.
-3. Isi variabel lingkungan `WASTU_CONNECTION_STRING` dengan connection string Npgsql. Untuk Supabase, gunakan koneksi langsung atau session pooler.
+3. Isi `.env` sesuai `.env.example` dengan `host`, `port`, `database`, `user`, dan `password` dari Supabase. Aplikasi menyusun connection string Npgsql otomatis dengan SSL. Gunakan session pooler port 5432. Alternatifnya, isi `WASTU_CONNECTION_STRING` lengkap untuk mengesampingkan variabel terpisah.
+
 4. Jalankan `dotnet run --project Wastu.csproj` di Windows dengan .NET 8 SDK. Uji backend dapat dijalankan dengan `dotnet test Wastu.sln`.
 
-Dengan koneksi PostgreSQL, proyek, luas bidang, profil iklim, dan katalog dibaca dari database. Katalog dimuat saat aplikasi dibuka. Jadwal dan preferensi tampilan disimpan di `state-postgres.json`. Saat variabel koneksi kosong, aplikasi membuka proyek dan katalog lokal seperti biasa. Proyek lama tetap dapat dibuka di mode lokal melalui `state.json`.
+File `.env` dicari dari direktori kerja, lalu direktori executable, termasuk folder induknya. Environment variable yang terisi lebih diutamakan daripada nilai dalam file. `.env` tidak disertakan dalam build atau publish dan tidak boleh di-commit. Untuk menjalankan hasil publish, sediakan `.env` sendiri di direktori executable atau atur environment variable. Konfigurasi database yang hanya terisi sebagian akan menghasilkan kesalahan agar aplikasi tidak diam-diam beralih ke mode lokal.
+
+Dengan koneksi PostgreSQL, proyek, luas bidang, profil iklim, dan katalog dibaca dari database. Katalog dimuat saat aplikasi dibuka. Jadwal dan preferensi tampilan disimpan di `state-postgres.json`. Saat seluruh konfigurasi koneksi kosong, aplikasi membuka proyek dan katalog lokal seperti biasa. Proyek lama tetap dapat dibuka di mode lokal melalui `state.json`.
 
 Dalam mode PostgreSQL, profil iklim memakai 10 tahun data historis Open-Meteo. Jarak pesisir diestimasi dari segmen garis pantai regional [Natural Earth 1:10m](https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-coastline/). Resolusi garis pantai membatasi akurasi jarak pada pulau kecil.
 

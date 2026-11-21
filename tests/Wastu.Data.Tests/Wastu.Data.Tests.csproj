@@ -9,11 +9,6 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
-  <!--
-    Uji integrasi untuk adapter Wastu.Data. Berbeda dari Wastu.Domain.Tests yang
-    berjalan di atas adapter in-memory, uji ini benar-benar menyentuh PostgreSQL
-    (Supabase), jadi dijalankan hanya bila WASTU_CONNECTION_STRING tersedia.
-  -->
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />

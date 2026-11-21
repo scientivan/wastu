@@ -23,3 +23,6 @@ Thumbs.db
 
 ## Konfigurasi lokal berisi rahasia (connection string db, dsb.)
 appsettings*.json
+.env
+.env.*
+!.env.example

@@ -260,7 +260,7 @@ public sealed class AppState
 
     public static async Task<AppState> MuatAsync()
     {
-        var koneksi = Environment.GetEnvironmentVariable(KoneksiSupabase.NamaVariabelLingkungan);
+        var koneksi = KoneksiSupabase.Cari();
         if (string.IsNullOrWhiteSpace(koneksi))
             return MuatLokal(postgreSql: false);
 

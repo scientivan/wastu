@@ -7,9 +7,6 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
-  <!-- Adapter PostgreSQL (PRD §7, §9) untuk port repository Wastu.Domain.
-       Connection string dibaca dari WASTU_CONNECTION_STRING, tidak dari berkas. -->
-
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

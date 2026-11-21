@@ -14,6 +14,7 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        Wastu.Data.KonfigurasiLingkungan.MuatPreferensi();
         // Multicore JIT: profil startup direkam sekali lalu dipakai untuk mengompilasi paralel.
         Directory.CreateDirectory(StateStore.ProfileFolder);
         ProfileOptimization.SetProfileRoot(StateStore.ProfileFolder);
