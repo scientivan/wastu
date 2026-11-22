@@ -8,9 +8,14 @@ using Wastu.Domain;
 using Wastu.Domain.Weather;
 using Wastu.Services;
 
-if (args.Length != 2) throw new ArgumentException("Use api|database|benchmark <output-directory>.");
+if (args.Length != 2) throw new ArgumentException("Use api|database|benchmark|supabase <output-directory>.");
 var output = Path.GetFullPath(args[1]);
 Directory.CreateDirectory(output);
+if (args[0] == "supabase")
+{
+    Environment.ExitCode = await SupabaseVerification.RunAsync(output);
+    return;
+}
 if (args[0] == "benchmark")
 {
     var measurements = new List<object>();
