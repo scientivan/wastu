@@ -3,25 +3,15 @@ namespace Wastu.Domain.Weather;
 /// <summary>
 /// Ambang layak-kerja untuk satu jenis pekerjaan (PRD §12).
 /// </summary>
-/// <remarks>
-/// <para>
-/// Setiap jenis pekerjaan punya sensitivitas cuaca berbeda sehingga tidak bisa
-/// memakai ambang yang sama. PRD §12 juga mewajibkan ambang ini dapat
-/// dikonfigurasi, bukan konstanta tersembunyi, karena spesifikasi produk cat dan
-/// semen berbeda antar merek (PRD §14, R4). Karena itu ambangnya berupa nilai
-/// yang dikirim pemanggil, dengan <see cref="AmbangLayakKerja"/> hanya menyediakan
-/// nilai awal.
-/// </para>
-/// <para>
-/// Ambang yang null berarti tidak berlaku untuk jenis pekerjaan tersebut, bukan
-/// berarti diabaikan diam-diam. Pengecoran tidak punya ambang kelembapan, dan
-/// pengecatan tidak punya ambang curah hujan karena keduanya memang tidak jadi
-/// alasan utama kegagalan pada pekerjaan itu.
-/// </para>
-/// </remarks>
 public sealed record AmbangPekerjaan
 {
-    /// <summary>Ambang siap pakai untuk pengecoran; lihat <see cref="AmbangLayakKerja"/>.</summary>
+    private readonly double? _probabilitasHujanMaksPct;
+    private readonly double? _curahHujanMaksMm;
+    private readonly double? _kelembapanMaksPct;
+    private readonly double? _suhuMinC;
+    private readonly double? _suhuMaksC;
+
+    /// <summary>Ambang siap pakai untuk pekerjaan konstruksi; lihat <see cref="AmbangLayakKerja"/>.</summary>
     public AmbangPekerjaan(
         double? probabilitasHujanMaksPct,
         double? curahHujanMaksMm,
@@ -43,37 +33,106 @@ public sealed record AmbangPekerjaan
                 + "rentang tersebut tidak mungkin dipenuhi.");
         }
 
-        ProbabilitasHujanMaksPct = probabilitasHujanMaksPct;
-        CurahHujanMaksMm = curahHujanMaksMm;
-        KelembapanMaksPct = kelembapanMaksPct;
-        SuhuMinC = suhuMinC;
-        SuhuMaksC = suhuMaksC;
+        if (!Enum.IsDefined(typeof(TingkatPelanggaran), tingkatSuhu))
+        {
+            throw new ArgumentOutOfRangeException(nameof(tingkatSuhu), tingkatSuhu, "Tingkat pelanggaran suhu tidak dikenal.");
+        }
+
+        _probabilitasHujanMaksPct = probabilitasHujanMaksPct;
+        _curahHujanMaksMm = curahHujanMaksMm;
+        _kelembapanMaksPct = kelembapanMaksPct;
+        _suhuMinC = suhuMinC;
+        _suhuMaksC = suhuMaksC;
         TingkatSuhu = tingkatSuhu;
     }
 
     /// <summary>Batas atas probabilitas hujan, persen 0-100. Null berarti tidak berlaku.</summary>
-    public double? ProbabilitasHujanMaksPct { get; init; }
+    public double? ProbabilitasHujanMaksPct
+    {
+        get => _probabilitasHujanMaksPct;
+        init
+        {
+            Validasi(value, nameof(ProbabilitasHujanMaksPct), 100);
+            _probabilitasHujanMaksPct = value;
+        }
+    }
 
     /// <summary>Batas atas curah hujan, mm. Null berarti tidak berlaku.</summary>
-    public double? CurahHujanMaksMm { get; init; }
+    public double? CurahHujanMaksMm
+    {
+        get => _curahHujanMaksMm;
+        init
+        {
+            Validasi(value, nameof(CurahHujanMaksMm));
+            _curahHujanMaksMm = value;
+        }
+    }
 
     /// <summary>Batas atas kelembapan relatif, persen 0-100. Null berarti tidak berlaku.</summary>
-    public double? KelembapanMaksPct { get; init; }
+    public double? KelembapanMaksPct
+    {
+        get => _kelembapanMaksPct;
+        init
+        {
+            Validasi(value, nameof(KelembapanMaksPct), 100);
+            _kelembapanMaksPct = value;
+        }
+    }
 
     /// <summary>Suhu minimum yang masih layak dikerjakan, derajat Celsius. Null berarti tidak berlaku.</summary>
-    public double? SuhuMinC { get; init; }
+    public double? SuhuMinC
+    {
+        get => _suhuMinC;
+        init
+        {
+            Validasi(value, nameof(SuhuMinC));
+            _suhuMinC = value;
+        }
+    }
 
     /// <summary>Suhu maksimum yang masih layak dikerjakan, derajat Celsius. Null berarti tidak berlaku.</summary>
-    public double? SuhuMaksC { get; init; }
+    public double? SuhuMaksC
+    {
+        get => _suhuMaksC;
+        init
+        {
+            Validasi(value, nameof(SuhuMaksC));
+            _suhuMaksC = value;
+        }
+    }
 
     /// <summary>Apakah pelanggaran batas suhu bersifat keras atau hanya peringatan.</summary>
     public TingkatPelanggaran TingkatSuhu { get; init; }
+
+    /// <summary>
+    /// Memvalidasi ulang seluruh ambang batas terhadap NaN/Infinity dan konsistensi rentang suhu.
+    /// </summary>
+    public void PastikanValid()
+    {
+        Validasi(ProbabilitasHujanMaksPct, nameof(ProbabilitasHujanMaksPct), 100);
+        Validasi(CurahHujanMaksMm, nameof(CurahHujanMaksMm));
+        Validasi(KelembapanMaksPct, nameof(KelembapanMaksPct), 100);
+        Validasi(SuhuMinC, nameof(SuhuMinC));
+        Validasi(SuhuMaksC, nameof(SuhuMaksC));
+
+        if (SuhuMinC is not null && SuhuMaksC is not null && SuhuMinC > SuhuMaksC)
+        {
+            throw new ArgumentException(
+                $"Suhu minimum {SuhuMinC} lebih besar dari suhu maksimum {SuhuMaksC}; "
+                + "rentang tersebut tidak mungkin dipenuhi.");
+        }
+    }
 
     private static void Validasi(double? nilai, string nama, double batasAtas = double.PositiveInfinity)
     {
         if (nilai is null)
         {
             return;
+        }
+
+        if (!double.IsFinite(nilai.Value))
+        {
+            throw new ArgumentException($"Ambang {nama} harus berupa angka finite.", nama);
         }
 
         if (nilai < 0)

@@ -5,12 +5,6 @@ namespace Wastu.Domain;
 /// (PRD §F2). Objek ini adalah masukan utama <c>SuitabilityScoringService</c> dan
 /// <c>EmissionSimulationService</c>.
 /// </summary>
-/// <remarks>
-/// Batas nilai pada konstruktor sengaja meniru CHECK constraint tabel <c>bahan</c>
-/// supaya data tidak valid tertangkap di domain, bukan baru saat menyentuh database.
-/// Bersifat immutable: lapisan data (Wastu.Data) memetakannya ke baris tabel,
-/// domain tidak tahu-menahu tentang tabel.
-/// </remarks>
 public sealed record Bahan
 {
     public Bahan(
@@ -23,11 +17,48 @@ public sealed record Bahan
         double usiaPakaiNominalTahun,
         double faktorEmisi,
         string sumberData)
+        : this(id, nama, jenis, konduktivitasTermal, ketahananLembap, ketahananKorosi, usiaPakaiNominalTahun, faktorEmisi, sumberData, null, 1, null)
+    {
+    }
+
+    public Bahan(
+        Guid id,
+        string nama,
+        JenisKomponen jenis,
+        double konduktivitasTermal,
+        int ketahananLembap,
+        int ketahananKorosi,
+        double usiaPakaiNominalTahun,
+        double faktorEmisi,
+        string sumberData,
+        string? susunanKetebalan = null,
+        int versiData = 1,
+        IReadOnlyList<SumberPropertiBahan>? sumberProperti = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(nama);
         ArgumentException.ThrowIfNullOrWhiteSpace(sumberData);
+
+        if (!Enum.IsDefined(typeof(JenisKomponen), jenis))
+        {
+            throw new ArgumentOutOfRangeException(nameof(jenis), jenis, "Jenis komponen tidak dikenal.");
+        }
+
+        if (!double.IsFinite(konduktivitasTermal))
+        {
+            throw new ArgumentException("Konduktivitas termal harus bernilai finite.", nameof(konduktivitasTermal));
+        }
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(konduktivitasTermal);
+
+        if (!double.IsFinite(usiaPakaiNominalTahun))
+        {
+            throw new ArgumentException("Usia pakai nominal harus bernilai finite.", nameof(usiaPakaiNominalTahun));
+        }
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(usiaPakaiNominalTahun);
+
+        if (!double.IsFinite(faktorEmisi))
+        {
+            throw new ArgumentException("Faktor emisi harus bernilai finite.", nameof(faktorEmisi));
+        }
         ArgumentOutOfRangeException.ThrowIfNegative(faktorEmisi);
 
         if (ketahananLembap is < 1 or > 5)
@@ -44,6 +75,11 @@ public sealed record Bahan
                 "Indeks ketahanan korosi harus 1-5 (bahan.ketahanan_korosi CHECK).");
         }
 
+        if (versiData < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(versiData), versiData, "Versi data minimal bernilai 1.");
+        }
+
         Id = id;
         Nama = nama;
         Jenis = jenis;
@@ -53,6 +89,9 @@ public sealed record Bahan
         UsiaPakaiNominalTahun = usiaPakaiNominalTahun;
         FaktorEmisi = faktorEmisi;
         SumberData = sumberData;
+        SusunanKetebalan = susunanKetebalan;
+        VersiData = versiData;
+        SumberProperti = sumberProperti;
     }
 
     public Guid Id { get; init; }
@@ -81,4 +120,13 @@ public sealed record Bahan
     /// komitmen PRD §1 dan §11.4, bukan metadata opsional.
     /// </summary>
     public string SumberData { get; init; }
+
+    /// <summary>Susunan ketebalan standar atau konfigurasi lapisan (opsional).</summary>
+    public string? SusunanKetebalan { get; init; }
+
+    /// <summary>Nomor versi katalog data bahan (default 1).</summary>
+    public int VersiData { get; init; } = 1;
+
+    /// <summary>Daftar sumber rujukan terverifikasi per properti (opsional).</summary>
+    public IReadOnlyList<SumberPropertiBahan>? SumberProperti { get; init; }
 }
