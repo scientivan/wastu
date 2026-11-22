@@ -250,6 +250,11 @@ internal static partial class DebugSnapshot
             Check(File.ReadAllText(report.PathBerkas).StartsWith("%PDF-"), "Direct PDF export has PDF signature");
             Check(snapshot.BahanTerpilih.Single().Peringkat == 10, "Report includes rank 10 selection");
             Check(snapshot.JadwalTerkunci.Last().StatusCuaca == "TidakLayak", "Report preserves risky decision");
+            var copy = await App.State.Workflows.RegenerateReportAsync(report.Id, Path.Combine(folder, "windows-report-copy.pdf"));
+            Check(copy.Id == report.Id && copy.SnapshotHash == report.SnapshotHash,
+                "Historical report copy preserves original identity and input hash");
+            Check(copy.SnapshotJson == report.SnapshotJson && File.Exists(copy.PathBerkas),
+                "Historical report copy preserves all captured values");
             window.ShowShell("report");
             await Shot("report-history");
 
@@ -266,6 +271,22 @@ internal static partial class DebugSnapshot
             var name = VisibleNamed<TextBox>("NameBox");
             name.Focus();
             Check(name.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next)), "Keyboard focus traverses next control");
+            var active = App.State.Aktif;
+            var legacy = new Models.Bangunan { Id = 999, Nama = "Proyek legacy tanpa luas", Kota = "Jakarta",
+                Latitude = -6.2, Longitude = 106.8 };
+            App.State.Proyek.Add(legacy);
+            App.State.PilihProyek(legacy.Id);
+            window.ShowShell("project");
+            await Shot("legacy-missing-components");
+            Check(App.State.Peringkat().Length == 0 && App.State.Aktif.Komponen.Count == 0,
+                "Incomplete legacy project never receives an invented component or ranking");
+            foreach (var key in new[] { "home", "materials", "compare", "sim", "weather", "report" })
+            {
+                window.ShowShell(key);
+                await Idle(window);
+            }
+            App.State.Proyek.Remove(legacy);
+            App.State.PilihProyek(active.Id);
             log.Add(await PerfAsync(window));
             App.State.SimpanSekarang();
         }

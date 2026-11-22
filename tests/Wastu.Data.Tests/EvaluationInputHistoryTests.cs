@@ -11,6 +11,47 @@ namespace Wastu.Data.Tests;
 public sealed class EvaluationInputHistoryTests
 {
     [PerluPostgreSql]
+    public async Task UpgradeDariSkemaSebelumnyaMempertahankanHasilLegacyTanpaMengarangSnapshot()
+    {
+        await using var isolated = await PostgreSqlTestDatabase.CreateAsync();
+        await using (var db = isolated.Factory.CreateDbContext())
+        {
+            var migrator = Microsoft.EntityFrameworkCore.Infrastructure.AccessorExtensions
+                .GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>(db);
+            await migrator.MigrateAsync("20261122110422_SeedCanonicalCatalogProvenance");
+            var applied = await db.Database.GetAppliedMigrationsAsync();
+            Assert.DoesNotContain(applied, m => m.Contains("PreserveEvaluationInputs"));
+        }
+        // Seed the legacy shape before the new nullable column exists.
+        await isolated.ExecuteSqlScriptAsync(File.ReadAllText(FindSeed()).Replace(
+            "ON CONFLICT (evaluasi_id, horizon_tahun, versi_model, faktor_penuaan_a)",
+            "ON CONFLICT (evaluasi_id, horizon_tahun, versi_model)"));
+        Guid[] ids;
+        await using (var db = isolated.Factory.CreateDbContext())
+        {
+            ids = await db.Evaluasi.Select(e => e.Id).ToArrayAsync();
+            await db.Database.MigrateAsync();
+        }
+        Assert.NotEmpty(ids);
+        var repo = new EvaluasiRepositoryEf(isolated.Factory);
+        foreach (var id in ids) Assert.Null((await repo.GetByIdAsync(id))!.Input);
+        await using var check = isolated.Factory.CreateDbContext();
+        Assert.Equal(ids.Order(), (await check.Evaluasi.Select(e => e.Id).ToArrayAsync()).Order());
+    }
+
+    private static string FindSeed()
+    {
+        var folder = AppContext.BaseDirectory;
+        while (folder is not null)
+        {
+            var path = Path.Combine(folder, "database", "03_seed_supabase.sql");
+            if (File.Exists(path)) return path;
+            folder = Directory.GetParent(folder)?.FullName;
+        }
+        throw new FileNotFoundException("Seed fixture not found.");
+    }
+
+    [PerluPostgreSql]
     public async Task MasukanAsliBertahanSetelahKatalogLokasiDanAsumsiBerubah()
     {
         await using var isolated = await PostgreSqlTestDatabase.CreateAsync();
