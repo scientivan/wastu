@@ -206,7 +206,7 @@ public sealed class DesktopWorkflowService
                 p.RiwayatSimulasi.Add(entry);
             }
         }
-        if (!_state.ModeBacaSaja) _state.Simpan();
+        if (!_state.ModeBacaSaja) _state.SimpanHasil();
         return result;
     }
 

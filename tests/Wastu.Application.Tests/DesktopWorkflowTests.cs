@@ -10,6 +10,15 @@ namespace Wastu.Application.Tests;
 public sealed class DesktopWorkflowTests
 {
     [Fact]
+    public async Task SimulationMarksSessionDirtySoShutdownFlushesPendingSnapshot()
+    {
+        var state = CreateState();
+        Assert.Equal(0, state.Revisi);
+        await state.Workflows.SimulateAsync();
+        Assert.True(state.Revisi > 0);
+        Assert.NotEmpty(state.Aktif.RiwayatSimulasi);
+    }
+    [Fact]
     public async Task CatalogRefreshCannotSilentlyChangeLocalStorageMode()
     {
         var state = CreateState();

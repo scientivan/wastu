@@ -10,6 +10,12 @@ public sealed partial class AppState
     private DesktopWorkflowService? _workflows;
     public DesktopWorkflowService Workflows => _workflows ??= new(this, _backend);
 
+    internal void SimpanHasil()
+    {
+        Revisi++;
+        Simpan();
+    }
+
     internal async Task<Domain.Evaluasi> EvaluasiTersimpanAsync(Models.Evaluasi evaluasi, CancellationToken ct)
     {
         var domain = evaluasi.HasilDomain ?? throw new InvalidOperationException("Evaluasi belum tersedia.");
