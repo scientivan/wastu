@@ -14,7 +14,7 @@ Dokumen ini mencatat rekonsiliasi spesifikasi kebutuhan produk Wastu antara nask
 | **PRD-R04** | Monotonisitas Skor & Simulasi (Plateau) | §4.2 menuntut setiap penurunan usia efektif menaikkan emisi. Padahal fungsi tangga memiliki plateau. | Penurunan usia efektif tidak boleh menurunkan emisi kumulatif ($n$ monoton tidak turun). Penurunan beban/iklim tidak menurunkan skor ketahanan; plateau dijelaskan pada batas saturasi model. | PRD §4.2, §11.1, §11.3; `PerhitunganSkor.cs`, `PerhitunganSimulasi.cs`, pengujian unit domain. |
 | **PRD-R05** | Ambang Cuaca & Spesifikasi Bahan | §1 menyebut ambang diturunkan otomatis dari bahan; §12 hanya memuat nilai generik per pekerjaan. | Penjadwal menggunakan ambang jenis pekerjaan dengan urutan: Override Spesifikasi Produk $\rightarrow$ Default Asumsi Generik. Status Waspada bawaan hanya untuk suhu pengecoran $> 35^\circ\text{C}$ tanpa pelanggaran keras; nilai tepat pada batas tidak melanggar. Bukan standar tervalidasi. | PRD §1, §6 (F6), §12; `Pekerjaan.cs`, `PrakiraanCuaca.cs`, `WorkSchedulingService.cs`, UI Penjadwal. |
 | **PRD-R06** | Penyimpanan Remote, Snapshot & Mode Luring | PRD hanya berasumsi PostgreSQL lokal; baseline memakai remote Supabase dan JSON fallback. Gagal koneksi mematikan aplikasi. | PostgreSQL adalah penyimpanan utama (lokal/remote). Mode remote wajib memiliki snapshot lokal atomik untuk peninjauan luring read-only. Penolakan konfigurasi parsial diperjelas. Mode JSON lama dipertahankan untuk kompatibilitas. | PRD §5.2, §7, §8.4, §9; `AppState.cs`, `StateStore.cs`, `PostgreSqlBackend.cs`, `App.xaml.cs`. |
-| **PRD-R07** | Bounding Box Koordinat Indonesia | Bounding box inkonsisten: kode 94–142°BT vs PRD 95–141°BT. Validasi diklaim sebagai batas administratif presisi. | Standarisasi rentang inklusif lintang -11 s/d 6, bujur 95 s/d 141 sebagai filter kasar area layanan Wastu. Data legacy 94–95° / 141–142° diaudit aman tanpa crash migrasi. | PRD §6 (F1), §9; `Proyek.cs`, `ProjectService.cs`, dialog proyek, skema migrasi. |
+| **PRD-R07** | Bounding Box Koordinat Indonesia | Bounding box inkonsisten: kode 94–142°BT vs PRD 95–141°BT. Validasi diklaim sebagai batas administratif presisi. | Standarisasi rentang inklusif lintang -11 s/d 6, bujur 95 s/d 141 sebagai filter kasar area layanan Wastu. Data legacy 94–95° / 141–142° diaudit aman tanpa crash migrasi. | PRD §6 (F1), §9; `Proyek.cs`, `Projects/ProjectService.cs`, dialog proyek, skema migrasi. |
 | **PRD-R08** | TTL Cache Prakiraan & Zona Waktu | Cache prakiraan JSON tidak memiliki TTL terstruktur; tanggal cuaca mengikuti jam komputer klien Windows. | Cache ber-TTL default 6 jam (X04) berbasis timestamp UTC `fetched_at`. Tanggal harian diinterpretasikan menurut zona waktu lokasi proyek dari respons penyedia cuaca. Data di luar rentang / tidak tersedia hanya draft (F6-05). | PRD §8.4, §12; `OpenMeteoDailyForecastClient.cs`, `WorkSchedulingService.cs`, entitas cache cuaca. |
 | **PRD-R09** | Transparansi Provenance Data | Seed contoh menggunakan `now()` tanpa membedakan data API historis riil, contoh, atau estimasi manual. | Provenance material: sumber properti + status perkiraan/terverifikasi tanpa wajib label ICE/EPD bila tak tertelusuri. Provenance iklim: `ApiHistoris`, `EstimasiBawaan`, `CacheHistoris`, `LegacyUnknown`. | PRD §6 (F2), §8.4, §9, §11.4; `ProfilIklim.cs`, `Bahan.cs`, `Laporan.cs`, schema migrasi. |
 | **PRD-R10** | Ambang Label, GUID, Skema & UML | Ambang UI 55 vs domain 50; UML mewajibkan login; multiplisitas profil 1..1 dan simulasi 0..1 kaku; tabel fisik Indonesia belum dipetakan. | Label terpusat: `< 55` Tidak disarankan, `55..74,999` Perlu pertimbangan, `≥ 75` Cocok. GUID konsisten. Multiplisitas: Profil `0..1`, Komponen `1..*`, Evaluasi ke SimulasiEmisi `0..*`. Hapus login dari UML. | PRD §9, §11.1, §16.3; `docs/uml-wastu.md`, `docs/uml-wastu.drawio`, `docs/implementasi-class-diagram.md`. |
@@ -115,16 +115,18 @@ Dokumen ini mencatat rekonsiliasi spesifikasi kebutuhan produk Wastu antara nask
   - Namun pada §12, PRD hanya memuat ambang generik per jenis pekerjaan (pengecoran dan pengecatan). Properti konduktivitas termal dan ketahanan lembap tidak dapat dikonversi langsung menjadi syarat curing beton atau pengeringan cat.
 - **Bagian Baru (Kontrak Normatif):**
   - Penjadwal cuaca menggunakan lokasi proyek dan profil ambang per jenis pekerjaan.
-  - Pengguna dapat mengaitkan pekerjaan dengan bahan/komponen proyek dan memasukkan nilai *override* ambang berdasarkan lembar data teknis spesifikasi produk material.
+  - Pekerjaan dapat memiliki relasi opsional (`0..1`) ke `Komponen` dan `Bahan` proyek; pengguna dapat memasukkan nilai *override* ambang berdasarkan lembar data teknis spesifikasi produk material.
   - Jika spesifikasi produk tidak dimasukkan, aplikasi menggunakan ambang generik bawaan yang berlabel jelas sebagai "Asumsi Generik Perancangan" (bukan standar keselamatan atau konstruksi tervalidasi).
   - Batas default status:
     - **Pengecoran:** peluang hujan $\le 60\%$, curah hujan $\le 5\text{ mm}$, suhu kerja $\le 35^\circ\text{C}$. Pelanggaran hujan menyebabkan `TidakLayak`. Kondisi hujan aman namun suhu $> 35^\circ\text{C}$ menghasilkan status `Waspada`.
     - **Pengecatan:** peluang hujan $\le 40\%$, kelembapan relatif $\le 85\%$, suhu kerja antara $10^\circ\text{C}$ s/d $35^\circ\text{C}$. Pelanggaran salah satu ambang menyebabkan `TidakLayak`.
     - Nilai metrik tepat pada batas ambang (60, 5, 85, 40, 10, 35) tidak melanggar (berstatus `Layak`).
-  - Aplikasi dilarang mengklaim bahwa ambang cuaca dihitung secara otomatis dari indeks ketahanan bahan tanpa dasar teknis.
+  - Evaluasi cuaca mengembalikan objek terstruktur (`HasilEvaluasiCuaca`) yang memuat status kelayakan **DAN seluruh daftar alasan/peringatan** yang terpicu (bukan sekadar enum tunggal tanpa konteks).
+  - Penguncian tanggal hanya berlaku dalam rentang 14 hari prakiraan dan **wajib menolak tanggal yang sudah lewat** menurut zona waktu lokasi proyek. Penguncian data lama ($\ge 6$ jam) memerlukan konfirmasi eksplisit; data hilang/parsial hanya disimpan sebagai draf (F6-05).
+  - Perubahan lokasi, ambang, bahan, atau prakiraan menandai jadwal lama sebagai "Perlu ditinjau" tanpa menghapus keputusan penguncian.
 - **Dampak Kode & Area Terdampak:**
-  - `Models/Pekerjaan.cs` dan `src/Wastu.Domain/Weather/AmbangLayakKerja.cs`: Evaluasi kelayakan dengan batas eksak dan status multi-nilai.
-  - `Views/Pages/SchedulePage.xaml`: UI pengaturan ambang dengan indikator sumber ambang (Override Produk vs Asumsi Generik).
+  - `Models/Pekerjaan.cs` dan `src/Wastu.Domain/Weather/AmbangLayakKerja.cs`: Evaluasi kelayakan dengan batas eksak, status multi-nilai, dan alasan terstruktur.
+  - `Views/Pages/SchedulePage.xaml`: UI pengaturan ambang dengan indikator sumber ambang (Override Produk vs Asumsi Generik) dan penolakan tanggal lewat.
 
 ---
 
@@ -161,7 +163,8 @@ Dokumen ini mencatat rekonsiliasi spesifikasi kebutuhan produk Wastu antara nask
   - Antarmuka menjelaskan bahwa batasan ini adalah batas koordinat kotak wilayah layanan Wastu, bukan verifikasi batas administratif batas negara presisi (*reverse geocoding* administratif di luar scope).
   - **Migrasi Data Legacy:** Koordinat legacy yang berada pada rentang 94°–95° atau 141°–142° diaudit secara aman dan ditandai "Perlu peninjauan", tanpa penghapusan diam-diam atau pelemparan exception yang menggagalkan migrasi.
 - **Dampak Kode & Area Terdampak:**
-  - `src/Wastu.Domain/Proyek.cs`, `src/Wastu.Domain/Services/ProjectService.cs`: Validasi rentang $[-11, 6]$ dan $[95, 141]$.
+  - `src/Wastu.Domain/Proyek.cs`, `src/Wastu.Domain/Projects/ProjectService.cs`: Validasi rentang $[-11, 6]$ dan $[95, 141]$.
+  - `src/Wastu.Domain/Komponen.cs`: Mempertahankan validasi constructor luas $> 0$ (menolak non-finite dan $\le 0$) seraya mendukung fleksibilitas komponen opsional (dinding saja atau atap saja).
   - `database/02_schema.sql`: Constraint `CHECK (latitude BETWEEN -11.0 AND 6.0 AND longitude BETWEEN 95.0 AND 141.0)`.
   - Dialog proyek antarmuka: Pesan kesalahan validasi input koordinat yang informatif dan ramah pengguna.
 
@@ -177,10 +180,10 @@ Dokumen ini mencatat rekonsiliasi spesifikasi kebutuhan produk Wastu antara nask
   - Permintaan penjadwal dalam rentang masa berlaku 6 jam wajib memanfaatkan cache tanpa memanggil API cuaca kembali.
   - Data tanggal harian diinterpretasikan menurut **zona waktu lokasi proyek** dari respons penyedia API cuaca.
   - Penanganan data cuaca hilang/parsial atau di luar rentang 14 hari diatur pada **F6-05**: data tersebut hanya dapat disimpan sebagai draf, tidak dapat dikunci secara normal, dan diberi status `DataTidakTersedia`.
-  - Data kedaluwarsa (> 6 jam) tetap dapat ditinjau dengan peringatan data lama, dan pengunciannya membutuhkan konfirmasi khusus.
+  - Data kedaluwarsa (> 6 jam) tetap dapat ditinjau dengan peringatan data lama, dan pengunciannya membutuhkan konfirmasi khusus. Penguncian tanggal lewat menurut zona waktu proyek wajib ditolak.
 - **Dampak Kode & Area Terdampak:**
   - `src/Wastu.Domain/Abstractions/WeatherClients.cs`: Penyimpanan timestamp UTC dan metadata zona waktu proyek.
-  - `src/Wastu.Domain/Services/WorkSchedulingService.cs`: Evaluasi tanggal kerja berbasis zona waktu proyek dan validasi TTL cache.
+  - `src/Wastu.Domain/Services/ServiceContracts.cs` (`IWorkSchedulingService`) dan `Models/Pekerjaan.cs`: Evaluasi tanggal kerja berbasis zona waktu proyek dan validasi TTL cache.
   - `Views/Pages/SchedulePage.xaml`: Indikator umur data cuaca dan banner peringatan cache kedaluwarsa.
 
 ---
@@ -196,12 +199,14 @@ Dokumen ini mencatat rekonsiliasi spesifikasi kebutuhan produk Wastu antara nask
     - **Iklim (F3-01):** Menyimpan kategori provenance iklim terpisah yang eksplisit:
       - `ApiHistoris`: Data yang benar-benar diambil dari layanan API iklim Open-Meteo.
       - `EstimasiBawaan`: Data aproksimasi atau estimasi default bawaan sistem.
-      - `CacheHistoris`: Data cuaca dari cache lokal yang telah tersimpan.
+      - `CacheHistoris`: Kualitas penggunaan profil iklim tersimpan dari API yang masih berlaku.
       - `LegacyUnknown`: Data historis lama yang asal-usulnya tidak dapat diverifikasi secara tuntas.
+      - Sumber pendukung: `SumberContoh` dan `ManualOverride`.
+    - **Pemisahan Provenance vs Status Operasional:** Provenance mencatat riwayat asal data, sedangkan status proses saat ini (`Mengambil`, `GagalMemperbarui`, `BelumTersedia`) adalah status operasional sementara. Ketika refresh API gagal, status menjadi `GagalMemperbarui` dan provenance profil tersimpan tetap terjaga (tidak diubah secara palsu).
   - Laporan PDF dan antarmuka mencantumkan keterbatasan data internasional dan asumsi proksi jarak pesisir secara transparan.
 - **Dampak Kode & Area Terdampak:**
   - `src/Wastu.Domain/Bahan.cs`: Properti `SumberData` dan `StatusVerifikasi`.
-  - `src/Wastu.Domain/ProfilIklim.cs`: Kategori provenance iklim (`ApiHistoris`, `EstimasiBawaan`, `CacheHistoris`, `LegacyUnknown`).
+  - `src/Wastu.Domain/ProfilIklim.cs`: Kategori provenance iklim (`ApiHistoris`, `EstimasiBawaan`, `CacheHistoris`, `LegacyUnknown`) terpisah dari status operasional pembaruan.
   - `src/Wastu.Data/Entities/`: Kolom persistensi provenance iklim dan bahan.
 
 ---
@@ -218,16 +223,20 @@ Dokumen ini mencatat rekonsiliasi spesifikasi kebutuhan produk Wastu antara nask
     - Skor $< 55{,}0$: **Tidak disarankan**
     - $55{,}0 \le \text{Skor} < 75{,}0$: **Perlu pertimbangan**
     - Skor $\ge 75{,}0$: **Cocok**
-  - Tipe entitas domain dan persistensi database diseragamkan menggunakan `Guid`. ID integer lama pada `Models/` dipetakan secara terpisah dalam masa transisi.
-  - Skema fisik tabel PostgreSQL Bahasa Indonesia ditetapkan sebagai kontrak resmi aplikasi: `bangunan`, `bahan`, `komponen`, `profil_iklim`, `evaluasi`, `simulasi_emisi`, `pekerjaan`, `prakiraan_cache`, `laporan`.
+    - Aturan tie-break: jika skor sama, urutkan berdasarkan emisi terendah; jika emisi sama, urutkan alfabetis nama bahan.
+  - Tipe entitas domain dan persistensi database diseragamkan menggunakan `Guid`. ID integer lama pada `Models/` dipetakan secara terpisah dalam masa transisi (`Models.Pekerjaan` baseline sama sekali tidak memiliki properti ID; `Models.StatusKelayakan` sudah 3 nilai: `Layak`, `Waspada`, `TidakLayak`).
+  - Skema fisik tabel PostgreSQL Bahasa Indonesia ditetapkan sebagai kontrak resmi aplikasi: baseline 6 tabel fisik (`bangunan`, `bahan`, `komponen`, `profil_iklim`, `evaluasi`, `simulasi_emisi`) plus tabel target perluasan (`pekerjaan`, `prakiraan_cache`, `laporan`).
   - Penyelarasan UML normatif:
-    - Menghapus kewajiban login dari UML use-case, activity, dan class diagram (Wastu adalah aplikasi desktop single-user).
+    - Menghapus kewajiban login dari UML use-case, activity, dan class diagram; entitas `Pengguna` dijelaskan sebagai representasi konteks aktor lokal historis pada aplikasi desktop Wastu tanpa tabel akun/kredensial database.
+    - Menghubungkan aktor `Pemilik Rumah` ke use case `Simulasi Emisi Karbon` (UC5).
     - Multiplisitas `Proyek` ke `ProfilIklim` menjadi `0..1`.
-    - Multiplisitas `Proyek` ke `Komponen` menjadi `1..*` (proyek dapat berisi dinding saja, atap saja, atau keduanya; minimal 1 komponen aktif).
+    - Multiplisitas `Proyek` ke `Komponen` menjadi `1..*` (proyek dapat berisi dinding saja, atap saja, atau keduanya; minimal 1 komponen aktif). Constructor `Domain.Komponen` sudah memvalidasi luas $> 0$ (menolak non-finite/$\le 0$).
     - Multiplisitas `Evaluasi` ke `SimulasiEmisi` menjadi `0..*` (evaluasi baru/draft boleh belum memiliki hasil simulasi emisi, dan setelah dieksekusi dapat menyimpan simulasi horizon 20, 30, 50 tahun secara simultan).
-    - Kontrak service aktual dipertahankan: `GetAnnualProfileAsync`, `GetForecastAsync`, `RankAsync`, `EvaluateDaysAsync`, `LockDateAsync`, `ExportAsync`.
+    - Menambahkan relasi opsional `Pekerjaan` ke `Komponen` (`0..1`) dan `Bahan` (`0..1`).
+    - Evaluasi cuaca mengembalikan `HasilEvaluasiCuaca` (status kelayakan DAN seluruh daftar alasan/peringatan).
+    - Kontrak service aktual (§10) dipertahankan inventaris metodenya: `GetAnnualProfileAsync`, `GetForecastAsync`, `RankAsync`, `EvaluateDaysAsync`, `LockDateAsync`, `ExportAsync`; penambahan tanggung jawab seperti metadata, persistensi setting, list report, dan pruning cache dijelaskan sebagai evolusi target tanpa mengganti nama metode aktual secara sembarang.
 - **Dampak Kode & Area Terdampak:**
-  - `docs/uml-wastu.md`, `docs/uml-wastu.drawio`: Selaras penuh dengan naskah kontrak normatif dan multiplisitas `0..*`.
+  - `docs/uml-wastu.md`, `docs/uml-wastu.drawio`: Selaras penuh dengan naskah kontrak normatif, aktor lokal, relasi opsional pekerjaan, dan multiplisitas `0..*`.
   - `docs/implementasi-class-diagram.md`: Penjelasan pemisahan tegas baseline `Models/` vs target WP01–WP08.
   - `src/Wastu.Domain/Scoring/KonfigurasiSkoring.cs`: Ambang batas 55/75 terpusat.
 
@@ -239,6 +248,11 @@ Dokumen ini mencatat rekonsiliasi spesifikasi kebutuhan produk Wastu antara nask
   - Nilai-nilai asumsi perhitungan (seperti pita konduktivitas termal, faktor penuaan $a=0{,}5$, acuan curah hujan lembap, batas proksi korosi 50 km) tertanam secara hardcoded tanpa dokumentasi parameter.
   - PRD §4 menetapkan target kuantitatif (waktu alur < 3 menit, respon antarmuka < 2 detik, ketersediaan API cuaca $\ge 95\%$) tanpa metodologi pengukuran dan instrumen uji yang nyata.
 - **Bagian Baru (Kontrak Normatif):**
+  - **Formulasi Perhitungan Lengkap & Transparan:**
+    - **Termal:** Interpolasi linier kontinu pada pita 26–32°C. Bahan isolator unggul dengan konduktivitas $\lambda < 0{,}10\text{ W/m}\cdot\text{K}$ dijamin memperoleh skor termal 100 pada iklim panas.
+    - **Usia Pakai:** Jika $\text{usia}_{\min} == \text{usia}_{\max}$ pada katalog, skor usia pakai bernilai 100.
+    - **Penuaan:** Parameter $a$ ($0 < a \le 1$, default 0,5) dapat dikonfigurasi melalui panel asumsi perancangan, berversi, dan dapat di-reset.
+    - **Bobot Kustom V2:** Validasi ketat finite, non-negatif, dan total tepat 100% tanpa normalisasi diam-diam; kalkulasi lokal tanpa memicu request HTTP ulang.
   - Seluruh parameter model perhitungan dikelompokkan ke dalam konfigurasi berversi (`KonfigurasiModel`) yang dapat dibaca pada panel antarmuka "Asumsi Perhitungan" dan dapat dikembalikan ke nilai default (*reset*).
   - Setiap perubahan parameter asumsi menghasilkan revisi hasil evaluasi baru tanpa menimpa riwayat evaluasi lama.
   - Metodologi pengujian performa dan keandalan didefinisikan:

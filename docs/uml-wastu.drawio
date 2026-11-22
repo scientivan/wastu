@@ -56,6 +56,9 @@
         <mxCell id="uc-e5" style="endArrow=none;html=1;rounded=0;" edge="1" parent="1" source="uc-a1" target="uc7">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
+        <mxCell id="uc-e8" style="endArrow=none;html=1;rounded=0;" edge="1" parent="1" source="uc-a1" target="uc5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
         <mxCell id="uc-e6" style="endArrow=none;html=1;rounded=0;" edge="1" parent="1" source="uc8" target="uc-a2">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
@@ -238,13 +241,16 @@
         <mxCell id="c-lap-3" value="+ ekspor() : File" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="c-lap"><mxGeometry y="86" width="240" height="26" as="geometry" /></mxCell>
 
         <mxCell id="c-kerja" value="Pekerjaan" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;html=1;verticalAlign=middle;align=center;collapsible=0;marginBottom=0;" vertex="1" parent="1">
-          <mxGeometry x="720" y="430" width="240" height="138" as="geometry" />
+          <mxGeometry x="720" y="430" width="240" height="216" as="geometry" />
         </mxCell>
         <mxCell id="c-kerja-1" value="+ nama : string" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="c-kerja"><mxGeometry y="26" width="240" height="26" as="geometry" /></mxCell>
         <mxCell id="c-kerja-2" value="+ tanggalRencana : date" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="c-kerja"><mxGeometry y="52" width="240" height="26" as="geometry" /></mxCell>
         <mxCell id="c-kerja-3" value="+ status : string" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="c-kerja"><mxGeometry y="78" width="240" height="26" as="geometry" /></mxCell>
-        <mxCell id="c-kerja-d" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="c-kerja"><mxGeometry y="104" width="240" height="8" as="geometry" /></mxCell>
-        <mxCell id="c-kerja-4" value="+ jadwalkan(c, konfirmasi) : bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="c-kerja"><mxGeometry y="112" width="240" height="26" as="geometry" /></mxCell>
+        <mxCell id="c-kerja-5" value="+ komponenId : Guid?" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="c-kerja"><mxGeometry y="104" width="240" height="26" as="geometry" /></mxCell>
+        <mxCell id="c-kerja-6" value="+ bahanId : Guid?" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="c-kerja"><mxGeometry y="130" width="240" height="26" as="geometry" /></mxCell>
+        <mxCell id="c-kerja-7" value="+ penandaTinjau : bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="c-kerja"><mxGeometry y="156" width="240" height="26" as="geometry" /></mxCell>
+        <mxCell id="c-kerja-d" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="c-kerja"><mxGeometry y="182" width="240" height="8" as="geometry" /></mxCell>
+        <mxCell id="c-kerja-4" value="+ jadwalkan(c, konfirmasi) : bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="c-kerja"><mxGeometry y="190" width="240" height="26" as="geometry" /></mxCell>
 
         <mxCell id="c-cuaca" value="PrakiraanCuaca" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;html=1;verticalAlign=middle;align=center;collapsible=0;marginBottom=0;" vertex="1" parent="1">
           <mxGeometry x="1080" y="430" width="240" height="164" as="geometry" />
@@ -254,7 +260,7 @@
         <mxCell id="c-cuaca-3" value="+ suhu : double" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="c-cuaca"><mxGeometry y="78" width="240" height="26" as="geometry" /></mxCell>
         <mxCell id="c-cuaca-4" value="+ kelembapan : double" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="c-cuaca"><mxGeometry y="104" width="240" height="26" as="geometry" /></mxCell>
         <mxCell id="c-cuaca-d" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="c-cuaca"><mxGeometry y="130" width="240" height="8" as="geometry" /></mxCell>
-        <mxCell id="c-cuaca-5" value="+ layakKerja() : bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="c-cuaca"><mxGeometry y="138" width="240" height="26" as="geometry" /></mxCell>
+        <mxCell id="c-cuaca-5" value="+ evaluasiKelayakan() : HasilEvaluasiCuaca" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="c-cuaca"><mxGeometry y="138" width="240" height="26" as="geometry" /></mxCell>
 
         <mxCell id="c-komp" value="Komponen" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;html=1;verticalAlign=middle;align=center;collapsible=0;marginBottom=0;" vertex="1" parent="1">
           <mxGeometry x="360" y="380" width="240" height="112" as="geometry" />
@@ -325,6 +331,12 @@
         <mxCell id="r8b" value="0..*" style="edgeLabel;html=1;resizable=0;points=[];" vertex="1" connectable="0" parent="r8"><mxGeometry x="0.8" relative="1" as="geometry"><mxPoint y="-10" as="offset" /></mxGeometry></mxCell>
 
         <mxCell id="r9" value="&#171;use&#187; memakai" style="endArrow=open;endSize=12;dashed=1;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-kerja" target="c-cuaca"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="r10" value="mengaitkan" style="endArrow=open;endSize=12;dashed=1;html=1;rounded=0;exitX=0;exitY=0.25;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-kerja" target="c-komp"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="r10b" value="0..1" style="edgeLabel;html=1;resizable=0;points=[];" vertex="1" connectable="0" parent="r10"><mxGeometry x="0.8" relative="1" as="geometry"><mxPoint y="-10" as="offset" /></mxGeometry></mxCell>
+
+        <mxCell id="r11" value="mengaitkan" style="endArrow=open;endSize=12;dashed=1;html=1;rounded=0;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-kerja" target="c-bahan"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="r11b" value="0..1" style="edgeLabel;html=1;resizable=0;points=[];" vertex="1" connectable="0" parent="r11"><mxGeometry x="0.8" relative="1" as="geometry"><mxPoint y="-10" as="offset" /></mxGeometry></mxCell>
       </root>
     </mxGraphModel>
   </diagram>

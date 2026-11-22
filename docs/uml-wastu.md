@@ -34,6 +34,7 @@ flowchart LR
     U --- UC1
     U --- UC2
     U --- UC3
+    U --- UC5
     U --- UC6
     U --- UC8
 
@@ -88,7 +89,8 @@ Entitas inti dan relasi domain Wastu. Diagram ini mencerminkan struktur domain l
 - `Proyek` memiliki relasi `0..1` ke `ProfilIklim` (profil iklim bernilai null sebelum berhasil diambil dari API atau saat koordinat baru belum selesai dianalisis).
 - `Proyek` memiliki minimal satu `Komponen` (`1..*`), mendukung evaluasi dinding saja, atap saja, atau keduanya.
 - `Evaluasi` memiliki relasi `0..*` ke `SimulasiEmisi` (evaluasi awal/draft boleh belum memiliki hasil simulasi emisi, dan setelah dieksekusi dapat menyimpan hasil proyeksi untuk berbagai horizon waktu 20, 30, dan 50 tahun secara bersamaan).
-- Entitas `Pengguna` tidak lagi memiliki operasi `login()` karena aplikasi beroperasi secara *single-user desktop*.
+- `Pekerjaan` memiliki relasi opsional (`0..1`) ke `Komponen` dan `Bahan` yang sedang dikerjakan.
+- Entitas `Pengguna` dipertahankan semata-mata sebagai konteks representasi aktor lokal historis warisan Modul 3. Aplikasi Wastu beroperasi sebagai *desktop single-user* lokal tanpa mekanisme autentikasi/login dan tanpa tabel akun pengguna di database (§PRD-R10).
 
 ```mermaid
 classDiagram
@@ -112,6 +114,8 @@ classDiagram
     Evaluasi "*" --> "1" Bahan : menilai
     Evaluasi "1" --> "0..*" SimulasiEmisi : diproyeksikan
     Pekerjaan "1" ..> "*" PrakiraanCuaca : memakai
+    Pekerjaan "0..1" --> "0..1" Komponen : mengaitkan
+    Pekerjaan "0..1" --> "0..1" Bahan : mengaitkan
 ```
 
 ---
@@ -194,9 +198,16 @@ classDiagram
         +DateTime tanggalMulai
         +DateTime tanggalSelesai
         +DateTime? tanggalDikunci
+        +Guid? komponenId
+        +Guid? bahanId
         +string status
+        +bool penandaTinjau
         +bool persetujuanRisiko
         +jadwalkan(PrakiraanCuaca cuaca, bool konfirmasiRisiko) bool
+    }
+    class HasilEvaluasiCuaca {
+        +StatusKelayakan status
+        +IReadOnlyList~string~ alasan
     }
     class PrakiraanCuaca {
         +DateTime tanggal
@@ -206,7 +217,7 @@ classDiagram
         +double kelembapanMaks
         +double probabilitasHujan
         +string zonaWaktu
-        +evaluasiKelayakan(JenisPekerjaan jenis, OverrideAmbang? overrideAmbang) StatusKelayakan
+        +evaluasiKelayakan(JenisPekerjaan jenis, OverrideAmbang? overrideAmbang) HasilEvaluasiCuaca
     }
     class Laporan {
         +Guid id
@@ -225,6 +236,9 @@ classDiagram
     Evaluasi "*" --> "1" Bahan : menilai
     Evaluasi "1" --> "0..*" SimulasiEmisi : diproyeksikan
     Pekerjaan "1" ..> "*" PrakiraanCuaca : memakai
+    Pekerjaan "0..1" --> "0..1" Komponen : mengaitkan
+    Pekerjaan "0..1" --> "0..1" Bahan : mengaitkan
+    PrakiraanCuaca ..> HasilEvaluasiCuaca : menghasilkan
 ```
 
 ---

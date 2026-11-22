@@ -9,21 +9,26 @@ Dokumen ini menjelaskan hubungan antara spesifikasi diagram kelas UML normatif W
 
 Model pada folder `Models/` awalnya diadaptasi dari tugas Modul 3 dan saat ini menjadi representasi data domain aplikasi di antarmuka WPF:
 
-- **Identitas:** Model pada `Models/` (`Bangunan`, `Bahan`, `Pengguna`, `Pekerjaan`) masih menggunakan tipe `int id` warisan Modul 3, sedangkan lapisan basis data EF Core (`Wastu.Data`) dan service domain (`Wastu.Domain`) menggunakan `Guid`. Pemetaan antara `int` dan `Guid` saat ini dijembatani pada lapisan adapter penyimpanan.
+- **Identitas:** Model pada `Models/` (`Bangunan`, `Bahan`, `Pengguna`) masih menggunakan tipe `int id` warisan Modul 3, sedangkan `Models/Pekerjaan.cs` tidak memiliki field ID. Lapisan basis data EF Core (`Wastu.Data`) dan service domain (`Wastu.Domain`) menggunakan `Guid`. Pemetaan antara `int` dan `Guid` saat ini dijembatani pada lapisan adapter penyimpanan.
 - **Tipe Primitif:** `string`, `int`, dan `double` dipetakan langsung ke tipe data C#.
 - **Tanggal & Waktu:** `date` dipetakan menjadi `DateTime`.
 - **Berkas Artefak:** `File` dipetakan menjadi `System.IO.FileInfo` (karena `System.IO.File` adalah static class C#).
 - **Relasi & Multiplisitas Baseline:**
-  - `Bangunan` ke `Komponen`: `Bangunan` menyimpan luas komponen melalui `LuasKomponen` dan mewajibkan luas dinding serta atap sekaligus.
+  - `Bangunan` ke `Komponen`: `Bangunan` menyimpan luas komponen melalui `LuasKomponen` dan mewajibkan luas dinding serta atap sekaligus. Pada `Wastu.Domain.Komponen`, konstruktor domain sudah memvalidasi penolakan nilai non-finite atau $\le 0$; batasan pada baseline adalah kebijakan antarmuka yang mewajibkan input dua komponen sekaligus dan penggunaan `init`/`with`.
   - `Komponen` ke `Evaluasi`: `Evaluasi[]` dipetakan menjadi array atau `IReadOnlyList<Evaluasi>`.
   - `Evaluasi` ke `SimulasiEmisi`: Multiplicity pada model baseline adalah `0..1` (`SimulasiEmisi?` tunggal pada `Models/Evaluasi.cs`).
   - `Pekerjaan` ke `PrakiraanCuaca`: Menggunakan dependensi use untuk mengevaluasi kelayakan kerja.
-- **Tipe Enumerasi Baseline:** `JenisKomponen`, `JenisPekerjaan`, dan `StatusKelayakan` diterapkan sebagai C# `enum`. Pada `Models/PrakiraanCuaca.cs`, evaluasi mengembalikan kelayakan dasar (`bool` / status dua nilai Layak dan Tidak Layak).
+- **Tipe Enumerasi Baseline:** `JenisKomponen`, `JenisPekerjaan`, dan `StatusKelayakan` diterapkan sebagai C# `enum`. Pada `Models/Enums.cs`, `StatusKelayakan` sudah merupakan enum 3 nilai (`Layak`, `Waspada`, `TidakLayak`). Pada `Models/PrakiraanCuaca.cs`, evaluasi mengembalikan kelayakan dasar (`bool`) beserta alasan teknisnya.
 - **Rumus & Ambang Baseline:**
   - `Evaluasi.HitungSkor` diselaraskan dengan prototipe awal HTML (`app.js`).
   - `SimulasiEmisi.Proyeksikan` di domain telah mengadopsi $\lceil H/L \rceil - 1$, namun UI memiliki duplikasi perhitungan dengan penanganan epsilon terpisah.
   - Ambang penjadwalan cuaca di UI masih menggunakan konstanta generik per jenis pekerjaan.
   - `Pekerjaan.TanggalDikunci` bertipe `DateTime?`, dengan dukungan penguncian hari tidak layak setelah konfirmasi pengguna.
+- **Lokasi Layanan Domain Aktual:**
+  - `ProjectService`: `src/Wastu.Domain/Projects/ProjectService.cs`
+  - `MaterialService`: `src/Wastu.Domain/Catalog/MaterialService.cs`
+  - `SuitabilityScoringService`: `src/Wastu.Domain/Scoring/SuitabilityScoringService.cs`
+  - `EmissionSimulationService`: `src/Wastu.Domain/Emissions/EmissionSimulationService.cs`
 
 ## 2. Target Revisi Spesifikasi Normatif (WP01 — WP08)
 
