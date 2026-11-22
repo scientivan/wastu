@@ -105,6 +105,37 @@ public class AmbangPekerjaanTests
         Assert.InRange(AmbangLayakKerja.SkorMinimumDisarankan, 0, 100);
     }
 
+    [Fact]
+    public void AmbangNaN_Ditolak()
+    {
+        Assert.Throws<ArgumentException>(() => new AmbangPekerjaan(double.NaN, null, null, null, null));
+        Assert.Throws<ArgumentException>(() => new AmbangPekerjaan(null, double.NaN, null, null, null));
+        Assert.Throws<ArgumentException>(() => new AmbangPekerjaan(null, null, double.NaN, null, null));
+        Assert.Throws<ArgumentException>(() => new AmbangPekerjaan(null, null, null, double.NaN, null));
+        Assert.Throws<ArgumentException>(() => new AmbangPekerjaan(null, null, null, null, double.NaN));
+    }
+
+    [Fact]
+    public void AmbangInfinity_Ditolak()
+    {
+        Assert.Throws<ArgumentException>(() => new AmbangPekerjaan(double.PositiveInfinity, null, null, null, null));
+        Assert.Throws<ArgumentException>(() => new AmbangPekerjaan(null, double.PositiveInfinity, null, null, null));
+    }
+
+    [Fact]
+    public void WithBypass_NaNDitolak()
+    {
+        var ambang = AmbangLayakKerja.Pengecoran;
+        Assert.Throws<ArgumentException>(() => ambang with { ProbabilitasHujanMaksPct = double.NaN });
+    }
+
+    [Fact]
+    public void WithBypass_SuhuMinLebihBesarDariMaks_PastikanValidDitolak()
+    {
+        var ambang = AmbangLayakKerja.Pengecoran with { SuhuMinC = 40, SuhuMaksC = 30 };
+        Assert.Throws<ArgumentException>(() => ambang.PastikanValid());
+    }
+
     /// <summary>Salinan ambang pengecoran sebagai titik awal uji konfigurasi ulang.</summary>
     private static AmbangPekerjaan AmbangDisesuaikan => AmbangLayakKerja.Pengecoran;
 }

@@ -189,6 +189,102 @@ public class ProjectServiceTests
             () => service.AddComponentAsync(Guid.NewGuid(), JenisKomponen.Dinding, 120));
     }
 
+    [Fact]
+    public async Task CreateProject_DindingSaja_BerhasilDisimpan()
+    {
+        (ProjectService service, ProyekRepositoryInMemory repo, _) = Setup();
+
+        var hasil = await service.CreateProjectAsync("Rumah Dinding", "Bandar Lampung", -5.45, 105.26,
+            [new InputKomponen(JenisKomponen.Dinding, 80)]);
+
+        var list = await repo.ListKomponenAsync(hasil.Id);
+        var komp = Assert.Single(list);
+        Assert.Equal(JenisKomponen.Dinding, komp.Jenis);
+        Assert.Equal(80, komp.LuasM2);
+    }
+
+    [Fact]
+    public async Task CreateProject_AtapSaja_BerhasilDisimpan()
+    {
+        (ProjectService service, ProyekRepositoryInMemory repo, _) = Setup();
+
+        var hasil = await service.CreateProjectAsync("Rumah Atap", "Bandar Lampung", -5.45, 105.26,
+            [new InputKomponen(JenisKomponen.Atap, 110)]);
+
+        var list = await repo.ListKomponenAsync(hasil.Id);
+        var komp = Assert.Single(list);
+        Assert.Equal(JenisKomponen.Atap, komp.Jenis);
+        Assert.Equal(110, komp.LuasM2);
+    }
+
+    [Fact]
+    public async Task CreateProject_Keduanya_BerhasilDisimpan()
+    {
+        (ProjectService service, ProyekRepositoryInMemory repo, _) = Setup();
+
+        var hasil = await service.CreateProjectAsync("Rumah Lengkap", "Bandar Lampung", -5.45, 105.26,
+            [new InputKomponen(JenisKomponen.Dinding, 120), new InputKomponen(JenisKomponen.Atap, 95)]);
+
+        var list = await repo.ListKomponenAsync(hasil.Id);
+        Assert.Equal(2, list.Count);
+        Assert.Contains(list, k => k.Jenis == JenisKomponen.Dinding && k.LuasM2 == 120);
+        Assert.Contains(list, k => k.Jenis == JenisKomponen.Atap && k.LuasM2 == 95);
+    }
+
+    [Fact]
+    public async Task CreateProject_KomponenKosong_Ditolak()
+    {
+        (ProjectService service, _, _) = Setup();
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.CreateProjectAsync("Rumah", "Bandar Lampung", -5.45, 105.26, Array.Empty<InputKomponen>()));
+    }
+
+    [Fact]
+    public async Task CreateProject_KomponenDuplikat_Ditolak()
+    {
+        (ProjectService service, _, _) = Setup();
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.CreateProjectAsync("Rumah", "Bandar Lampung", -5.45, 105.26,
+                [new InputKomponen(JenisKomponen.Dinding, 50), new InputKomponen(JenisKomponen.Dinding, 60)]));
+    }
+
+    [Fact]
+    public async Task UpdateLocation_MenambahRevisiLokasi()
+    {
+        (ProjectService service, ProyekRepositoryInMemory repo, _) = Setup();
+        Proyek proyek = await service.CreateProjectAsync("Rumah", "Bandar Lampung", -5.45, 105.26);
+        Assert.Equal(1, proyek.RevisiLokasi);
+
+        await service.UpdateLocationAsync(proyek.Id, -6.20, 106.82);
+
+        Proyek? tersimpan = await repo.GetByIdAsync(proyek.Id);
+        Assert.NotNull(tersimpan);
+        Assert.Equal(2, tersimpan.RevisiLokasi);
+    }
+
+    [Fact]
+    public async Task UpdateProject_DenganInputKomponen_MemperbaruiKomponenDanRevisi()
+    {
+        (ProjectService service, ProyekRepositoryInMemory repo, _) = Setup();
+        Proyek proyek = await service.CreateProjectAsync("Rumah Awal", "Bandar Lampung", -5.45, 105.26,
+            [new InputKomponen(JenisKomponen.Dinding, 100)]);
+
+        await service.UpdateProjectAsync(proyek.Id, "Rumah Revisi", "Jakarta", -6.20, 106.82,
+            [new InputKomponen(JenisKomponen.Dinding, 140), new InputKomponen(JenisKomponen.Atap, 90)]);
+
+        Proyek? tersimpan = await repo.GetByIdAsync(proyek.Id);
+        Assert.NotNull(tersimpan);
+        Assert.Equal("Rumah Revisi", tersimpan.Nama);
+        Assert.Equal(2, tersimpan.RevisiLokasi);
+
+        var komponen = await repo.ListKomponenAsync(proyek.Id);
+        Assert.Equal(2, komponen.Count);
+        Assert.Contains(komponen, k => k.Jenis == JenisKomponen.Dinding && k.LuasM2 == 140);
+        Assert.Contains(komponen, k => k.Jenis == JenisKomponen.Atap && k.LuasM2 == 90);
+    }
+
     private static (ProjectService Service, ProyekRepositoryInMemory Repo, IklimServicePerekam Iklim) Setup()
     {
         var repo = new ProyekRepositoryInMemory();

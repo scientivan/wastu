@@ -8,8 +8,11 @@ public sealed record Komponen
 {
     public Komponen(Guid id, Guid proyekId, JenisKomponen jenis, double luasM2)
     {
+        if (!Enum.IsDefined(typeof(JenisKomponen), jenis))
+            throw new ArgumentOutOfRangeException(nameof(jenis), jenis, "Jenis komponen tidak dikenal.");
+
         if (!double.IsFinite(luasM2) || luasM2 <= 0)
-            throw new ArgumentOutOfRangeException(nameof(luasM2));
+            throw new ArgumentOutOfRangeException(nameof(luasM2), luasM2, "Luas komponen harus bernilai finite dan lebih besar dari 0 m².");
 
         Id = id;
         ProyekId = proyekId;
