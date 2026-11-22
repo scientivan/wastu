@@ -96,6 +96,9 @@ public sealed class PdfReportBuilder
         // 6. Transparansi & Metodologi
         DrawTransparansiSection(ref page, ref gfx, document, snapshot, ref currentY);
 
+        // Dispose content gfx before footer pass
+        gfx.Dispose();
+
         // Final pass: draw footers on all pages
         DrawFooters(document, snapshot);
 
@@ -229,6 +232,7 @@ public sealed class PdfReportBuilder
             // Page break check
             if (currentY + rowHeight > MaxY)
             {
+                gfx.Dispose();
                 page = doc.AddPage();
                 page.Size = PageSize.A4;
                 gfx = XGraphics.FromPdfPage(page);
@@ -374,6 +378,7 @@ public sealed class PdfReportBuilder
             var rowH = 22.0;
             if (currentY + rowH > MaxY)
             {
+                gfx.Dispose();
                 page = doc.AddPage();
                 page.Size = PageSize.A4;
                 gfx = XGraphics.FromPdfPage(page);
@@ -496,6 +501,7 @@ public sealed class PdfReportBuilder
 
             if (currentY + rowH > MaxY)
             {
+                gfx.Dispose();
                 page = doc.AddPage();
                 page.Size = PageSize.A4;
                 gfx = XGraphics.FromPdfPage(page);
@@ -580,11 +586,12 @@ public sealed class PdfReportBuilder
             g.DrawLine(new XPen(BorderColor, 0.6), MarginLeft, PageHeight - MarginBottom + 6, MarginLeft + ContentWidth, PageHeight - MarginBottom + 6);
 
             // Left: Platform, Model version, Snapshot hash (zero DB passwords/credentials)
-            var leftText = $"Wastu {snapshot.VersiModel}  •  Hash Dokumen: {shortHash}  •  ID: {snapshot.Id:N}[..8]";
+            var idShort = snapshot.Id.ToString("N")[..8];
+            var leftText = $"Wastu {snapshot.VersiModel}  •  Hash: {shortHash}  •  ID: {idShort}";
             g.DrawString(leftText, _fontFooter, new XSolidBrush(MutedColor), new XPoint(MarginLeft, footerY));
 
             // Right: Page number and UTC + WIB timestamps
-            var rightText = $"Halaman {i + 1} dari {totalPages}  •  {snapshot.DibuatPadaWib:dd/MM/yyyy HH:mm} WIB ({snapshot.DibuatPadaUtc:HH:mm} UTC)";
+            var rightText = $"Halaman {i + 1} dari {totalPages}  •  {snapshot.DibuatPadaWib:dd/MM/yyyy HH:mm} WIB";
             var rightWidth = g.MeasureString(rightText, _fontFooter).Width;
             g.DrawString(rightText, _fontFooter, new XSolidBrush(MutedColor), new XPoint(MarginLeft + ContentWidth - rightWidth, footerY));
         }
@@ -594,6 +601,7 @@ public sealed class PdfReportBuilder
     {
         if (currentY + neededHeight > MaxY)
         {
+            gfx.Dispose();
             page = doc.AddPage();
             page.Size = PageSize.A4;
             gfx = XGraphics.FromPdfPage(page);
