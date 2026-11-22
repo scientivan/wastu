@@ -35,34 +35,38 @@ Wastu menjawab masalah itu dengan tiga prinsip:
 3. **Penjadwalan kerja menyatu dengan rekomendasi bahan.** Hari layak kerja untuk pengecoran dan
    pengecatan dinilai dari prakiraan cuaca lokasi proyek.
 
-## Status Sistem: Baseline Saat Ini vs Target Revisi Spesifikasi
+## Status Implementasi
 
-Tabel berikut membedakan kapabilitas yang tersedia pada implementasi *baseline* saat ini dari target spesifikasi revisi normatif (WP00–WP08):
+Implementasi saat ini mencakup perubahan V2 berikut. Ketersediaan kode dan kelulusan tes otomatis belum menggantikan pengujian aplikasi WPF pada Windows.
 
-| Modul / Aspek | Kapabilitas Baseline Saat Ini | Target Revisi Spesifikasi (PRD-R01 — PRD-R11) |
-|---|---|---|
-| **Profil Proyek (F1)** | Constructor `Domain.Komponen` sudah memvalidasi luas $> 0$ (menolak non-finite dan $\le 0$), namun antarmuka dan kebijakan pembuatan proyek saat ini mewajibkan input luas dinding serta atap sekaligus. Bounding box bujur 94°–142° BT. | [TARGET] Mendukung fleksibilitas komponen: dinding saja, atap saja, atau keduanya (luas $> 0\text{ m}^2$) tanpa regresi init/with. Bounding box diseragamkan ke rentang inklusif lintang $[-11, 6]$ dan bujur $[95, 141]$ dengan migrasi aman untuk data legacy (§PRD-R07). |
-| **Katalog Bahan (F2)** | Seed 15 bahan dinding dan 10 bahan atap tersimpan di database/JSON, namun terdapat divergensi nilai dan properti antara katalog lokal (`Services/Katalog.cs`) dan seed PostgreSQL (`database/03_seed_supabase.sql`); detail properti belum menampilkan seluruh rincian sumber. | [TARGET] Harmonisasi dataset kanonik lintas-mode (lokal dan PostgreSQL); faktor emisi wajib dinormalisasi ke $\text{kgCO}_2\text{e/m}^2$ untuk susunan/ketebalan tertentu; pencatatan sumber per properti + status perkiraan/terverifikasi; klasifikasi provenance data (§PRD-R03, §PRD-R09). |
-| **Analisis Iklim (F3)** | Klien Open-Meteo historis 10 tahun dan estimasi jarak pesisir garis pantai Natural Earth 1:10m. Profil tersimpan per proyek. | [TARGET] Pengambilan iklim otomatis saat online; penanganan kegagalan graceful dengan penanda profil iklim 0..1; pemisahan provenance iklim (`ApiHistoris`, `EstimasiBawaan`, `CacheHistoris`, `LegacyUnknown`) (§PRD-R09, §PRD-R10). |
-| **Perbandingan & Bobot (F4)** | Peringkat bahan dengan 4 kriteria berbobot default 0,25. Rumus lembap lama cepat jenuh pada curah hujan sedang. Ambang UI memakai 55 sedangkan domain 50. | [TARGET] Rumus lembap baru dengan $\alpha=0{,}5$ dan acuan 3000 mm/thn yang sensitif terhadap variasi hujan (§PRD-R04). Ambang label terpusat: $<55$ *Tidak disarankan*, $55..74,999$ *Perlu pertimbangan*, $\ge 75$ *Cocok*. Mode MVP mengunci bobot pada 0,25; mode V2 menyediakan bobot kustom tervalidasi ($\sum=100\%$) dan reset (§PRD-R01, §PRD-R10). |
-| **Simulasi Emisi (F5)** | Kode domain sudah mengadopsi $\lceil H/L \rceil - 1$, namun narasi PRD lama masih mencantumkan `floor(H/L)` dan UI memiliki duplikasi dengan epsilon terpisah. Hasil disimpan per `EvaluasiId` saja. | [TARGET] Menyatukan seluruh dokumen, domain, UI, dan grafik emisi kumulatif pada satu kontrak konsisten strictly $0 < t < H$: $n = \max(0, \lceil H/L \rceil - 1)$ (§PRD-R02). Kasus acuan: nominal 15 thn, skor 20, $H=30 \rightarrow L=9$ thn, 3 penggantian (thn 9, 18, 27), total emisi $\times 4$. Riwayat multi-horizon disimpan simultan (relasi 0..*, §PRD-R10). |
-| **Penjadwal Cuaca (F6)** | Mengambil prakiraan 14 hari Open-Meteo; evaluasi ambang pengecoran dan pengecatan generik; jadwal disimpan di JSON lokal; penguncian hari berisiko didukung. | [TARGET] Mendukung override spesifikasi produk bahan terpilih (§PRD-R05). Status evaluasi multi-nilai: `Layak`, `Waspada` (suhu pengecoran >35°C), `TidakLayak` (alasan spesifik), dan `DataTidakTersedia`. Cache ber-TTL 6 jam UTC dengan penafsiran tanggal menurut zona waktu lokasi proyek (§PRD-R08). |
-| **Ekspor Laporan (F7)** | Tombol PDF menjalankan `PrintDialog` Windows; `Models/Laporan.Ekspor` hanya menulis teks sederhana. | [TARGET] Generator PDF mandiri berlisensi sesuai, memuat profil proyek, iklim, bahan terpilih, simulasi horizon, dan jadwal terkunci lengkap dengan catatan transparansi sumber dan peninjauan riwayat lokal luring (§PRD-R06). |
-| **Persistensi & Luring** | Mendukung PostgreSQL (lokal/remote Supabase) dan mode JSON lokal (`state.json` / `state-postgres.json`). Gagal koneksi remote saat startup menutup aplikasi. | [TARGET] PostgreSQL sebagai penyimpanan utama relasional; snapshot lokal atomik read-only untuk koneksi remote saat offline sehingga aplikasi tetap dapat dibuka untuk ditinjau tanpa crash (§PRD-R06). |
+| Modul | Perilaku yang tersedia |
+|---|---|
+| Profil proyek | Dinding saja, atap saja, atau keduanya; luas positif dan koordinat dalam rentang lintang [-11, 6], bujur [95, 141]. |
+| Katalog | Dataset kanonik 15 bahan dinding dan 10 bahan atap untuk mode lokal/PostgreSQL, sumber per properti, status perkiraan, dan refresh katalog. |
+| Iklim | Pengambilan historis berdasarkan lokasi, perlindungan respons terlambat ketika lokasi/proyek berubah, profil tersimpan, serta metadata sumber, periode, cache, dan proksi pesisir. |
+| Peringkat | Satu layanan skoring untuk halaman aplikasi, normalisasi usia terhadap kategori penuh, alasan setiap bahan, ambang 55/75, dan emisi awal berdampingan dengan skor. |
+| Bobot | Mode MVP memakai 25% per kriteria; mode V2 menyimpan bobot per proyek, menolak total selain 100%, mendukung reset, dan menghitung ulang tanpa mengambil iklim lagi. |
+| Riwayat evaluasi | Identitas proyek/komponen stabil dan batch berdasarkan hash input; render ulang memakai cache, penulisan berulang tidak menimpa batch lama, dan kegagalan penyimpanan dapat dicoba lagi. |
+| Simulasi | Penggantian hanya pada waktu 0 < t < H, faktor penuaan dapat diatur, grafik step mengikuti kalkulator domain, dan repository mendukung beberapa horizon. |
+| Jadwal | Prakiraan, cache enam jam, zona waktu proyek, status data tidak tersedia, pengaturan ambang, dan konfirmasi untuk mengunci hari berisiko. |
+| Laporan | PDF langsung tanpa printer, pilihan bahan/horizon/jadwal, bobot serta metadata iklim aktual, riwayat lokal, dan pemulihan pencatatan yang tertunda. |
+| Luring | Snapshot per profil koneksi untuk peninjauan baca-saja saat database tidak tersedia; mode JSON lokal tetap tersedia. |
+
+Verifikasi otomatis tersedia untuk domain, repository PostgreSQL terisolasi, snapshot/pemulihan, alur state aplikasi tanpa WPF, dan isi serta tata letak PDF. Uji interaktif WPF pada Windows, pengukuran performa Windows, reliabilitas API nyata, uji pemahaman pengguna, dan penyelesaian pemisahan ViewModel masih menjadi bagian penerimaan yang belum selesai.
 
 ## Fitur Aplikasi
 
-- **Profil Proyek:** Nama, kota atau koordinat lokasi, jarak ke pesisir, serta luas dinding dan atap. Pengguna dapat mengelola lebih dari satu proyek. *(Target revisi: mendukung proyek dinding saja atau atap saja).*
+- **Profil Proyek:** Nama, kota atau koordinat lokasi, jarak ke pesisir, serta luas dinding, atap, atau keduanya. Pengguna dapat mengelola lebih dari satu proyek.
 - **Analisis Iklim Lokasi:** Curah hujan tahunan, kelembapan, dan suhu rata-rata dari data historis 10 tahun Open-Meteo.
 - **Eksplor Material:** Katalog bahan dinding dan atap dengan skor kesesuaian iklim, status kecocokan, dan emisi awal untuk luas bidang proyek.
 - **Bandingkan Material:** Dua bahan berdampingan beserta peringkat kesesuaian seluruh bahan sejenis.
 - **Simulasi Emisi:** Proyeksi emisi kumulatif 20, 30, atau 50 tahun termasuk jumlah penggantian bahan.
 - **Jadwal Pekerjaan:** Prakiraan cuaca 14 hari, penilaian hari layak atau tidak layak untuk pengecoran dan pengecatan, serta penguncian tanggal pekerjaan.
-- **Laporan Proyek:** Ringkasan proyek, profil iklim, peringkat material, simulasi emisi, dan jadwal terkunci untuk dibawa ke tukang atau kontraktor. *(Target revisi: generator PDF mandiri dengan riwayat).*
+- **Laporan Proyek:** Ringkasan proyek, profil iklim, peringkat material, simulasi emisi, dan jadwal terkunci untuk dibawa ke tukang atau kontraktor. PDF dibuat langsung dan dapat dibuka kembali dari riwayat lokal.
 
 ## Alur Penggunaan
 
-1. **Buat Proyek Baru:** Beri nama, tentukan lokasi (pilih kota atau koordinat), lalu isi luas dinding dan atap. *(Target revisi: dapat memilih salah satu komponen saja).*
+1. **Buat Proyek Baru:** Beri nama, tentukan lokasi (pilih kota atau koordinat), lalu pilih satu atau kedua komponen dan isi luas bidangnya.
 2. **Perbarui Profil Iklim:** Tinjau ringkasan iklim lokasi di Beranda.
 3. **Bandingkan Bahan:** Telusuri katalog bahan, pilih dua bahan, lalu bandingkan kesesuaian dan emisinya.
 4. **Simulasikan Emisi:** Lihat dampak penggantian dini material sepanjang masa pakai rumah.
@@ -79,7 +83,7 @@ Aplikasi desktop Windows berbasis WPF (.NET 8, C#) dengan data cuaca dan iklim d
 2. Jalankan `database/02_schema.sql` dan `database/03_seed_supabase.sql` pada database tersebut.
 3. Isi `.env` sesuai `.env.example` dengan `host`, `port`, `database`, `user`, dan `password` dari Supabase. Aplikasi menyusun connection string Npgsql otomatis dengan SSL. Gunakan session pooler port 5432. Alternatifnya, isi `WASTU_CONNECTION_STRING` lengkap untuk mengesampingkan variabel terpisah.
 
-4. Jalankan `dotnet run --project Wastu.csproj` di Windows dengan .NET 8 SDK. Uji backend dapat dijalankan dengan `dotnet test Wastu.sln`.
+4. Jalankan `dotnet run --project Wastu.csproj` di Windows dengan .NET 8 SDK. Jalankan tes dengan perintah pada bagian Pengujian di bawah.
 
 File `.env` dicari dari direktori kerja, lalu direktori executable, termasuk folder induknya. Environment variable yang terisi lebih diutamakan daripada nilai dalam file. `.env` tidak disertakan dalam build atau publish dan tidak boleh di-commit. Untuk menjalankan hasil publish, sediakan `.env` sendiri di direktori executable atau atur environment variable. Konfigurasi database yang hanya terisi sebagian akan menghasilkan kesalahan agar aplikasi tidak diam-diam beralih ke mode lokal.
 
@@ -89,4 +93,23 @@ Dalam mode PostgreSQL, profil iklim memakai 10 tahun data historis Open-Meteo. J
 
 ## Batasan dan Transparansi
 
-Properti bahan, faktor emisi, dan profil iklim bawaan masih berupa estimasi awal dari referensi literatur publik, belum dikalibrasi untuk produk spesifik di pasar lokal Indonesia. Saat ini terdapat divergensi nilai dan properti antara katalog lokal (`Services/Katalog.cs`) dan seed PostgreSQL (`database/03_seed_supabase.sql`); target revisi spesifikasi menyatukan keduanya ke dalam satu dataset kanonik lintas-mode. Usia pakai efektif dan simulasi emisi adalah model perhitungan estimasi matematis untuk membantu keputusan, bukan jaminan keawetan mutlak di lapangan.
+Properti bahan, faktor emisi, dan profil iklim bawaan masih berupa estimasi awal dari referensi literatur publik, belum dikalibrasi untuk produk spesifik di pasar lokal Indonesia. Katalog lokal dan seed PostgreSQL memakai dataset kanonik yang sama; sumber dan status perkiraan per properti tetap harus diperiksa sebelum digunakan untuk produk tertentu. Usia pakai efektif dan simulasi emisi adalah model perhitungan estimasi matematis untuk membantu keputusan, bukan jaminan keawetan mutlak di lapangan.
+
+## Pengujian dan Publish
+
+```sh
+dotnet build Wastu.sln -c Release
+dotnet test tests/Wastu.Domain.Tests -c Release --no-build
+dotnet test tests/Wastu.Application.Tests -c Release --no-build
+dotnet test tests/Wastu.Reporting.Tests -c Release --no-build
+```
+
+Tes aplikasi mengompilasi sumber state dan adapter yang sama tanpa lapisan visual Windows. Tes tersebut tidak menjalankan jendela WPF atau dialog berkas.
+
+Tes data memakai `WASTU_TEST_CONNECTION_STRING` menuju PostgreSQL uji terisolasi. Jalankan `dotnet test tests/Wastu.Data.Tests -c Release --no-build --filter "FullyQualifiedName!~AlurSupabaseTests"`. Tes integrasi yang memerlukan database akan melaporkan skip jika koneksi uji tidak tersedia. `AlurSupabaseTests` menggunakan konfigurasi aplikasi dan menulis data, sehingga harus dijalankan hanya dengan konfigurasi database uji yang disengaja, terpisah dari database pengguna.
+
+```sh
+dotnet publish Wastu.csproj -c Release -r win-x64 --self-contained true -o artifacts/win-x64
+```
+
+Salin seluruh folder hasil publish ke Windows dan jalankan `Wastu.exe`. Build/publish lintas platform memverifikasi kompilasi dan paket; jalankan pengujian interaktif, luring, resize, dialog ekspor, serta buka ulang PDF pada Windows sebelum menyatakan rilis siap digunakan. Aset garis pantai dan font PDF disertakan sebagai embedded resource. Berkas `.env` harus disediakan secara lokal dan tidak disertakan dalam paket.
