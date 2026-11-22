@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -47,14 +46,10 @@ public partial class MaterialsPage : PageBase
             // Jika kalkulasi evaluasi gagal, tampilkan kartu bahan dari katalog secara aman
             try
             {
-                var katalogField = typeof(AppState).GetField("_katalog", BindingFlags.NonPublic | BindingFlags.Instance);
-                if (katalogField?.GetValue(S) is IReadOnlyList<ItemKatalog> allItems)
-                {
-                    _cards = allItems
-                        .Where(item => item.Jenis == S.Jenis)
-                        .Select(item => new MaterialCard(item, null, area))
-                        .ToList();
-                }
+                _cards = S.KatalogAktif
+                    .Where(item => item.Jenis == S.Jenis)
+                    .Select(item => new MaterialCard(item, null, area))
+                    .ToList();
             }
             catch
             {
@@ -150,40 +145,7 @@ public partial class MaterialsPage : PageBase
             RefreshBtn.IsEnabled = false;
             RefreshBtn.Content = "Menyegarkan...";
 
-            var backendField = typeof(AppState).GetField("_backend", BindingFlags.NonPublic | BindingFlags.Instance);
-            var backend = backendField?.GetValue(S) as PostgreSqlBackend;
-            var koneksiField = typeof(AppState).GetField("_koneksi", BindingFlags.NonPublic | BindingFlags.Instance);
-            var koneksi = koneksiField?.GetValue(S) as string
-                ?? Environment.GetEnvironmentVariable("WASTU_POSTGRESQL_CONNECTION");
-
-            if (backend is null && !string.IsNullOrWhiteSpace(koneksi))
-            {
-                try
-                {
-                    backend = new PostgreSqlBackend(koneksi);
-                    backendField?.SetValue(S, backend);
-                }
-                catch
-                {
-                    // Gunakan mode lokal bila koneksi gagal
-                }
-            }
-
-            IReadOnlyList<ItemKatalog> items;
-            if (backend is not null)
-            {
-                var dinding = await backend.Material.ListByKindAsync(Domain.JenisKomponen.Dinding);
-                var atap = await backend.Material.ListByKindAsync(Domain.JenisKomponen.Atap);
-                items = dinding.Concat(atap).Select(ItemKatalog.DariDomain).ToArray();
-            }
-            else
-            {
-                items = Katalog.Semua;
-            }
-
-            var katalogField = typeof(AppState).GetField("_katalog", BindingFlags.NonPublic | BindingFlags.Instance);
-            katalogField?.SetValue(S, items);
-
+            await S.SegarkanKatalogAsync();
             Refresh();
         }
         catch (Exception ex)

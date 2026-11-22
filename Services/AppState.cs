@@ -85,6 +85,43 @@ public sealed class AppState
     public ProfilIklim Iklim => Aktif.ProfilIklim ??= Katalog.ProfilBawaan(Aktif.Kota, 30);
     public double Luas => Aktif.LuasKomponen(Jenis);
 
+    public IReadOnlyList<ItemKatalog> KatalogAktif => _katalog;
+
+    public async Task<bool> SegarkanKatalogAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var koneksi = _koneksi ?? KoneksiSupabase.Cari();
+            var be = _backend ?? (!string.IsNullOrWhiteSpace(koneksi) ? new PostgreSqlBackend(koneksi) : null);
+            if (be is not null)
+            {
+                var dinding = await be.Material.ListByKindAsync(Domain.JenisKomponen.Dinding, ct).ConfigureAwait(false);
+                var atap = await be.Material.ListByKindAsync(Domain.JenisKomponen.Atap, ct).ConfigureAwait(false);
+                var gabung = dinding.Concat(atap).Select(ItemKatalog.DariDomain).ToArray();
+                if (gabung.Length > 0)
+                {
+                    _katalog = gabung;
+                    _backend ??= be;
+                    _koneksi ??= koneksi;
+                    Ubah();
+                    return true;
+                }
+            }
+            else
+            {
+                _katalog = Katalog.Semua;
+                Ubah();
+                return true;
+            }
+        }
+        catch
+        {
+            return false;
+        }
+
+        return false;
+    }
+
     public ItemKatalog Item(Bahan bahan) => _katalog[bahan.Id];
 
     public Evaluasi Nilai(ItemKatalog item) => Peringkat(item.Jenis).First(e => e.Bahan == item.Bahan);
