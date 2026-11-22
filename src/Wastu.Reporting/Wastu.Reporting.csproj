@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Wastu.Reporting</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Fonts\Inter-400.ttf" LogicalName="Wastu.Reporting.Fonts.Inter-400.ttf" />
+    <EmbeddedResource Include="Fonts\Inter-700.ttf" LogicalName="Wastu.Reporting.Fonts.Inter-700.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Wastu.Domain\Wastu.Domain.csproj" />
+    <PackageReference Include="PDFsharp" Version="6.1.1" />
+  </ItemGroup>
+</Project>

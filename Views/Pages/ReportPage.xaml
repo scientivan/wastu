@@ -32,15 +32,82 @@
             <Setter Property="Leading" Value="1.6" />
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
+        <Style x:Key="BadgeTersedia" TargetType="Border">
+            <Setter Property="Background" Value="#DCFCE7" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="Padding" Value="6,2" />
+        </Style>
+        <Style x:Key="BadgeHilang" TargetType="Border">
+            <Setter Property="Background" Value="#FEE2E2" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="Padding" Value="6,2" />
+        </Style>
     </p:PageBase.Resources>
 
     <StackPanel>
-        <c:PageHeading x:Name="Heading" Title="Laporan proyek" Description="Ringkasan proyek, profil iklim, material, proyeksi emisi, dan tanggal terkunci.">
-            <Button Style="{StaticResource Btn}" Content="Simpan PDF" Click="Print_Click" />
+        <c:PageHeading x:Name="Heading" Title="Laporan proyek" Description="Ringkasan proyek, profil iklim, material terpilih, proyeksi emisi, dan tanggal terkunci.">
+            <Button Style="{StaticResource Btn}" Content="Simpan PDF" Click="ExportPdf_Click" />
         </c:PageHeading>
 
-        <!-- #report -->
-        <Border x:Name="Report" Style="{StaticResource Panel}">
+        <!-- Opsi Pilihan Ekspor -->
+        <Border Style="{StaticResource Panel}" Margin="0,0,0,18">
+            <StackPanel>
+                <c:TrackedText Style="{StaticResource PanelTitle}" Text="Pengaturan Ekspor PDF" Margin="0,0,0,12" />
+
+                <c:FlowGrid Columns="3" ColumnGap="20" Stretch="False" Margin="0,0,0,14">
+                    <StackPanel>
+                        <c:CssText Text="Komponen Aktif" FontWeight="700" Margin="0,0,0,6" />
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton x:Name="CompWallRadio" Content="Dinding" GroupName="CompGroup" Checked="Comp_Checked" Tag="Dinding" Margin="0,0,12,0" VerticalAlignment="Center" />
+                            <RadioButton x:Name="CompRoofRadio" Content="Atap" GroupName="CompGroup" Checked="Comp_Checked" Tag="Atap" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel>
+                        <c:CssText Text="Horizon Simulasi" FontWeight="700" Margin="0,0,0,6" />
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton x:Name="Hor20Radio" Content="20 thn" GroupName="HorGroup" Checked="Horizon_Checked" Tag="20" Margin="0,0,10,0" VerticalAlignment="Center" />
+                            <RadioButton x:Name="Hor30Radio" Content="30 thn" GroupName="HorGroup" Checked="Horizon_Checked" Tag="30" Margin="0,0,10,0" VerticalAlignment="Center" />
+                            <RadioButton x:Name="Hor50Radio" Content="50 thn" GroupName="HorGroup" Checked="Horizon_Checked" Tag="50" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel>
+                        <c:CssText Text="Jadwal Lapangan" FontWeight="700" Margin="0,0,0,6" />
+                        <CheckBox x:Name="IncludeScheduleCheck" Content="Sertakan jadwal terkunci" IsChecked="True" Click="ScheduleCheck_Click" VerticalAlignment="Center" />
+                    </StackPanel>
+                </c:FlowGrid>
+
+                <c:CssText Text="Pilih Material untuk Laporan (Dapat memilih material apa pun termasuk peringkat 10):" FontWeight="700" Margin="0,0,0,8" />
+                <ItemsControl x:Name="MaterialCheckList" ItemsSource="{Binding SelectableMaterials}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="0,6">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="50" />
+                                        <ColumnDefinition Width="180" />
+                                        <ColumnDefinition Width="90" />
+                                        <ColumnDefinition Width="90" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" Click="MaterialCheck_Click" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <c:CssText Grid.Column="1" Text="{Binding RankText}" FontWeight="600" VerticalAlignment="Center" />
+                                    <c:CssText Grid.Column="2" Text="{Binding Name}" FontWeight="600" VerticalAlignment="Center" />
+                                    <c:CssText Grid.Column="3" Text="{Binding ScoreText}" VerticalAlignment="Center" />
+                                    <c:CssText Grid.Column="4" Text="{Binding EmissionText}" VerticalAlignment="Center" />
+                                    <c:CssText Grid.Column="5" Text="{Binding ReasonPreview}" TextWrapping="Wrap" VerticalAlignment="Center" Style="{StaticResource Small}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+
+        <!-- #report Preview -->
+        <Border x:Name="Report" Style="{StaticResource Panel}" Margin="0,0,0,18">
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
                     <Image Source="{StaticResource Logo}" Width="43" Height="43" />
@@ -130,6 +197,48 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
                 <c:CssText Style="{StaticResource MutedLine}" Text="Belum ada tanggal terkunci." Visibility="{Binding NoLocked}" Margin="0,0,0,12" />
+            </StackPanel>
+        </Border>
+
+        <!-- Riwayat Laporan Section -->
+        <Border Style="{StaticResource Panel}">
+            <StackPanel>
+                <c:TrackedText Style="{StaticResource PanelTitle}" Text="Riwayat Laporan PDF" Margin="0,0,0,12" />
+                <c:CssText Text="Daftar berkas PDF rekomendasi yang pernah diekspor untuk proyek ini:" Style="{StaticResource Small}" Margin="0,0,0,12" />
+
+                <ItemsControl ItemsSource="{Binding ReportHistory}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="0,10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                            <c:CssText Text="{Binding NamaBerkas}" FontWeight="700" FontSize="14" Margin="0,0,10,0" />
+                                            <Border Style="{Binding BadgeStyle}" VerticalAlignment="Center">
+                                                <c:CssText Text="{Binding StatusTeks}" FontSize="11" FontWeight="600" Foreground="{Binding StatusFg}" />
+                                            </Border>
+                                        </StackPanel>
+                                        <c:CssText Text="{Binding TanggalFormat}" Style="{StaticResource Small}" Margin="0,0,0,2" />
+                                        <c:CssText Text="{Binding PathBerkas}" Style="{StaticResource Small}" Foreground="{StaticResource Muted}" />
+                                        <c:CssText Text="⚠️ Berkas PDF tidak ditemukan pada lokasi ini. Berkas mungkin telah dipindahkan atau dihapus."
+                                                   Visibility="{Binding MissingVisibility}"
+                                                   Foreground="#B91C1C" FontSize="12" Margin="0,4,0,0" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                                        <Button Style="{StaticResource BtnLight}" Content="Buka PDF" Click="OpenPdf_Click" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <c:CssText Text="Belum ada laporan PDF yang diekspor untuk proyek ini." Visibility="{Binding NoHistory}" Style="{StaticResource MutedLine}" Margin="0,8,0,0" />
             </StackPanel>
         </Border>
     </StackPanel>
