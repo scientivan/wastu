@@ -24,7 +24,17 @@ public sealed class EvaluasiEntity
 
     public DateTimeOffset DihitungPada { get; set; }
 
+    public Guid? BatchId { get; set; }
+
+    public string VersiModel { get; set; } = "v2.0";
+
+    public string? HashInput { get; set; }
+
+    public DateTimeOffset? DihitungPadaUtc { get; set; }
+
     public KomponenEntity? Komponen { get; set; }
 
     public BahanEntity? Bahan { get; set; }
+
+    public BatchEvaluasiEntity? Batch { get; set; }
 }

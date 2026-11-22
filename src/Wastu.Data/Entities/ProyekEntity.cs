@@ -13,4 +13,8 @@ public sealed class ProyekEntity
     public double Longitude { get; set; }
 
     public DateTimeOffset DibuatPada { get; set; }
+
+    public int RevisiLokasi { get; set; } = 1;
+
+    public string? ZonaWaktu { get; set; }
 }
