@@ -137,4 +137,7 @@ public sealed record KriteriaBobot
 
     /// <summary>Bobot equiponderal yang disarankan PRD §11.1.</summary>
     public static KriteriaBobot Default { get; } = new(0.25, 0.25, 0.25, 0.25);
+
+    /// <summary>Alias bahasa Indonesia untuk bobot equiponderal/seimbang (PRD §11.1).</summary>
+    public static KriteriaBobot Seimbang => Default;
 }

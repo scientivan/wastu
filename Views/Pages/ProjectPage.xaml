@@ -91,17 +91,23 @@
                     </StackPanel>
                     <c:FlowGrid Columns="2" ColumnGap="18" RowGap="18" Margin="0,18,0,0">
                         <StackPanel>
+                            <CheckBox x:Name="WallCheck" Content="Komponen Dinding" IsChecked="True" FontSize="13" FontWeight="550" Foreground="{StaticResource Ink}" Margin="0,0,0,6" Click="ComponentCheck_Click" />
                             <c:CssText Style="{StaticResource FormLabel}" Text="Luas dinding (m²)" />
                             <TextBox x:Name="WallBox" Style="{StaticResource Input}" />
                         </StackPanel>
                         <StackPanel>
+                            <CheckBox x:Name="RoofCheck" Content="Komponen Atap" IsChecked="True" FontSize="13" FontWeight="550" Foreground="{StaticResource Ink}" Margin="0,0,0,6" Click="ComponentCheck_Click" />
                             <c:CssText Style="{StaticResource FormLabel}" Text="Luas atap (m²)" />
                             <TextBox x:Name="RoofBox" Style="{StaticResource Input}" />
                         </StackPanel>
                     </c:FlowGrid>
                     <StackPanel Margin="0,18,0,0">
-                        <c:CssText Style="{StaticResource FormLabel}" Text="Perkiraan jarak ke pesisir (km)" />
+                        <Grid Margin="0,0,0,6">
+                            <c:CssText Style="{StaticResource FormLabel}" Text="Perkiraan jarak ke pesisir (km)" VerticalAlignment="Center" Margin="0" />
+                            <CheckBox x:Name="CoastalOverrideCheck" Content="Sesuaikan manual" HorizontalAlignment="Right" VerticalAlignment="Center" Click="CoastalOverride_Click" />
+                        </Grid>
                         <TextBox x:Name="CoastalBox" Style="{StaticResource Input}" />
+                        <c:CssText Text="Perkiraan jarak ke garis pantai; proksi paparan udara bergaram." FontSize="11" Foreground="{StaticResource Muted}" Margin="0,6,0,0" />
                     </StackPanel>
                     <WrapPanel Margin="0,18,0,0">
                         <Button Style="{StaticResource Btn}" Content="Simpan proyek" Click="Save_Click" IsDefault="True" Margin="0,0,10,0" />
@@ -120,7 +126,12 @@
                         <Button Style="{StaticResource BtnLight}" Content="Perbarui iklim" Click="Climate_Click" Margin="0,5,0,0" />
                     </StackPanel>
                     <StackPanel Visibility="{Binding HasClimate}">
-                        <c:TrackedText Style="{StaticResource PanelTitle}" Text="{Binding ClimateTitle}" Margin="0,0,0,18" />
+                        <Grid Margin="0,0,0,14">
+                            <c:TrackedText Style="{StaticResource PanelTitle}" Text="{Binding ClimateTitle}" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                            <Border Background="{Binding BadgeBg}" BorderBrush="{Binding BadgeBorder}" BorderThickness="1" CornerRadius="4" Padding="8,4" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <c:CssText Text="{Binding ProvenanceBadge}" Foreground="{Binding BadgeFg}" FontSize="11" FontWeight="600" />
+                            </Border>
+                        </Grid>
                         <c:FlowGrid Columns="2" ColumnGap="16" RowGap="16">
                             <Border Style="{StaticResource ClimateCell}">
                                 <StackPanel>
@@ -147,7 +158,10 @@
                                 </StackPanel>
                             </Border>
                         </c:FlowGrid>
-                        <c:CssText Text="{Binding Caption}" FontSize="11" Foreground="{StaticResource Muted}" Leading="1.6" TextWrapping="Wrap" Margin="0,15,0,14" />
+                        <c:CssText Text="{Binding CoastalCaption}" FontSize="11" Foreground="{StaticResource Muted}" Leading="1.6" TextWrapping="Wrap" Margin="0,12,0,4" />
+                        <c:CssText Text="{Binding ProviderText}" FontSize="12" Foreground="{StaticResource Ink}" Margin="0,4,0,2" />
+                        <c:CssText Text="{Binding PeriodText}" FontSize="11" Foreground="{StaticResource Muted}" Margin="0,0,0,2" />
+                        <c:CssText Text="{Binding TimestampText}" FontSize="11" Foreground="{StaticResource Muted}" Margin="0,0,0,14" />
                         <Button Style="{StaticResource BtnLightSm}" Content="Perbarui iklim" Click="Climate_Click" Margin="0,5,0,0" />
                     </StackPanel>
                 </Grid>

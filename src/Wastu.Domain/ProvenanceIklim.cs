@@ -8,6 +8,9 @@ public enum ProvenanceIklim
     /// <summary>Data yang benar-benar diambil dari layanan API iklim historis (Open-Meteo).</summary>
     ApiHistoris,
 
+    /// <summary>Data cache iklim historis API yang tersimpan.</summary>
+    CacheHistoris,
+
     /// <summary>Data contoh atau sintetis berlabel contoh.</summary>
     Contoh,
 
@@ -38,6 +41,8 @@ public enum StatusPengambilanIklim
 /// </summary>
 public enum KualitasCacheIklim
 {
+    CocokLokasi,
+    TidakCocokLokasi,
     Segar,
     CacheHistoris,
     DataLama,

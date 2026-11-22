@@ -1,7 +1,10 @@
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
+using Wastu.Domain;
 using Wastu.Models;
 using Wastu.Services;
+using JenisKomponen = Wastu.Models.JenisKomponen;
 
 namespace Wastu.Views.Pages;
 
@@ -11,6 +14,8 @@ public partial class ProjectPage : PageBase
     {
         InitializeComponent();
         Map.Bind(LatBox, LonBox);
+        LatBox.TextChanged += (_, _) => HitungPesisirOtomatis();
+        LonBox.TextChanged += (_, _) => HitungPesisirOtomatis();
     }
 
     protected override void Refresh()
@@ -18,16 +23,66 @@ public partial class ProjectPage : PageBase
         var p = S.Aktif;
         DataContext = new ProjectData(S);
         NameBox.Text = p.Nama;
+
+        CityBox.SelectionChanged -= City_Changed;
         CityBox.Items.Clear();
         foreach (var city in Katalog.NamaKota.Append(p.Kota).Distinct())
             CityBox.Items.Add(city);
         CityBox.SelectedItem = p.Kota;
+        CityBox.SelectionChanged += City_Changed;
+
         LatBox.Text = Format.Masukan(p.Latitude);
         LonBox.Text = Format.Masukan(p.Longitude);
-        WallBox.Text = Format.Masukan(p.LuasKomponen(JenisKomponen.Dinding));
-        RoofBox.Text = Format.Masukan(p.LuasKomponen(JenisKomponen.Atap));
-        CoastalBox.Text = Format.Masukan(S.Iklim.JarakPesisirKm);
-        CoastalBox.IsReadOnly = S.PostgreSql;
+
+        WallCheck.IsChecked = p.AdaKomponen(JenisKomponen.Dinding);
+        RoofCheck.IsChecked = p.AdaKomponen(JenisKomponen.Atap);
+        WallBox.IsEnabled = WallCheck.IsChecked == true;
+        RoofBox.IsEnabled = RoofCheck.IsChecked == true;
+        WallBox.Text = p.AdaKomponen(JenisKomponen.Dinding) ? Format.Masukan(p.LuasKomponen(JenisKomponen.Dinding)) : "";
+        RoofBox.Text = p.AdaKomponen(JenisKomponen.Atap) ? Format.Masukan(p.LuasKomponen(JenisKomponen.Atap)) : "";
+
+        CoastalOverrideCheck.IsChecked = p.ProfilIklim?.CatatanOverridePesisir is not null;
+        CoastalBox.IsReadOnly = CoastalOverrideCheck.IsChecked != true;
+        CoastalBox.Text = Format.Masukan(p.ProfilIklim?.JarakPesisirKm ?? S.Iklim.JarakPesisirKm);
+    }
+
+    private void City_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (CityBox.SelectedItem is string cityName && Katalog.Kota.TryGetValue(cityName, out var kota))
+        {
+            LatBox.Text = Format.Masukan(kota.Lintang);
+            LonBox.Text = Format.Masukan(kota.Bujur);
+            HitungPesisirOtomatis();
+        }
+    }
+
+    private void ComponentCheck_Click(object sender, RoutedEventArgs e)
+    {
+        WallBox.IsEnabled = WallCheck.IsChecked == true;
+        RoofBox.IsEnabled = RoofCheck.IsChecked == true;
+    }
+
+    private void CoastalOverride_Click(object sender, RoutedEventArgs e)
+    {
+        bool isOverride = CoastalOverrideCheck.IsChecked == true;
+        CoastalBox.IsReadOnly = !isOverride;
+        if (!isOverride)
+        {
+            HitungPesisirOtomatis();
+        }
+    }
+
+    private void HitungPesisirOtomatis()
+    {
+        if (CoastalOverrideCheck.IsChecked == true) return;
+        if (Format.CobaBaca(LatBox.Text, out var lat) && Format.CobaBaca(LonBox.Text, out var lon))
+        {
+            var dist = JarakPesisir.CobaHitungKm(lat, lon);
+            if (dist.HasValue)
+            {
+                CoastalBox.Text = Format.Masukan(Math.Round(dist.Value, 1));
+            }
+        }
     }
 
     private void New_Click(object sender, RoutedEventArgs e) => Shell.NewProject();
@@ -46,6 +101,7 @@ public partial class ProjectPage : PageBase
         {
             var posisi = await Lokasi.DeteksiAsync();
             Map.Place(posisi.Lintang, posisi.Bujur, 17);
+            HitungPesisirOtomatis();
             Shell.Toast($"Lokasi terdeteksi (akurasi ±{Format.Angka(Math.Round(posisi.AkurasiMeter))} m). Simpan proyek untuk menerapkan.");
         }
         catch (InvalidOperationException ex)
@@ -63,30 +119,72 @@ public partial class ProjectPage : PageBase
 
     private async void Save_Click(object sender, RoutedEventArgs e)
     {
-        // Validasi bawaan form (required, type=number) sebelum handler submit referensi.
-        if (new[] { NameBox, LatBox, LonBox, WallBox, RoofBox, CoastalBox }.FirstOrDefault(f => f.Text.Length == 0) is { } empty)
+        if (NameBox.Text.Trim().Length == 0)
         {
-            empty.Focus();
-            Shell.Toast("Harap isi bidang ini.");
-            return;
-        }
-        if (!Format.CobaBaca(LatBox.Text, out var lat) | !Format.CobaBaca(LonBox.Text, out var lon) |
-            !Format.CobaBaca(WallBox.Text, out var wall) | !Format.CobaBaca(RoofBox.Text, out var roof) |
-            !Format.CobaBaca(CoastalBox.Text, out var coastal))
-        {
-            Shell.Toast("Masukkan angka.");
+            NameBox.Focus();
+            Shell.Toast("Masukkan nama proyek.");
             return;
         }
 
-        if (lat < -11 || lat > 6 || lon < 94 || lon > 142) { Shell.Toast("Koordinat di luar bounding box wilayah Indonesia."); return; }
-        if (NameBox.Text.Trim().Length == 0) { Shell.Toast("Masukkan nama proyek."); return; }
-        if (coastal < 0) { Shell.Toast("Jarak pesisir tidak boleh negatif."); return; }
-        if (wall <= 0 || roof <= 0) { Shell.Toast("Luas bidang harus lebih dari nol."); return; }
+        if (!Format.CobaBaca(LatBox.Text, out var lat) || !Format.CobaBaca(LonBox.Text, out var lon))
+        {
+            LatBox.Focus();
+            Shell.Toast("Masukkan angka koordinat.");
+            return;
+        }
 
-        var city = (string)CityBox.SelectedItem;
+        if (!ValidasiKoordinat.CobaValidasi(lat, lon, out var pesanKoordinat))
+        {
+            LatBox.Focus();
+            Shell.Toast(pesanKoordinat!);
+            return;
+        }
+
+        if (WallCheck.IsChecked != true && RoofCheck.IsChecked != true)
+        {
+            Shell.Toast("Pilih minimal satu komponen (dinding atau atap).");
+            return;
+        }
+
+        var daftarKomponen = new List<(JenisKomponen Jenis, double Luas)>();
+        if (WallCheck.IsChecked == true)
+        {
+            if (!Format.CobaBaca(WallBox.Text, out var wall) || wall <= 0)
+            {
+                WallBox.Focus();
+                Shell.Toast("Luas dinding harus lebih dari nol.");
+                return;
+            }
+            daftarKomponen.Add((JenisKomponen.Dinding, wall));
+        }
+
+        if (RoofCheck.IsChecked == true)
+        {
+            if (!Format.CobaBaca(RoofBox.Text, out var roof) || roof <= 0)
+            {
+                RoofBox.Focus();
+                Shell.Toast("Luas atap harus lebih dari nol.");
+                return;
+            }
+            daftarKomponen.Add((JenisKomponen.Atap, roof));
+        }
+
+        double? pesisirManual = null;
+        if (CoastalOverrideCheck.IsChecked == true)
+        {
+            if (!Format.CobaBaca(CoastalBox.Text, out var cVal) || cVal < 0)
+            {
+                CoastalBox.Focus();
+                Shell.Toast("Jarak pesisir tidak boleh negatif.");
+                return;
+            }
+            pesisirManual = cVal;
+        }
+
+        var city = (string)CityBox.SelectedItem ?? S.Aktif.Kota;
         await Shell.RunProjectChangeAsync(async () =>
         {
-            var pesan = await S.UbahProyekAsync(NameBox.Text.Trim(), city, lat, lon, wall, roof, coastal);
+            var pesan = await S.UbahProyekAsync(NameBox.Text.Trim(), city, lat, lon, daftarKomponen, pesisirManual);
             Shell.Render();
             Shell.Toast(pesan is null ? "Proyek disimpan." : $"Proyek disimpan. {pesan}");
         });
@@ -94,7 +192,7 @@ public partial class ProjectPage : PageBase
 
     private async void Delete_Click(object sender, RoutedEventArgs e)
     {
-        if (MessageBox.Show(Window.GetWindow(this)!, "Hapus proyek aktif beserta jadwal terkait?", "Wastu",
+        if (MessageBox.Show(Window.GetWindow(this)!, "Hapus proyek aktif beserta jadwal terkait??", "Wastu",
                 MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK)
             return;
         await Shell.RunProjectChangeAsync(async () =>
@@ -126,8 +224,76 @@ public sealed class ProjectData : ViewData
         Rain = Format.Angka(climate.CurahHujanTahunan) + " mm";
         Humidity = Format.Angka(climate.KelembapanRata) + "%";
         Temperature = Format.Angka(climate.SuhuRata) + "°C";
-        Coastal = Format.Angka(climate.JarakPesisirKm) + " km";
-        Caption = climate.Sumber + ". Diperbarui " + climate.DiperbaruiPada;
+        Coastal = climate.PesisirTersedia ? Format.Angka(climate.JarakPesisirKm) + " km" : "Tidak tersedia";
+
+        CoastalCaption = climate.PesisirTersedia
+            ? "Perkiraan jarak ke garis pantai; proksi paparan udara bergaram."
+            : "Data pesisir tidak tersedia.";
+
+        ProviderText = "Penyedia: " + (!string.IsNullOrWhiteSpace(climate.Provider) ? climate.Provider : climate.Sumber);
+        PeriodText = climate.PeriodeMulai.HasValue && climate.PeriodeSelesai.HasValue
+            ? $"Periode data: {climate.PeriodeMulai.Value:yyyy-MM-dd} s/d {climate.PeriodeSelesai.Value:yyyy-MM-dd}"
+            : "Periode data: 10 tahun historis";
+        TimestampText = climate.DiambilPadaUtc.HasValue
+            ? $"Diambil: {Format.WaktuLokal(climate.DiambilPadaUtc.Value.LocalDateTime)} WIB ({climate.DiambilPadaUtc.Value:yyyy-MM-dd HH:mm} UTC)"
+            : (climate.DiperbaruiPada is not null ? $"Diperbarui: {climate.DiperbaruiPada}" : "Belum diperbarui");
+
+        if (climate.KualitasCache == KualitasCacheIklim.TidakCocokLokasi)
+        {
+            ProvenanceBadge = "Lokasi Lama (Perlu Pembaruan)";
+            BadgeBg = Palette.TagRedBg;
+            BadgeFg = Palette.TagRedFg;
+            BadgeBorder = Palette.DayBadBorder;
+        }
+        else if (climate.StatusPengambilan == StatusPengambilanIklim.GagalMemperbarui)
+        {
+            ProvenanceBadge = "Gagal Memperbarui";
+            BadgeBg = Palette.TagRedBg;
+            BadgeFg = Palette.TagRedFg;
+            BadgeBorder = Palette.DayBadBorder;
+        }
+        else
+        {
+            switch (climate.Provenance)
+            {
+                case ProvenanceIklim.ApiHistoris:
+                    ProvenanceBadge = "API Historis";
+                    BadgeBg = Palette.TagBg;
+                    BadgeFg = Palette.TagFg;
+                    BadgeBorder = Palette.DayGoodBorder;
+                    break;
+                case ProvenanceIklim.CacheHistoris:
+                    ProvenanceBadge = "Cache Historis";
+                    BadgeBg = Palette.TagBg;
+                    BadgeFg = Palette.TagFg;
+                    BadgeBorder = Palette.DayGoodBorder;
+                    break;
+                case ProvenanceIklim.EstimasiBawaan:
+                    ProvenanceBadge = "Estimasi Bawaan";
+                    BadgeBg = Palette.TagPaleBg;
+                    BadgeFg = Palette.TagPaleFg;
+                    BadgeBorder = Palette.Line;
+                    break;
+                case ProvenanceIklim.Contoh:
+                    ProvenanceBadge = "Data Contoh";
+                    BadgeBg = Palette.TagGoldBg;
+                    BadgeFg = Palette.TagGoldFg;
+                    BadgeBorder = Palette.DayWarnBorder;
+                    break;
+                case ProvenanceIklim.ManualOverride:
+                    ProvenanceBadge = "Manual Override";
+                    BadgeBg = Palette.TagGoldBg;
+                    BadgeFg = Palette.TagGoldFg;
+                    BadgeBorder = Palette.DayWarnBorder;
+                    break;
+                default:
+                    ProvenanceBadge = "Legacy (Sumber Tidak Diketahui)";
+                    BadgeBg = Palette.TagPaleBg;
+                    BadgeFg = Palette.TagPaleFg;
+                    BadgeBorder = Palette.Line;
+                    break;
+            }
+        }
     }
 
     public List<ProjectPill> Projects { get; }
@@ -139,7 +305,14 @@ public sealed class ProjectData : ViewData
     public string Humidity { get; }
     public string Temperature { get; }
     public string Coastal { get; }
-    public string Caption { get; }
+    public string CoastalCaption { get; }
+    public string ProviderText { get; }
+    public string PeriodText { get; }
+    public string TimestampText { get; }
+    public string ProvenanceBadge { get; }
+    public Brush BadgeBg { get; }
+    public Brush BadgeFg { get; }
+    public Brush BadgeBorder { get; }
 }
 
 public sealed class ProjectPill(int id, string label, bool active) : ViewData

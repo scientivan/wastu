@@ -17,6 +17,13 @@ public partial class ComparePage : PageBase
         var ranked = S.Peringkat();
         var selected = S.Terpilih();
         _refreshing = true;
+        bool hasWall = S.AdaProyek && S.Aktif.AdaKomponen(JenisKomponen.Dinding);
+        bool hasRoof = S.AdaProyek && S.Aktif.AdaKomponen(JenisKomponen.Atap);
+        WallTab.IsEnabled = hasWall;
+        WallTab.Visibility = hasWall ? Visibility.Visible : Visibility.Collapsed;
+        RoofTab.IsEnabled = hasRoof;
+        RoofTab.Visibility = hasRoof ? Visibility.Visible : Visibility.Collapsed;
+
         WallTab.IsChecked = S.Jenis == JenisKomponen.Dinding;
         RoofTab.IsChecked = S.Jenis == JenisKomponen.Atap;
         Fill(SelectA, ranked, selected.ElementAtOrDefault(0));

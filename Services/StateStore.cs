@@ -3,7 +3,10 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Npgsql;
 using Wastu.Data.Snapshots;
+using Wastu.Domain;
 using Wastu.Models;
+using JenisKomponen = Wastu.Models.JenisKomponen;
+using ProfilIklim = Wastu.Models.ProfilIklim;
 
 namespace Wastu.Services;
 
@@ -33,8 +36,18 @@ public sealed class ProyekDto
     public double Dinding { get; set; }
     public double Atap { get; set; }
     public double JarakPesisir { get; set; }
+    public int RevisiLokasi { get; set; } = 1;
+    public string ZonaWaktu { get; set; } = "Asia/Jakarta";
+    public List<KomponenDto> Komponen { get; set; } = [];
     public IklimDto? Iklim { get; set; }
     public List<PekerjaanDto> Pekerjaan { get; set; } = [];
+}
+
+public sealed class KomponenDto
+{
+    public Guid? DatabaseId { get; set; }
+    public JenisKomponen Jenis { get; set; }
+    public double Luas { get; set; }
 }
 
 public sealed class IklimDto
@@ -44,6 +57,17 @@ public sealed class IklimDto
     public double Suhu { get; set; }
     public string Sumber { get; set; } = "";
     public string Diperbarui { get; set; } = "";
+    public ProvenanceIklim Provenance { get; set; } = ProvenanceIklim.EstimasiBawaan;
+    public StatusPengambilanIklim StatusPengambilan { get; set; } = StatusPengambilanIklim.BelumTersedia;
+    public KualitasCacheIklim KualitasCache { get; set; } = KualitasCacheIklim.CocokLokasi;
+    public DateTimeOffset? DiambilPadaUtc { get; set; }
+    public DateOnly? PeriodeMulai { get; set; }
+    public DateOnly? PeriodeSelesai { get; set; }
+    public string Provider { get; set; } = "";
+    public string VersiAlgoritmePesisir { get; set; } = "";
+    public int? RevisiLokasi { get; set; }
+    public string? CatatanOverridePesisir { get; set; }
+    public bool PesisirTersedia { get; set; } = true;
 }
 
 public sealed class PekerjaanDto
@@ -67,6 +91,11 @@ public sealed class CuacaDto
 
 [JsonSourceGenerationOptions(UseStringEnumConverter = true, WriteIndented = false)]
 [JsonSerializable(typeof(StateDto))]
+[JsonSerializable(typeof(Wastu.Models.JenisKomponen))]
+[JsonSerializable(typeof(KomponenDto))]
+[JsonSerializable(typeof(ProyekDto))]
+[JsonSerializable(typeof(IklimDto))]
+[JsonSerializable(typeof(CuacaDto))]
 internal sealed partial class StateJson : JsonSerializerContext;
 
 public static class StateStore

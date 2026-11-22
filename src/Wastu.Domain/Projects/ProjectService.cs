@@ -60,6 +60,22 @@ public sealed class ProjectService : IProjectService
         return proyek;
     }
 
+    public async Task<(Proyek Proyek, ProfilIklim? Profil, string? Peringatan)> CreateWithClimateAsync(
+        string nama, string kota, double latitude, double longitude,
+        IReadOnlyList<InputKomponen> komponen, CancellationToken ct = default)
+    {
+        var proyek = await CreateProjectAsync(nama, kota, latitude, longitude, komponen, ct).ConfigureAwait(false);
+        try
+        {
+            var profil = await _iklim.GetOrFetchProfileAsync(proyek.Id, ct).ConfigureAwait(false);
+            return (proyek, profil, null);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return (proyek, null, ex.Message);
+        }
+    }
+
     public async Task<ProfilIklim?> UpdateProjectAsync(Guid proyekId, string nama, string kota, double latitude, double longitude,
         double luasDinding, double luasAtap, CancellationToken ct = default)
     {

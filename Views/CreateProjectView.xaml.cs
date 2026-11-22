@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Wastu.Controls;
+using Wastu.Domain;
 using Wastu.Services;
 
 namespace Wastu.Views;
@@ -28,7 +29,7 @@ public partial class CreateProjectView : UserControl
     {
         _window = window;
         InitializeComponent();
-        if (App.State.PostgreSql) CoastalGroup.Visibility = Visibility.Collapsed;
+        CoastalBox.IsReadOnly = true;
         _sections = [Step0, Step1, Step2];
         _titles = [Title0, Title1, Title2];
         Illustration.Source = ImageCache.Planning;
@@ -36,6 +37,9 @@ public partial class CreateProjectView : UserControl
         BuildBubble();
 
         Map.Bind(LatBox, LonBox);
+        LatBox.TextChanged += (_, _) => HitungPesisirOtomatis();
+        LonBox.TextChanged += (_, _) => HitungPesisirOtomatis();
+
         foreach (var name in Katalog.NamaKota) CityBox.Items.Add(name);
         CityBox.Items.Add(Katalog.LokasiLain);
         CityBox.SelectedIndex = 0;
@@ -49,7 +53,8 @@ public partial class CreateProjectView : UserControl
 
     private void BuildSteps()
     {
-        for (var i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++
+        )
         {
             var item = new Grid { Height = 78 };
             if (i < 2)
@@ -157,12 +162,43 @@ public partial class CreateProjectView : UserControl
         {
             LatBox.Text = Format.Masukan(kota.Lintang);
             LonBox.Text = Format.Masukan(kota.Bujur);
-            CoastalBox.Text = Format.Masukan(kota.JarakPesisir);
+            HitungPesisirOtomatis();
         }
         else
         {
             LatBox.Text = LonBox.Text = CoastalBox.Text = "";
         }
+    }
+
+    private void HitungPesisirOtomatis()
+    {
+        if (CoastalOverrideCheck.IsChecked == true) return;
+        if (Format.CobaBaca(LatBox.Text, out var lat) && Format.CobaBaca(LonBox.Text, out var lon))
+        {
+            var dist = JarakPesisir.CobaHitungKm(lat, lon);
+            if (dist.HasValue)
+            {
+                CoastalBox.Text = Format.Masukan(Math.Round(dist.Value, 1));
+            }
+        }
+    }
+
+    private void CoastalOverride_Click(object sender, RoutedEventArgs e)
+    {
+        bool isOverride = CoastalOverrideCheck.IsChecked == true;
+        CoastalBox.IsReadOnly = !isOverride;
+        if (!isOverride)
+        {
+            HitungPesisirOtomatis();
+        }
+    }
+
+    private void ComponentCheck_Click(object sender, RoutedEventArgs e)
+    {
+        WallBox.IsEnabled = WallCheck.IsChecked == true;
+        WallBox.Opacity = WallCheck.IsChecked == true ? 1.0 : 0.5;
+        RoofBox.IsEnabled = RoofCheck.IsChecked == true;
+        RoofBox.Opacity = RoofCheck.IsChecked == true ? 1.0 : 0.5;
     }
 
     private async void Gps_Click(object sender, RoutedEventArgs e)
@@ -175,6 +211,7 @@ public partial class CreateProjectView : UserControl
             var posisi = await Lokasi.DeteksiAsync();
             Map.Place(posisi.Lintang, posisi.Bujur, 17);
             MapHint.Text = $"Lokasi terdeteksi dengan akurasi ±{Format.Angka(Math.Round(posisi.AkurasiMeter))} m. Klik peta bila titiknya perlu digeser.";
+            HitungPesisirOtomatis();
         }
         catch (InvalidOperationException ex)
         {
@@ -199,27 +236,80 @@ public partial class CreateProjectView : UserControl
 
     private bool ValidStep()
     {
-        var fields = _step switch
+        if (_step == 0)
         {
-            0 => new (Control, Func<string?>)[] { (NameBox, () => NameBox.Text.Trim().Length == 0 ? "Masukkan nama proyek." : null) },
-            1 => [
-                (CustomCityBox, () => IsCustomCity && CustomCityBox.Text.Trim().Length == 0 ? "Masukkan kota atau kabupaten." : null),
-                (LatBox, () => Range(LatBox.Text, -11, 6)),
-                (LonBox, () => Range(LonBox.Text, 94, 142)),
-                (CoastalBox, () => App.State.PostgreSql ? null : Range(CoastalBox.Text, 0, null))
-            ],
-            _ => [
-                (WallBox, () => Range(WallBox.Text, 0.1, null)),
-                (RoofBox, () => Range(RoofBox.Text, 0.1, null))
-            ]
-        };
-        foreach (var (field, check) in fields)
+            if (NameBox.Text.Trim().Length == 0)
+            {
+                NameBox.Focus();
+                ShowBubble(NameBox, "Masukkan nama proyek.");
+                return false;
+            }
+            return true;
+        }
+
+        if (_step == 1)
         {
-            if (check() is not { } message) continue;
-            field.Focus();
-            ShowBubble(field, message);
+            if (IsCustomCity && CustomCityBox.Text.Trim().Length == 0)
+            {
+                CustomCityBox.Focus();
+                ShowBubble(CustomCityBox, "Masukkan kota atau kabupaten.");
+                return false;
+            }
+
+            if (!Format.CobaBaca(LatBox.Text, out var lat) || !Format.CobaBaca(LonBox.Text, out var lon))
+            {
+                LatBox.Focus();
+                ShowBubble(LatBox, "Masukkan angka koordinat.");
+                return false;
+            }
+
+            if (!ValidasiKoordinat.CobaValidasi(lat, lon, out var pesanKoordinat))
+            {
+                LatBox.Focus();
+                ShowBubble(LatBox, pesanKoordinat!);
+                return false;
+            }
+
+            if (CoastalOverrideCheck.IsChecked == true)
+            {
+                if (Range(CoastalBox.Text, 0, null) is { } cMsg)
+                {
+                    CoastalBox.Focus();
+                    ShowBubble(CoastalBox, cMsg);
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // _step == 2
+        if (WallCheck.IsChecked != true && RoofCheck.IsChecked != true)
+        {
+            WallCheck.Focus();
+            ShowBubble(WallCheck, "Pilih minimal satu komponen (dinding atau atap).");
             return false;
         }
+
+        if (WallCheck.IsChecked == true)
+        {
+            if (Range(WallBox.Text, 0.1, null) is { } wMsg)
+            {
+                WallBox.Focus();
+                ShowBubble(WallBox, wMsg);
+                return false;
+            }
+        }
+
+        if (RoofCheck.IsChecked == true)
+        {
+            if (Range(RoofBox.Text, 0.1, null) is { } rMsg)
+            {
+                RoofBox.Focus();
+                ShowBubble(RoofBox, rMsg);
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -268,23 +358,43 @@ public partial class CreateProjectView : UserControl
 
         var name = NameBox.Text.Trim();
         var city = IsCustomCity ? CustomCityBox.Text.Trim() : (string)CityBox.SelectedItem;
-        double coastal = 0;
         if (name.Length == 0 || city.Length == 0 ||
             !Format.CobaBaca(LatBox.Text, out var lat) || !Format.CobaBaca(LonBox.Text, out var lon) ||
-            !Format.CobaBaca(WallBox.Text, out var wall) || !Format.CobaBaca(RoofBox.Text, out var roof) ||
-            (!App.State.PostgreSql && !Format.CobaBaca(CoastalBox.Text, out coastal)) ||
-            lat < -11 || lat > 6 || lon < 94 || lon > 142 || wall <= 0 || roof <= 0 || coastal < 0)
+            !ValidasiKoordinat.CobaValidasi(lat, lon, out _))
         {
             ErrorText.Text = "Periksa kembali data proyek sebelum menyimpan.";
             ErrorText.Visibility = Visibility.Visible;
             return;
         }
 
+        var daftarKomponen = new List<(Models.JenisKomponen Jenis, double Luas)>();
+        if (WallCheck.IsChecked == true && Format.CobaBaca(WallBox.Text, out var wall) && wall > 0)
+        {
+            daftarKomponen.Add((Models.JenisKomponen.Dinding, wall));
+        }
+        if (RoofCheck.IsChecked == true && Format.CobaBaca(RoofBox.Text, out var roof) && roof > 0)
+        {
+            daftarKomponen.Add((Models.JenisKomponen.Atap, roof));
+        }
+
+        if (daftarKomponen.Count == 0)
+        {
+            ErrorText.Text = "Pilih minimal satu komponen aktif dengan luas lebih dari 0 m².";
+            ErrorText.Visibility = Visibility.Visible;
+            return;
+        }
+
+        double? pesisirManual = null;
+        if (CoastalOverrideCheck.IsChecked == true && Format.CobaBaca(CoastalBox.Text, out var cm) && cm >= 0)
+        {
+            pesisirManual = cm;
+        }
+
         IsEnabled = false;
-        if (App.State.PostgreSql) _window.Toast("Menyimpan proyek dan mengambil profil iklim…");
+        _window.Toast("Menyimpan proyek...");
         try
         {
-            var pesan = await App.State.TambahProyekAsync(name, city, lat, lon, wall, roof, coastal);
+            var pesan = await App.State.TambahProyekAsync(name, city, lat, lon, daftarKomponen, pesisirManual);
             App.State.Ubah();
             _window.ShowShell("home");
             if (pesan is not null) _window.Toast(pesan);
@@ -292,7 +402,7 @@ public partial class CreateProjectView : UserControl
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine(ex);
-            ErrorText.Text = "Proyek belum dapat disimpan. Periksa koneksi database dan coba lagi.";
+            ErrorText.Text = "Proyek belum dapat disimpan. Periksa koneksi dan coba lagi.";
             ErrorText.Visibility = Visibility.Visible;
         }
         finally

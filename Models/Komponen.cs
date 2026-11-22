@@ -6,6 +6,9 @@ public class Komponen
     private double _luas;
     private readonly List<Evaluasi> _evaluasi = [];
 
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid? DatabaseId { get; set; }
+
     public JenisKomponen Jenis { get => _jenis; set => _jenis = value; }
     public double Luas { get => _luas; set => _luas = value; }
 

@@ -35,6 +35,11 @@ public interface IProjectService
     Task UpdateLocationAsync(Guid proyekId, double latitude, double longitude, CancellationToken ct = default);
 
     Task AddComponentAsync(Guid proyekId, JenisKomponen jenis, double luasM2, CancellationToken ct = default);
+
+    Task<(Proyek Proyek, ProfilIklim? Profil, string? Peringatan)> CreateWithClimateAsync(
+        string nama, string kota, double latitude, double longitude,
+        IReadOnlyList<InputKomponen> komponen, CancellationToken ct = default)
+        => Task.FromResult<(Proyek, ProfilIklim?, string?)>((null!, null, null));
 }
 
 /// <summary>Analisis iklim lokasi (PRD §F3, §10).</summary>

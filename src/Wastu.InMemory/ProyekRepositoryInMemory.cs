@@ -56,9 +56,17 @@ public sealed class ProyekRepositoryInMemory : IProyekRepository
                 _profilIklim.TryRemove(proyek.Id, out _);
             }
             _proyek[proyek.Id] = proyek;
-            foreach (var item in komponen ?? [])
+            if (komponen is not null)
             {
-                _komponen[item.Id] = item;
+                var keepIds = komponen.Select(k => k.Id).ToHashSet();
+                foreach (var k in _komponen.Values.Where(k => k.ProyekId == proyek.Id && !keepIds.Contains(k.Id)).ToList())
+                {
+                    _komponen.TryRemove(k.Id, out _);
+                }
+                foreach (var item in komponen)
+                {
+                    _komponen[item.Id] = item;
+                }
             }
         }
 
