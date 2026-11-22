@@ -4,11 +4,11 @@ namespace Wastu.Services;
 
 public static class ReportSnapshotFactory
 {
-    public static async Task<SnapshotLaporan> BuildAsync(AppState state, Models.JenisKomponen jenis, int horizon,
+    public static async Task<SnapshotLaporan> BuildAsync(AppState state, Models.JenisKomponen? jenis, int horizon,
         bool includeSchedule, IReadOnlySet<string> selectedCodes, CancellationToken ct = default)
     {
         // Capture all inputs and persistence tasks before the first await.
-        var rank = state.Peringkat(jenis);
+        var rank = Peringkat(state, jenis).Select(row => row.Evaluasi).ToArray();
         var snapshot = Build(state, jenis, horizon, includeSchedule, selectedCodes);
         var originals = rank.Where(e => selectedCodes.Contains(state.Item(e.Bahan).Kode))
             .Select(e => (Id: e.HasilDomain!.Id, Pending: state.EvaluasiTersimpanAsync(e, ct))).ToArray();
@@ -18,17 +18,21 @@ public static class ReportSnapshotFactory
             .Select(s => s with { EvaluasiId = ids[s.EvaluasiId] }).ToArray() };
     }
 
-    public static SnapshotLaporan Build(AppState state, Models.JenisKomponen jenis, int horizon,
+    internal static IEnumerable<(Models.Evaluasi Evaluasi, int Peringkat)> Peringkat(AppState state, Models.JenisKomponen? jenis)
+        => state.Aktif.JenisKomponenAktif.Where(k => jenis is null || k == jenis)
+            .SelectMany(k => state.Peringkat(k).Select((e, index) => (e, index + 1)));
+
+    public static SnapshotLaporan Build(AppState state, Models.JenisKomponen? jenis, int horizon,
         bool includeSchedule, IReadOnlySet<string> selectedCodes)
     {
         if (selectedCodes.Count == 0)
             throw new InvalidOperationException("Pilih minimal satu material untuk laporan.");
         var p = state.Aktif;
         var climate = state.Iklim;
-        var rank = state.Peringkat(jenis);
+        var rank = Peringkat(state, jenis).ToArray();
 
         // Map components
-        var compList = p.Komponen.Where(k => k.Jenis == jenis).Select(k => new SnapshotKomponen(
+        var compList = p.Komponen.Where(k => jenis is null || k.Jenis == jenis).Select(k => new SnapshotKomponen(
             k.Jenis == Models.JenisKomponen.Dinding ? Wastu.Domain.JenisKomponen.Dinding : Wastu.Domain.JenisKomponen.Atap,
             k.Luas)).ToList();
 
@@ -38,12 +42,12 @@ public static class ReportSnapshotFactory
         var selectedBahan = new List<SnapshotBahan>();
         for (int i = 0; i < rank.Length; i++)
         {
-            var e = rank[i];
+            var (e, peringkat) = rank[i];
             var item = state.Item(e.Bahan);
             if (selectedCodes.Contains(item.Kode))
             {
                 selectedBahan.Add(SnapshotBahanMapper.Buat(item, e,
-                    p.Komponen.Single(k => k.Jenis == jenis).Id, i + 1));
+                    p.Komponen.Single(k => k.Jenis == item.Jenis).Id, peringkat));
             }
         }
 
@@ -51,7 +55,7 @@ public static class ReportSnapshotFactory
         var simList = new List<SnapshotSimulasi>();
         foreach (var mat in selectedBahan)
         {
-            var evaluasi = rank.FirstOrDefault(r => r.Bahan.DomainId == mat.BahanId);
+            var evaluasi = rank.Select(r => r.Evaluasi).FirstOrDefault(r => r.Bahan.DomainId == mat.BahanId);
             if (evaluasi is not null)
             {
                 var item = state.Item(evaluasi.Bahan);
@@ -76,6 +80,9 @@ public static class ReportSnapshotFactory
                 }
             }
         }
+
+        if (compList.Count == 0 || compList.Any(c => !selectedBahan.Any(b => b.Jenis == c.Jenis)))
+            throw new InvalidOperationException("Pilih minimal satu material untuk setiap komponen laporan.");
 
         // Locked jobs
         var lockedJobs = new List<SnapshotPekerjaan>();

@@ -14,7 +14,7 @@ namespace Wastu.Views.Pages;
 
 public partial class ReportPage : PageBase
 {
-    private JenisKomponen _selectedJenis = JenisKomponen.Dinding;
+    private JenisKomponen? _selectedJenis = JenisKomponen.Dinding;
     private int _selectedHorizon = 30;
     private bool _includeSchedule = true;
     private readonly HashSet<string> _selectedMaterialCodes = [];
@@ -42,7 +42,8 @@ public partial class ReportPage : PageBase
 
         if (S.AdaProyek)
         {
-            if (!S.Aktif.AdaKomponen(_selectedJenis))
+            if (_selectedJenis is { } selected && !S.Aktif.AdaKomponen(selected)
+                || _selectedJenis is null && S.Aktif.JenisKomponenAktif.Count < 2)
             {
                 _selectedJenis = S.Jenis;
             }
@@ -67,6 +68,11 @@ public partial class ReportPage : PageBase
             }
 
             if (Hor20Radio is not null) Hor20Radio.IsChecked = _selectedHorizon == 20;
+            if (CompBothRadio is not null)
+            {
+                CompBothRadio.Visibility = S.Aktif.JenisKomponenAktif.Count == 2 ? Visibility.Visible : Visibility.Collapsed;
+                CompBothRadio.IsChecked = _selectedJenis is null;
+            }
             if (Hor30Radio is not null) Hor30Radio.IsChecked = _selectedHorizon == 30;
             if (Hor50Radio is not null) Hor50Radio.IsChecked = _selectedHorizon == 50;
 
@@ -81,17 +87,11 @@ public partial class ReportPage : PageBase
         if (!_selectionInitialized)
         {
             _selectionInitialized = true;
-            var rank = S.Peringkat(_selectedJenis);
-            foreach (var item in S.Terpilih().Where(item => item.Jenis == _selectedJenis))
+            foreach (var kind in S.Aktif.JenisKomponenAktif.Where(k => _selectedJenis is null || k == _selectedJenis))
             {
-                _selectedMaterialCodes.Add(item.Kode);
-            }
-            if (_selectedMaterialCodes.Count == 0 && rank.Length > 0)
-            {
-                foreach (var e in rank.Take(3))
-                {
-                    _selectedMaterialCodes.Add(S.Item(e.Bahan).Kode);
-                }
+                var chosen = S.Terpilih().Where(item => item.Jenis == kind).ToArray();
+                if (chosen.Length == 0) chosen = S.Peringkat(kind).Take(3).Select(e => S.Item(e.Bahan)).ToArray();
+                foreach (var item in chosen) _selectedMaterialCodes.Add(item.Kode);
             }
         }
 
@@ -101,9 +101,9 @@ public partial class ReportPage : PageBase
     private void Comp_Checked(object sender, RoutedEventArgs e)
     {
         if (_syncingControls) return;
-        if (sender is RadioButton rb && rb.Tag is string tag && Enum.TryParse<JenisKomponen>(tag, out var jenis))
+        if (sender is RadioButton { Tag: string tag })
         {
-            _selectedJenis = jenis;
+            _selectedJenis = Enum.TryParse<JenisKomponen>(tag, out var jenis) ? jenis : null;
             _selectedMaterialCodes.Clear();
             _selectionInitialized = false;
             Refresh();
@@ -326,30 +326,33 @@ public sealed class ReportHistoryItem : ViewData
 
 public sealed class ReportData : ViewData
 {
-    public ReportData(AppState s, JenisKomponen jenis, int horizon, bool includeSchedule, HashSet<string> selectedCodes)
+    public ReportData(AppState s, JenisKomponen? jenis, int horizon, bool includeSchedule, HashSet<string> selectedCodes)
     {
         var p = s.Aktif;
         var climate = s.Iklim;
         Subtitle = Format.Tanggal(DateTime.Today) + " " + p.Nama;
         Location = $"{p.Kota} ({Format.Angka(p.Latitude)}, {Format.Angka(p.Longitude)})";
-        Areas = $"Dinding {Format.Angka(p.LuasKomponen(Models.JenisKomponen.Dinding))} m² Atap {Format.Angka(p.LuasKomponen(Models.JenisKomponen.Atap))} m²";
+        Areas = string.Join(" · ", p.Komponen.Where(k => jenis is null || k.Jenis == jenis)
+            .Select(k => $"{k.Jenis} {Format.Angka(k.Luas)} m²"));
         Climate = climate.SudahDiperbarui
             ? $"{Format.Angka(climate.CurahHujanTahunan)} mm hujan per tahun, {Format.Angka(climate.KelembapanRata)}% kelembapan"
             : "Profil iklim belum diperbarui.";
         ClimateDetail = $"Suhu {Format.Angka(climate.SuhuRata)}°C. Jarak pesisir {Format.Angka(climate.JarakPesisirKm)} km";
         HasClimate = climate.SudahDiperbarui ? Visibility.Visible : Visibility.Collapsed;
 
-        RankingTitle = "Peringkat material " + (jenis == JenisKomponen.Dinding ? "dinding" : "atap");
+        RankingTitle = "Peringkat material " + (jenis is null ? "dinding dan atap" : jenis == JenisKomponen.Dinding ? "dinding" : "atap");
 
-        var rank = s.Peringkat(jenis);
-        SelectableMaterials = rank.Select((e, i) =>
+        var rank = ReportSnapshotFactory.Peringkat(s, jenis).ToArray();
+        SelectableMaterials = rank.Select(row =>
         {
+            var e = row.Evaluasi;
             var code = s.Item(e.Bahan).Kode;
-            return new SelectableMaterialItem(i + 1, code, e.Bahan.Nama, e.SkorKesesuaian, e.EmisiAwal, e.Alasan, selectedCodes.Contains(code));
+            var name = jenis is null ? $"{s.Item(e.Bahan).Jenis} · {e.Bahan.Nama}" : e.Bahan.Nama;
+            return new SelectableMaterialItem(row.Peringkat, code, name, e.SkorKesesuaian, e.EmisiAwal, e.Alasan, selectedCodes.Contains(code));
         }).ToList();
 
         // Selected rows (no 5-item cutoff!)
-        var chosenEvaluasi = rank.Where(e => selectedCodes.Contains(s.Item(e.Bahan).Kode)).ToArray();
+        var chosenEvaluasi = rank.Select(row => row.Evaluasi).Where(e => selectedCodes.Contains(s.Item(e.Bahan).Kode)).ToArray();
         Rows = chosenEvaluasi.Select((e, i) => new ReportRow(e, i == chosenEvaluasi.Length - 1)).ToList();
 
         SimulationTitle = $"Simulasi {horizon} tahun";
