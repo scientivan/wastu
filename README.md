@@ -87,7 +87,9 @@ Aplikasi desktop Windows berbasis WPF (.NET 8, C#) dengan data cuaca dan iklim d
 
 File `.env` dicari dari direktori kerja, lalu direktori executable, termasuk folder induknya. Environment variable yang terisi lebih diutamakan daripada nilai dalam file. `.env` tidak disertakan dalam build atau publish dan tidak boleh di-commit. Untuk menjalankan hasil publish, sediakan `.env` sendiri di direktori executable atau atur environment variable. Konfigurasi database yang hanya terisi sebagian akan menghasilkan kesalahan agar aplikasi tidak diam-diam beralih ke mode lokal.
 
-Dengan koneksi PostgreSQL, proyek, luas bidang, profil iklim, dan katalog dibaca dari database. Katalog dimuat saat aplikasi dibuka. Jadwal dan preferensi tampilan disimpan di `state-postgres.json`. Saat seluruh konfigurasi koneksi kosong, aplikasi membuka proyek dan katalog lokal seperti biasa. Proyek lama tetap dapat dibuka di mode lokal melalui `state.json`.
+Dengan koneksi PostgreSQL, proyek, luas bidang, profil iklim, dan katalog dibaca dari database. Katalog dimuat saat aplikasi dibuka. Snapshot lokal dipisahkan menurut profil koneksi; state tampilan, bobot per proyek, dan jadwal UI ikut disimpan dalam snapshot tersebut. Integrasi seluruh jalur simulasi/jadwal/laporan UI dengan repository PostgreSQL masih perlu dituntaskan dalam WP08.
+
+Saat seluruh konfigurasi koneksi kosong, aplikasi membuka mode JSON lokal. Berkas legacy `state.json` dan `state-postgres.json` dapat diimpor ke snapshot berversi yang sesuai. Jika database tidak tersedia, snapshot profil koneksi yang valid dapat dibuka dalam mode baca-saja; bila snapshot tidak tersedia atau rusak, aplikasi menampilkan alur pemulihan.
 
 Dalam mode PostgreSQL, profil iklim memakai 10 tahun data historis Open-Meteo. Jarak pesisir diestimasi dari segmen garis pantai regional [Natural Earth 1:10m](https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-coastline/). Resolusi garis pantai membatasi akurasi jarak pada pulau kecil.
 
