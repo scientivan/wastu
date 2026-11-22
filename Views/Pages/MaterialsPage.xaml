@@ -3,80 +3,239 @@
             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
             xmlns:c="clr-namespace:Wastu.Controls"
             xmlns:p="clr-namespace:Wastu.Views.Pages">
-    <StackPanel>
-        <c:PageHeading Title="Eksplor material" Description="Temukan bahan dinding dan atap untuk proyek Anda." />
+    <Grid>
+        <!-- Konten Utama Halaman Katalog -->
+        <StackPanel>
+            <c:PageHeading Title="Eksplor material" Description="Temukan bahan dinding dan atap untuk proyek Anda." />
 
-        <!-- .controls -->
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
-            <Border Style="{StaticResource Seg}">
-                <StackPanel Orientation="Horizontal">
-                    <RadioButton x:Name="WallTab" Style="{StaticResource SegItem}" Content="Dinding" Tag="Dinding" Click="Kind_Click" Margin="0,0,4,0" />
-                    <RadioButton x:Name="RoofTab" Style="{StaticResource SegItem}" Content="Atap" Tag="Atap" Click="Kind_Click" />
-                </StackPanel>
-            </Border>
-            <TextBox x:Name="SearchBox" Style="{StaticResource Input}" Width="380" Margin="12,0" c:Ui.Placeholder="Cari nama material..."
-                     TextChanged="Search_TextChanged" />
-            <Border Style="{StaticResource Tag}" Background="{StaticResource TagGoldBg}" TextElement.Foreground="{StaticResource TagGoldFg}">
-                <c:CssText x:Name="CountText" Leading="1.4" />
-            </Border>
-        </StackPanel>
+            <!-- .controls -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+                <Border Style="{StaticResource Seg}">
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton x:Name="WallTab" Style="{StaticResource SegItem}" Content="Dinding" Tag="Dinding" Click="Kind_Click" Margin="0,0,4,0" />
+                        <RadioButton x:Name="RoofTab" Style="{StaticResource SegItem}" Content="Atap" Tag="Atap" Click="Kind_Click" />
+                    </StackPanel>
+                </Border>
+                <TextBox x:Name="SearchBox" Style="{StaticResource Input}" Width="320" Margin="12,0" c:Ui.Placeholder="Cari nama material..."
+                         TextChanged="Search_TextChanged" />
+                <Border Style="{StaticResource Tag}" Background="{StaticResource TagGoldBg}" TextElement.Foreground="{StaticResource TagGoldFg}">
+                    <c:CssText x:Name="CountText" Leading="1.4" />
+                </Border>
+                <Button x:Name="RefreshBtn" Style="{StaticResource BtnLightSm}" Content="Segarkan Katalog" Margin="12,0,0,0" Click="RefreshCatalog_Click" />
+            </StackPanel>
 
-        <ItemsControl x:Name="Cards" Focusable="False">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <c:FlowGrid Columns="4" CompactColumns="3" ColumnGap="18" RowGap="18" />
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <!-- .mat-card -->
-                    <Border Style="{StaticResource Card}">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="155" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
-                            <Border CornerRadius="9,9,0,0" Background="{Binding Image}" />
-                            <Grid Grid.Row="1" Margin="16">
+            <ItemsControl x:Name="Cards" Focusable="False">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <c:FlowGrid Columns="4" CompactColumns="3" ColumnGap="18" RowGap="18" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <!-- .mat-card -->
+                        <Border Style="{StaticResource Card}">
+                            <Grid>
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="155" />
                                     <RowDefinition Height="*" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-                                <c:TrackedText Text="{Binding Kind}" FontSize="10" Tracking="0.4" LineHeight="15.5" Foreground="{StaticResource MutedLineInk}" />
-                                <c:TrackedText Grid.Row="1" Text="{Binding Name}" FontSize="15" FontWeight="650" Tracking="-0.525" LineHeight="21" Wrap="True" Margin="0,9" />
-                                <ContentPresenter Grid.Row="2" Content="{Binding Tag}" ContentTemplate="{StaticResource TagTemplate}" HorizontalAlignment="Left" />
-                                <StackPanel Grid.Row="3" Margin="0,12,0,17">
-                                    <c:CssText Text="{Binding Reason}" FontSize="12" Foreground="{StaticResource Muted}" Leading="1.6" TextWrapping="Wrap" />
-                                    <c:CssText Text="{Binding Source}" FontSize="10" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,5,0,0" />
-                                </StackPanel>
-                                <Border Grid.Row="4" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="0,13,0,0">
-                                    <Grid>
+                                <Border CornerRadius="9,9,0,0" Background="{Binding Image}" />
+                                <Grid Grid.Row="1" Margin="16">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <c:TrackedText Text="{Binding Kind}" FontSize="10" Tracking="0.4" LineHeight="15.5" Foreground="{StaticResource MutedLineInk}" />
+                                    <c:TrackedText Grid.Row="1" Text="{Binding Name}" FontSize="15" FontWeight="650" Tracking="-0.525" LineHeight="21" Wrap="True" Margin="0,9" />
+                                    <ContentPresenter Grid.Row="2" Content="{Binding Tag}" ContentTemplate="{StaticResource TagTemplate}" HorizontalAlignment="Left" />
+                                    <StackPanel Grid.Row="3" Margin="0,12,0,17">
+                                        <c:CssText Text="{Binding Reason}" FontSize="12" Foreground="{StaticResource Muted}" Leading="1.6" TextWrapping="Wrap" />
+                                        <c:CssText Text="{Binding Source}" FontSize="10" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,5,0,0" />
+                                    </StackPanel>
+                                    <Border Grid.Row="4" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="0,13,0,0">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="10" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <c:TrackedText Text="{Binding Score}" FontSize="19" FontWeight="650" Tracking="-0.5" Foreground="{Binding ScoreBrush}" />
+                                                <c:CssText Text="Kesesuaian iklim" FontSize="10" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" Margin="0,4,0,0" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2">
+                                                <c:TrackedText Text="{Binding Emission}" FontSize="19" FontWeight="700" Tracking="-0.5" />
+                                                <c:CssText Text="{Binding EmissionLabel}" FontSize="10" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" Margin="0,4,0,0" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                    <Grid Grid.Row="5" Margin="0,15,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="10" />
+                                            <ColumnDefinition Width="8" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
-                                        <StackPanel>
-                                            <c:TrackedText Text="{Binding Score}" FontSize="19" FontWeight="650" Tracking="-0.5" Foreground="{Binding ScoreBrush}" />
-                                            <c:CssText Text="Kesesuaian iklim" FontSize="10" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" Margin="0,4,0,0" />
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="2">
-                                            <c:TrackedText Text="{Binding Emission}" FontSize="19" FontWeight="700" Tracking="-0.5" />
-                                            <c:CssText Text="{Binding EmissionLabel}" FontSize="10" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" Margin="0,4,0,0" />
-                                        </StackPanel>
+                                        <Button Grid.Column="0" Style="{StaticResource BtnLightSm}" Content="Detail bahan" Tag="{Binding Code}"
+                                                HorizontalAlignment="Stretch" Click="Detail_Click" />
+                                        <Button Grid.Column="2" Style="{StaticResource BtnLightSm}" Content="Bandingkan" Tag="{Binding Code}"
+                                                HorizontalAlignment="Stretch" Click="Pick_Click" />
                                     </Grid>
-                                </Border>
-                                <Button Grid.Row="5" Style="{StaticResource BtnLightSm}" Content="Bandingkan material" Tag="{Binding Code}"
-                                        HorizontalAlignment="Stretch" Margin="0,17,0,0" Click="Pick_Click" />
+                                </Grid>
                             </Grid>
-                        </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+
+        <!-- Panel Modal Detail Bahan & Provenance Transparan (F2-01..F2-03, X13) -->
+        <Grid x:Name="DetailModal" Visibility="Collapsed" Background="#7F000000" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+            <Border HorizontalAlignment="Center" VerticalAlignment="Center" Width="680" MaxHeight="620"
+                    Background="{StaticResource White}" CornerRadius="12" BorderBrush="{StaticResource Line}" BorderThickness="1" Padding="24">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Modal Header -->
+                    <Grid Grid.Row="0" Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                <Border Style="{StaticResource Tag}" Background="{StaticResource TagGoldBg}" Margin="0,0,8,0">
+                                    <TextBlock x:Name="DetailKindBadge" FontSize="11" FontWeight="600" Foreground="{StaticResource TagGoldFg}" />
+                                </Border>
+                                <c:TrackedText Text="SPESIFIKASI &amp; PROVENANCE BAHAN" FontSize="11" Tracking="0.4" Foreground="{StaticResource MutedLineInk}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock x:Name="DetailName" FontSize="20" FontWeight="700" Foreground="{StaticResource Ink}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <Button Grid.Column="1" Style="{StaticResource BtnLightSm}" Content="✕" Width="32" Height="32" Padding="0" Click="CloseDetail_Click" />
+                    </Grid>
+
+                    <!-- Modal Body (Scrollable) -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,-8,0" Padding="0,0,8,0">
+                        <StackPanel>
+                            <!-- Susunan & Ketebalan -->
+                            <Border Background="{StaticResource ChipBg}" CornerRadius="8" Padding="14" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <c:TrackedText Text="SUSUNAN &amp; KETEBALAN STANDAR" FontSize="11" FontWeight="650" Tracking="0.4" Foreground="{StaticResource MutedLineInk}" Margin="0,0,0,4" />
+                                    <TextBlock x:Name="DetailAssembly" FontSize="13" Foreground="{StaticResource Ink}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Karakteristik Teknis -->
+                            <c:TrackedText Text="PROPERTI FISIK &amp; LINGKUNGAN" FontSize="12" FontWeight="700" Tracking="0.4" Foreground="{StaticResource Ink}" Margin="0,0,0,10" />
+                            <Grid Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <!-- Kolom Kiri -->
+                                <StackPanel Grid.Column="0">
+                                    <Border BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,10">
+                                        <StackPanel>
+                                            <TextBlock Text="Konduktivitas Termal" FontSize="12" FontWeight="600" Foreground="{StaticResource Ink}" />
+                                            <TextBlock x:Name="DetailThermal" FontSize="16" FontWeight="700" Foreground="{StaticResource Green}" Margin="0,3" />
+                                            <c:CssText Text="Kemudahan bahan menghantarkan panas (W/(m·K)); makin rendah angka makin baik menahan panas tropis." FontSize="11" Foreground="{StaticResource Muted}" Leading="1.4" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="8" Padding="12">
+                                        <StackPanel>
+                                            <TextBlock Text="Ketahanan Lembap" FontSize="12" FontWeight="600" Foreground="{StaticResource Ink}" />
+                                            <TextBlock x:Name="DetailMoisture" FontSize="16" FontWeight="700" Foreground="{StaticResource Green}" Margin="0,3" />
+                                            <c:CssText Text="Skala indeks 1–5; makin tinggi makin tahan terhadap penetrasi kelembapan dan curah hujan." FontSize="11" Foreground="{StaticResource Muted}" Leading="1.4" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                                <!-- Kolom Kanan -->
+                                <StackPanel Grid.Column="2">
+                                    <Border BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,10">
+                                        <StackPanel>
+                                            <TextBlock Text="Ketahanan Korosi" FontSize="12" FontWeight="600" Foreground="{StaticResource Ink}" />
+                                            <TextBlock x:Name="DetailCorrosion" FontSize="16" FontWeight="700" Foreground="{StaticResource Green}" Margin="0,3" />
+                                            <c:CssText Text="Skala indeks 1–5; relevansi terhadap paparan salinitas udara pesisir pantai." FontSize="11" Foreground="{StaticResource Muted}" Leading="1.4" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="8" Padding="12">
+                                        <StackPanel>
+                                            <TextBlock Text="Usia Pakai Nominal" FontSize="12" FontWeight="600" Foreground="{StaticResource Ink}" />
+                                            <TextBlock x:Name="DetailLifespan" FontSize="16" FontWeight="700" Foreground="{StaticResource Green}" Margin="0,3" />
+                                            <c:CssText Text="Tahun standar pemeliharaan; dibedakan dari usia efektif proyek setelah penyesuaian iklim." FontSize="11" Foreground="{StaticResource Muted}" Leading="1.4" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Faktor Emisi -->
+                            <Border BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,18">
+                                <StackPanel>
+                                    <TextBlock Text="Faktor Emisi Embodied (kgCO₂e/m²)" FontSize="12" FontWeight="600" Foreground="{StaticResource Ink}" />
+                                    <TextBlock x:Name="DetailEmission" FontSize="16" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,3" />
+                                    <c:CssText Text="Jejak karbon manufaktur (siklus hidup A1–A3) per m² untuk susunan dan ketebalan standar yang dinyatakan." FontSize="11" Foreground="{StaticResource Muted}" Leading="1.4" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Sumber & Transparansi Per Properti -->
+                            <Border BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="0,16,0,0" Margin="0,4,0,0">
+                                <StackPanel>
+                                    <c:TrackedText Text="SUMBER &amp; STATUS VERIFIKASI PER NILAI (PRD §F2-03, X13)" FontSize="12" FontWeight="700" Tracking="0.4" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
+                                    <c:CssText Text="Transparansi asal data setiap properti, status verifikasi (Perkiraan/Terverifikasi), serta catatan konversi perakitan." FontSize="11" Foreground="{StaticResource Muted}" Leading="1.4" TextWrapping="Wrap" Margin="0,0,0,12" />
+
+                                    <TextBlock x:Name="DetailSourcesEmpty" Text="Tidak ada catatan sumber rujukan terdaftar untuk bahan ini." FontSize="12" Foreground="{StaticResource Muted}" FontStyle="Italic" Visibility="Collapsed" Margin="0,8" />
+
+                                    <ItemsControl x:Name="DetailSources" Focusable="False">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="{StaticResource ChipBg}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,10">
+                                                    <StackPanel>
+                                                        <Grid Margin="0,0,0,6">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Text="{Binding Properti}" FontSize="13" FontWeight="650" Foreground="{StaticResource Ink}" />
+                                                            <Border Grid.Column="1" Style="{StaticResource Tag}" Background="{StaticResource TagGoldBg}">
+                                                                <TextBlock Text="{Binding Status}" FontSize="10" FontWeight="600" Foreground="{Binding StatusBrush}" />
+                                                            </Border>
+                                                        </Grid>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                            <TextBlock Text="Rujukan: " FontSize="11" FontWeight="600" Foreground="{StaticResource MutedLineInk}" />
+                                                            <TextBlock Text="{Binding Referensi}" FontSize="11" Foreground="{StaticResource Ink}" TextWrapping="Wrap" />
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4" Visibility="{Binding TautanVisibility}">
+                                                            <TextBlock Text="Tautan: " FontSize="11" FontWeight="600" Foreground="{StaticResource MutedLineInk}" />
+                                                            <TextBlock Text="{Binding Tautan}" FontSize="11" Foreground="{StaticResource Green}" TextWrapping="Wrap" />
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                            <TextBlock Text="Catatan: " FontSize="11" FontWeight="600" Foreground="{StaticResource MutedLineInk}" VerticalAlignment="Top" />
+                                                            <c:CssText Text="{Binding Catatan}" FontSize="11" Foreground="{StaticResource Muted}" Leading="1.4" TextWrapping="Wrap" />
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Modal Footer -->
+                    <Border Grid.Row="2" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="0,14,0,0" Margin="0,14,0,0">
+                        <Button Style="{StaticResource BtnLightSm}" Content="Tutup" HorizontalAlignment="Right" Width="90" Click="CloseDetail_Click" />
                     </Border>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
-    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
 </p:PageBase>

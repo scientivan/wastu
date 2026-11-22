@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -22,7 +23,45 @@ public partial class MaterialsPage : PageBase
         _refreshing = false;
 
         var area = S.Luas;
-        _cards = S.Peringkat().Select(e => new MaterialCard(S.Item(e.Bahan), e, area)).ToList();
+        _cards = [];
+        try
+        {
+            var evaluasiList = S.Peringkat();
+            foreach (var e in evaluasiList)
+            {
+                try
+                {
+                    if (e?.Bahan is null) continue;
+                    var item = S.Item(e.Bahan);
+                    if (item is null) continue;
+                    _cards.Add(new MaterialCard(item, e, area));
+                }
+                catch
+                {
+                    // Isolasi baris bahan tidak valid secara anggun tanpa menjatuhkan seluruh katalog
+                }
+            }
+        }
+        catch
+        {
+            // Jika kalkulasi evaluasi gagal, tampilkan kartu bahan dari katalog secara aman
+            try
+            {
+                var katalogField = typeof(AppState).GetField("_katalog", BindingFlags.NonPublic | BindingFlags.Instance);
+                if (katalogField?.GetValue(S) is IReadOnlyList<ItemKatalog> allItems)
+                {
+                    _cards = allItems
+                        .Where(item => item.Jenis == S.Jenis)
+                        .Select(item => new MaterialCard(item, null, area))
+                        .ToList();
+                }
+            }
+            catch
+            {
+                // Diamkan fallback terakhir
+            }
+        }
+
         ApplyFilter();
     }
 
@@ -65,25 +104,121 @@ public partial class MaterialsPage : PageBase
         S.PilihUntukBanding(TagOf(sender));
         Shell.Go("compare");
     }
+
+    private void Detail_Click(object sender, RoutedEventArgs e)
+    {
+        var code = TagOf(sender);
+        var card = _cards.Find(c => c.Code == code);
+        if (card is null) return;
+
+        TampilkanDetail(card.Item);
+    }
+
+    private void TampilkanDetail(ItemKatalog item)
+    {
+        DetailName.Text = item.Bahan.Nama;
+        DetailKindBadge.Text = item.Jenis == JenisKomponen.Atap ? "ATAP" : "DINDING";
+        DetailAssembly.Text = string.IsNullOrWhiteSpace(item.Bahan.SusunanKetebalan)
+            ? "Susunan standar material tunggal"
+            : item.Bahan.SusunanKetebalan;
+
+        DetailThermal.Text = $"{Format.Angka(item.Bahan.KonduktivitasTermal)} W/(m·K)";
+        DetailMoisture.Text = $"{item.Bahan.KetahananLembap} / 5";
+        DetailCorrosion.Text = $"{item.Bahan.KetahananKorosi} / 5";
+        DetailLifespan.Text = $"{Format.Angka(item.Bahan.UsiaPakaiTahun)} tahun";
+        DetailEmission.Text = $"{Format.Angka(item.Bahan.FaktorEmisi)} kgCO₂e/m²";
+
+        var sumberList = (item.Bahan.SumberProperti ?? [])
+            .Select(s => new SumberItemViewData(s))
+            .ToList();
+
+        DetailSources.ItemsSource = sumberList;
+        DetailSourcesEmpty.Visibility = sumberList.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        DetailModal.Visibility = Visibility.Visible;
+    }
+
+    private void CloseDetail_Click(object sender, RoutedEventArgs e)
+    {
+        DetailModal.Visibility = Visibility.Collapsed;
+    }
+
+    private async void RefreshCatalog_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            RefreshBtn.IsEnabled = false;
+            RefreshBtn.Content = "Menyegarkan...";
+
+            var backendField = typeof(AppState).GetField("_backend", BindingFlags.NonPublic | BindingFlags.Instance);
+            var backend = backendField?.GetValue(S) as PostgreSqlBackend;
+            var koneksiField = typeof(AppState).GetField("_koneksi", BindingFlags.NonPublic | BindingFlags.Instance);
+            var koneksi = koneksiField?.GetValue(S) as string
+                ?? Environment.GetEnvironmentVariable("WASTU_POSTGRESQL_CONNECTION");
+
+            if (backend is null && !string.IsNullOrWhiteSpace(koneksi))
+            {
+                try
+                {
+                    backend = new PostgreSqlBackend(koneksi);
+                    backendField?.SetValue(S, backend);
+                }
+                catch
+                {
+                    // Gunakan mode lokal bila koneksi gagal
+                }
+            }
+
+            IReadOnlyList<ItemKatalog> items;
+            if (backend is not null)
+            {
+                var dinding = await backend.Material.ListByKindAsync(Domain.JenisKomponen.Dinding);
+                var atap = await backend.Material.ListByKindAsync(Domain.JenisKomponen.Atap);
+                items = dinding.Concat(atap).Select(ItemKatalog.DariDomain).ToArray();
+            }
+            else
+            {
+                items = Katalog.Semua;
+            }
+
+            var katalogField = typeof(AppState).GetField("_katalog", BindingFlags.NonPublic | BindingFlags.Instance);
+            katalogField?.SetValue(S, items);
+
+            Refresh();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Gagal menyegarkan katalog: " + ex.Message, "Segarkan Katalog", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally
+        {
+            RefreshBtn.IsEnabled = true;
+            RefreshBtn.Content = "Segarkan Katalog";
+        }
+    }
 }
 
 public sealed class MaterialCard : ViewData
 {
-    public MaterialCard(ItemKatalog item, Evaluasi e, double area)
+    public MaterialCard(ItemKatalog item, Evaluasi? e, double area)
     {
+        Item = item;
         Code = item.Kode;
         Image = ImageCache.Cover(item.Gambar);
         Kind = item.Jenis == JenisKomponen.Atap ? "MATERIAL ATAP" : "MATERIAL DINDING";
         Name = item.Bahan.Nama;
-        Tag = TagData.Kesesuaian(e.SkorKesesuaian);
-        Reason = e.Alasan.Split(';')[0].TrimEnd('.') + ".";
+        Tag = e is not null ? TagData.Kesesuaian(e.SkorKesesuaian) : new TagData("Katalog", Palette.TagBg, Palette.TagFg);
+        Reason = e is not null
+            ? (e.Alasan.Split(';')[0].TrimEnd('.') + ".")
+            : "Bahan siap dievaluasi untuk proyek Anda.";
         Source = item.Bahan.DataSource;
-        Score = Format.Angka(e.SkorKesesuaian) + "/100";
-        ScoreBrush = e.SkorKesesuaian < 55 ? Palette.Red : Palette.Score;
-        Emission = Format.Angka(e.EmisiAwal);
+        Score = e is not null ? (Format.Angka(e.SkorKesesuaian) + "/100") : "-";
+        ScoreBrush = (e is not null && e.SkorKesesuaian < 55) ? Palette.Red : Palette.Score;
+        Emission = e is not null ? Format.Angka(e.EmisiAwal) : Format.Angka(item.Bahan.FaktorEmisi * Math.Max(0, area));
         EmissionLabel = $"kgCO₂e untuk {Format.Angka(area)} m²";
     }
 
+    public ItemKatalog Item { get; }
     public string Code { get; }
     public Brush Image { get; }
     public string Kind { get; }
@@ -95,4 +230,36 @@ public sealed class MaterialCard : ViewData
     public Brush ScoreBrush { get; }
     public string Emission { get; }
     public string EmissionLabel { get; }
+}
+
+public sealed class SumberItemViewData
+{
+    public SumberItemViewData(Domain.SumberPropertiBahan s)
+    {
+        Properti = FormatNamaProperti(s.Properti);
+        Status = s.Status == Domain.StatusVerifikasiProperti.Terverifikasi ? "Terverifikasi" : "Perkiraan";
+        StatusBrush = s.Status == Domain.StatusVerifikasiProperti.Terverifikasi ? Palette.Score : Palette.TagGoldFg;
+        Referensi = s.Referensi + (string.IsNullOrWhiteSpace(s.Versi) ? "" : $" (Versi {s.Versi})");
+        Tautan = s.Tautan;
+        TautanVisibility = string.IsNullOrWhiteSpace(s.Tautan) ? Visibility.Collapsed : Visibility.Visible;
+        Catatan = s.CatatanKonversi ?? "Tidak ada catatan konversi tambahan.";
+    }
+
+    public string Properti { get; }
+    public string Status { get; }
+    public Brush StatusBrush { get; }
+    public string Referensi { get; }
+    public string? Tautan { get; }
+    public Visibility TautanVisibility { get; }
+    public string Catatan { get; }
+
+    private static string FormatNamaProperti(string raw) => raw switch
+    {
+        "konduktivitas_termal" => "Konduktivitas Termal",
+        "ketahanan_lembap" => "Ketahanan Lembap",
+        "ketahanan_korosi" => "Ketahanan Korosi",
+        "usia_pakai_nominal" => "Usia Pakai Nominal",
+        "faktor_emisi" => "Faktor Emisi Embodied",
+        _ => raw
+    };
 }
