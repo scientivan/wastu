@@ -66,6 +66,11 @@ public interface ISuitabilityScoringService
     /// Bobot kriteria termal/lembap/korosi/usia. Null memakai bobot equiponderal bawaan (PRD §11.1).
     /// </param>
     Task<IReadOnlyList<Evaluasi>> RankAsync(Guid komponenId, KriteriaBobot? bobot = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Alias perankingan bahan untuk komponen dengan bobot kriteria tertentu (PRD §F4, WP04b).
+    /// </summary>
+    Task<IReadOnlyList<Evaluasi>> RankMaterialsAsync(Guid komponenId, KriteriaBobot? bobot = null, CancellationToken ct = default);
 }
 
 /// <summary>Simulasi emisi jangka panjang dengan pengganda penggantian dini (PRD §F5, §10).</summary>
