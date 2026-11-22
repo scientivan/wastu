@@ -13,6 +13,7 @@ public sealed record Proyek
     {
     }
 
+    [System.Text.Json.Serialization.JsonConstructor]
     public Proyek(
         Guid id,
         string nama,

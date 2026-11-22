@@ -69,7 +69,8 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
                 $"Proyek {komponen.ProyekId} belum memiliki profil iklim. Jalankan analisis iklim lebih dulu (PRD §F3).");
 
         IReadOnlyList<Bahan> bahan = await _material.ListByKindAsync(komponen.Jenis, ct).ConfigureAwait(false);
-        return await RankSnapshotAsync(komponen, iklim, bahan, bobotEfektif, ct).ConfigureAwait(false);
+        var proyek = await _proyek.GetByIdAsync(komponen.ProyekId, ct).ConfigureAwait(false);
+        return await RankSnapshotAsync(komponen, iklim, bahan, bobotEfektif, ct, proyek).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -81,7 +82,8 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
         ProfilIklim iklim,
         IReadOnlyList<Bahan> katalog,
         KriteriaBobot? bobot = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        Proyek? proyek = null)
     {
         ArgumentNullException.ThrowIfNull(komponen);
         ArgumentNullException.ThrowIfNull(iklim);
@@ -122,7 +124,7 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
                     }
                 }
 
-                IReadOnlyList<Evaluasi> baru = Rank(komponen, iklim, kategori, bobotEfektif, _konfigurasi);
+                IReadOnlyList<Evaluasi> baru = Rank(komponen, iklim, kategori, bobotEfektif, _konfigurasi, proyek);
                 DateTimeOffset dihitungPada = _clock.GetUtcNow();
                 var batchBaru = tersimpan ?? new BatchEvaluasi(
                     Guid.NewGuid(),
@@ -167,7 +169,7 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
             }
         }
 
-        return Rank(komponen, iklim, kategori, bobotEfektif, _konfigurasi);
+        return Rank(komponen, iklim, kategori, bobotEfektif, _konfigurasi, proyek);
     }
 
     private async Task<Evaluasi[]> BacaEvaluasiBatchAsync(BatchEvaluasi batch, CancellationToken ct)
@@ -203,7 +205,8 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
         ProfilIklim iklim,
         IReadOnlyList<Bahan> katalog,
         KriteriaBobot? bobot = null,
-        KonfigurasiModel? konfigurasi = null)
+        KonfigurasiModel? konfigurasi = null,
+        Proyek? proyek = null)
     {
         ArgumentNullException.ThrowIfNull(komponen);
         ArgumentNullException.ThrowIfNull(iklim);
@@ -246,7 +249,10 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
                 SkorKesesuaian: PerhitunganSkor.SkorKesesuaian(subSkor, bobotEfektif),
                 EmisiAwalKg: PerhitunganSkor.EmisiAwal(item, komponen),
                 SubSkor: subSkor,
-                Alasan: PerhitunganSkor.SusunAlasan(item, iklim, subSkor, konfigurasiEfektif)));
+                Alasan: PerhitunganSkor.SusunAlasan(item, iklim, subSkor, konfigurasiEfektif),
+                Input: new InputEvaluasi(komponen,
+                    item with { SumberProperti = item.SumberProperti?.ToArray() },
+                    iklim, bobotEfektif, konfigurasiEfektif, usiaMin, usiaMaks, proyek)));
         }
 
         return Urutkan(hasil, bahan);
@@ -330,10 +336,12 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
         KonfigurasiModel? konfigurasi = null)
     {
         KonfigurasiModel konfigurasiEfektif = konfigurasi ?? KonfigurasiModel.Bawaan;
-        string identitasKatalog = string.Join("|", kategori
+        string identitasKatalog = "input-v1:" + System.Text.Json.JsonSerializer.Serialize(kategori
             .OrderBy(item => item.Id)
-            .Select(item => FormattableString.Invariant(
-                $"{item.Id:N}:{item.VersiData}:{item.Nama}:{(int)item.Jenis}:{item.KonduktivitasTermal:R}:{item.KetahananLembap}:{item.KetahananKorosi}:{item.UsiaPakaiNominalTahun:R}:{item.FaktorEmisi:R}")));
+            .Select(item => item with { SumberProperti = item.SumberProperti?
+                .OrderBy(s => s.Properti, StringComparer.Ordinal)
+                .ThenBy(s => s.Referensi, StringComparer.Ordinal)
+                .ThenBy(s => s.Versi, StringComparer.Ordinal).ToArray() }));
 
         return HashInputEvaluasi.Hitung(komponen.LuasM2, iklim, bobot, konfigurasiEfektif, identitasKatalog);
     }

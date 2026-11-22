@@ -32,6 +32,8 @@ public sealed class EvaluasiEntity
 
     public DateTimeOffset? DihitungPadaUtc { get; set; }
 
+    public string? InputSnapshotJson { get; set; }
+
     public KomponenEntity? Komponen { get; set; }
 
     public BahanEntity? Bahan { get; set; }

@@ -204,8 +204,8 @@ INSERT INTO evaluasi (id, komponen_id, bahan_id, skor_kesesuaian, emisi_awal_kg,
 ON CONFLICT (id) DO NOTHING;
 
 -- Emisi kumulatif = emisi_awal × (1 + jumlah_penggantian) (PRD §11.3).
--- Multi-horizon PK: (evaluasi_id, horizon_tahun, versi_model)
+-- Identitas simulasi mencakup faktor asumsi; perubahan a tidak menimpa hasil lama.
 INSERT INTO simulasi_emisi (id, evaluasi_id, horizon_tahun, usia_pakai_efektif_tahun, jumlah_penggantian, emisi_kumulatif_kg, versi_model, faktor_penuaan_a, dihitung_pada_utc) VALUES
     ('f0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', 30, 43.0,   0, 14400, 'v2.0', 0.5, now()),
     ('f0000000-0000-4000-8000-000000000002', 'e0000000-0000-4000-8000-000000000002', 30,  9.375, 3, 32400, 'v2.0', 0.5, now())
-ON CONFLICT (evaluasi_id, horizon_tahun, versi_model) DO NOTHING;
+ON CONFLICT (evaluasi_id, horizon_tahun, versi_model, faktor_penuaan_a) DO NOTHING;

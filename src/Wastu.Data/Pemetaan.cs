@@ -92,7 +92,8 @@ internal static class Pemetaan
         e.BatchId,
         e.VersiModel,
         e.HashInput,
-        e.DihitungPadaUtc ?? e.DihitungPada);
+        e.DihitungPadaUtc ?? e.DihitungPada,
+        e.InputSnapshotJson is { } json ? System.Text.Json.JsonSerializer.Deserialize<InputEvaluasi>(json) : null);
 
     internal static EvaluasiEntity KeEntity(Evaluasi e) => new()
     {
@@ -110,7 +111,8 @@ internal static class Pemetaan
         BatchId = e.BatchId,
         VersiModel = e.VersiModel ?? "v2.0",
         HashInput = e.HashInput,
-        DihitungPadaUtc = e.DihitungPadaUtc ?? DateTimeOffset.UtcNow
+        DihitungPadaUtc = e.DihitungPadaUtc ?? DateTimeOffset.UtcNow,
+        InputSnapshotJson = e.Input is null ? null : System.Text.Json.JsonSerializer.Serialize(e.Input)
     };
 
     internal static void SalinKe(Evaluasi sumber, EvaluasiEntity target)
@@ -128,6 +130,8 @@ internal static class Pemetaan
         target.VersiModel = sumber.VersiModel ?? target.VersiModel;
         target.HashInput = sumber.HashInput ?? target.HashInput;
         target.DihitungPadaUtc = sumber.DihitungPadaUtc ?? target.DihitungPadaUtc;
+        if (sumber.Input is not null)
+            target.InputSnapshotJson = System.Text.Json.JsonSerializer.Serialize(sumber.Input);
     }
 
     internal static SimulasiEmisi KeDomain(SimulasiEmisiEntity e) => new(

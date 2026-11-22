@@ -618,6 +618,10 @@ namespace Wastu.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("hash_input");
 
+                    b.Property<string>("InputSnapshotJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("input_snapshot_json");
+
                     b.Property<Guid>("KomponenId")
                         .HasColumnType("uuid")
                         .HasColumnName("komponen_id");
@@ -1308,7 +1312,7 @@ namespace Wastu.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EvaluasiId", "HorizonTahun", "VersiModel")
+                    b.HasIndex("EvaluasiId", "HorizonTahun", "VersiModel", "FaktorPenuaanA")
                         .IsUnique()
                         .HasDatabaseName("uk_simulasi_emisi_evaluasi_horizon_versi");
 

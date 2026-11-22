@@ -148,7 +148,8 @@ public sealed class ComparisonStateTests
     private static AppState BuatState(SuitabilityScoringService? scoring = null)
     {
         var state = scoring is null ? new AppState() : new AppState(scoring);
-        var proyek = new Bangunan { Id = 1, Kota = "Jakarta", DatabaseId = Guid.NewGuid() };
+        var proyek = new Bangunan { Id = 1, Nama = "Proyek uji", Kota = "Jakarta",
+            Latitude = -6.2, Longitude = 106.8, DatabaseId = Guid.NewGuid() };
         proyek.TambahKomponen(new Komponen { Jenis = JenisKomponen.Dinding, Luas = 120, DatabaseId = Guid.NewGuid() });
         state.Proyek.Add(proyek);
         state.ProyekAktifId = 1;

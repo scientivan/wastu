@@ -240,7 +240,8 @@ public sealed partial class AppState
 
         if (!_peringkat.TryGetValue(komp.Id, out var cache) || cache.Hash != hash)
         {
-            var hasil = SuitabilityScoringService.Rank(domainKomponen, iklim, bahanList, bobot)
+            var hasil = SuitabilityScoringService.Rank(domainKomponen, iklim, bahanList, bobot,
+                    proyek: WorkflowMapper.KeDomain(Aktif))
                 .Select(e => new Evaluasi(bahanDict[e.BahanId].Bahan, e)).ToArray();
             cache = new PeringkatTersimpan(hash, hasil);
             _peringkat[komp.Id] = cache;
@@ -253,7 +254,8 @@ public sealed partial class AppState
             && (cache.Penyimpanan is null || cache.Penyimpanan.IsFaulted || cache.Penyimpanan.IsCanceled))
         {
             // Capture the exact displayed inputs before any asynchronous work or project switch.
-            cache.Penyimpanan = skoring.RankSnapshotAsync(domainKomponen, iklim, bahanList, bobot);
+            cache.Penyimpanan = skoring.RankSnapshotAsync(domainKomponen, iklim, bahanList, bobot,
+                proyek: WorkflowMapper.KeDomain(Aktif));
             _ = AmatiPenyimpananAsync(cache.Penyimpanan);
         }
 

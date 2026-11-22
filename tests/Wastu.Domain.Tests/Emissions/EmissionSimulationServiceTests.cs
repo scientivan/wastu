@@ -33,7 +33,7 @@ public class EmissionSimulationServiceTests
     }
 
     [Fact]
-    public async Task SimulateAsync_BahanTidakDitemukan_MelemparKeyNotFoundException()
+    public async Task SimulateAsync_EvaluasiLegacyTanpaInput_TidakMenebakUsiaDariKatalog()
     {
         var evaluasiRepo = new EvaluasiRepositoryPerekam();
         var materialRepo = new MaterialRepositoryInMemory();
@@ -49,7 +49,7 @@ public class EmissionSimulationServiceTests
             Alasan: "Uji");
         evaluasiRepo.EvaluasiMap[eval.Id] = eval;
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.SimulateAsync(eval.Id, 30));
     }
 
@@ -67,7 +67,7 @@ public class EmissionSimulationServiceTests
             SkorKesesuaian: 100,
             EmisiAwalKg: 500,
             SubSkor: new SubSkorKesesuaian(100, 100, 100, 100),
-            Alasan: "Uji");
+            Alasan: "Uji", Input: Input(bahan));
         evaluasiRepo.EvaluasiMap[eval.Id] = eval;
 
         var service = new EmissionSimulationService(evaluasiRepo, materialRepo);
@@ -95,7 +95,7 @@ public class EmissionSimulationServiceTests
             SkorKesesuaian: 50,
             EmisiAwalKg: 1000,
             SubSkor: new SubSkorKesesuaian(50, 50, 50, 50),
-            Alasan: "Uji kustom");
+            Alasan: "Uji kustom", Input: Input(bahan));
         evaluasiRepo.EvaluasiMap[eval.Id] = eval;
 
         var fixedTime = new DateTimeOffset(2026, 11, 22, 12, 34, 56, TimeSpan.Zero);
@@ -126,7 +126,7 @@ public class EmissionSimulationServiceTests
             SkorKesesuaian: 75,
             EmisiAwalKg: 1200,
             SubSkor: new SubSkorKesesuaian(75, 75, 75, 75),
-            Alasan: "Uji multi-horizon");
+            Alasan: "Uji multi-horizon", Input: Input(bahan));
         evaluasiRepo.EvaluasiMap[eval.Id] = eval;
 
         var service = new EmissionSimulationService(evaluasiRepo, materialRepo);
@@ -144,6 +144,29 @@ public class EmissionSimulationServiceTests
         Assert.Equal(30, evaluasiRepo.SimulasiTersimpan[1].HorizonTahun);
         Assert.Equal(50, evaluasiRepo.SimulasiTersimpan[2].HorizonTahun);
     }
+
+    [Fact]
+    public async Task SimulateAsync_KatalogBerubahAtauBahanDihapus_TetapMemakaiUsiaAsli()
+    {
+        var bahan = DataContoh.BetonBertulang() with { UsiaPakaiNominalTahun = 15 };
+        var repo = new EvaluasiRepositoryPerekam();
+        var eval = new Evaluasi(Guid.NewGuid(), bahan.Id, DataContoh.KomponenDindingId, 100,
+            500, new(100, 100, 100, 100), "Uji", Input: Input(bahan));
+        repo.EvaluasiMap[eval.Id] = eval;
+        foreach (var katalog in new[] { new MaterialRepositoryInMemory([]),
+            new MaterialRepositoryInMemory([bahan with { UsiaPakaiNominalTahun = 100 }]) })
+        {
+            var hasil = await new EmissionSimulationService(repo, katalog).SimulateAsync(eval.Id, 30);
+            Assert.Equal(15, hasil.UsiaPakaiEfektifTahun);
+            Assert.Equal(1, hasil.JumlahPenggantian);
+            Assert.Equal(1000, hasil.EmisiKumulatifKg);
+        }
+    }
+
+    private static InputEvaluasi Input(Bahan bahan) => new(
+        new(DataContoh.KomponenDindingId, DataContoh.ProyekId, JenisKomponen.Dinding, 120),
+        bahan, new ProfilIklim(700, 80, 26, 50, TingkatKorosi.Rendah),
+        KriteriaBobot.Default, KonfigurasiModel.Bawaan, 15, 50);
 
     private sealed class UjiTimeProvider(DateTimeOffset fixedUtc) : TimeProvider
     {

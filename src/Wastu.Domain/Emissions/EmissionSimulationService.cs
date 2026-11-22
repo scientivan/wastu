@@ -10,7 +10,6 @@ namespace Wastu.Domain.Emissions;
 public sealed class EmissionSimulationService : IEmissionSimulationService
 {
     private readonly IEvaluasiRepository _evaluasi;
-    private readonly IMaterialRepository _material;
     private readonly KonfigurasiModel _konfigurasi;
     private readonly TimeProvider _timeProvider;
 
@@ -31,7 +30,6 @@ public sealed class EmissionSimulationService : IEmissionSimulationService
         ArgumentNullException.ThrowIfNull(material);
 
         _evaluasi = evaluasi;
-        _material = material;
         _konfigurasi = konfigurasi ?? KonfigurasiModel.Bawaan;
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
@@ -49,10 +47,9 @@ public sealed class EmissionSimulationService : IEmissionSimulationService
         Evaluasi evaluasi = await _evaluasi.GetByIdAsync(evaluasiId, ct).ConfigureAwait(false)
             ?? throw new KeyNotFoundException($"Evaluasi {evaluasiId} tidak ditemukan.");
 
-        Bahan bahan = await _material.GetByIdAsync(evaluasi.BahanId, ct).ConfigureAwait(false)
-            ?? throw new KeyNotFoundException($"Bahan {evaluasi.BahanId} tidak ditemukan.");
-
-        return await SimulateSnapshotAsync(evaluasi, bahan.UsiaPakaiNominalTahun,
+        var input = evaluasi.Input ?? throw new InvalidOperationException(
+            "Evaluasi legacy tidak memiliki masukan asli. Hitung evaluasi baru sebelum simulasi; riwayat lama tetap disimpan.");
+        return await SimulateSnapshotAsync(evaluasi, input.Bahan.UsiaPakaiNominalTahun,
             horizonTahun, ct).ConfigureAwait(false);
     }
     /// <summary>Persists the same captured evaluation and nominal age displayed by the desktop.</summary>
