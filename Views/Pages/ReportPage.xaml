@@ -59,7 +59,8 @@
                         <c:CssText Text="Komponen Aktif" FontWeight="700" Margin="0,0,0,6" />
                         <StackPanel Orientation="Horizontal">
                             <RadioButton x:Name="CompWallRadio" Content="Dinding" GroupName="CompGroup" Checked="Comp_Checked" Tag="Dinding" Margin="0,0,12,0" VerticalAlignment="Center" />
-                            <RadioButton x:Name="CompRoofRadio" Content="Atap" GroupName="CompGroup" Checked="Comp_Checked" Tag="Atap" VerticalAlignment="Center" />
+                            <RadioButton x:Name="CompRoofRadio" Content="Atap" GroupName="CompGroup" Checked="Comp_Checked" Tag="Atap" Margin="0,0,12,0" VerticalAlignment="Center" />
+                            <RadioButton x:Name="CompBothRadio" Content="Keduanya" GroupName="CompGroup" Checked="Comp_Checked" Tag="Keduanya" VerticalAlignment="Center" />
                         </StackPanel>
                     </StackPanel>
 

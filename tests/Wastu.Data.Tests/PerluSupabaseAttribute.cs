@@ -6,10 +6,11 @@ public sealed class PerluSupabaseAttribute : FactAttribute
 {
     public PerluSupabaseAttribute()
     {
-        if (string.IsNullOrWhiteSpace(
-            Environment.GetEnvironmentVariable(KoneksiSupabase.NamaVariabelLingkungan)))
+        if (Environment.GetEnvironmentVariable("WASTU_ALLOW_SUPABASE_TESTS") != "1"
+            || string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("WASTU_SUPABASE_TEST_SCHEMA"))
+            || string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(KoneksiSupabase.NamaVariabelLingkungan)))
         {
-            Skip = $"Uji integrasi butuh PostgreSQL. Set {KoneksiSupabase.NamaVariabelLingkungan} untuk menjalankannya.";
+            Skip = "Uji Supabase memerlukan opt-in dan schema uji terisolasi melalui harness verifikasi.";
         }
     }
 }

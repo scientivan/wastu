@@ -16,6 +16,11 @@ public class AlurSupabaseTests
     public async Task AlurProyekSampaiSimulasiBerjalanDiAtasSupabase()
     {
         string connectionString = KoneksiSupabase.Ambil();
+        var configuration = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
+        var schema = Environment.GetEnvironmentVariable("WASTU_SUPABASE_TEST_SCHEMA");
+        if (schema is null || !System.Text.RegularExpressions.Regex.IsMatch(schema, "^wastu_v2_test_[a-f0-9]{32}$")
+            || configuration.SearchPath != schema)
+            throw new InvalidOperationException("Uji Supabase hanya boleh menulis pada schema uji yang ditetapkan harness.");
 
         var pabrik = new WastuDbContextFactory(connectionString);
         var material = new MaterialRepositoryEf(pabrik);

@@ -69,7 +69,7 @@ public sealed class ScheduleViewModel : OperationViewModel
 
 public sealed class ReportViewModel : OperationViewModel
 {
-    public async Task<Reporting.SnapshotLaporan?> CaptureAsync(AppState state, Models.JenisKomponen kind,
+    public async Task<Reporting.SnapshotLaporan?> CaptureAsync(AppState state, Models.JenisKomponen? kind,
         int horizon, bool schedule, IReadOnlySet<string> codes)
     {
         Reporting.SnapshotLaporan? snapshot = null;

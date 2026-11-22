@@ -18,6 +18,8 @@ public partial class ProjectPage : PageBase
         LonBox.TextChanged += (_, _) => HitungPesisirOtomatis();
     }
 
+    internal void RefreshClimateDisplay() => DataContext = new ProjectData(S);
+
     protected override void Refresh()
     {
         var p = S.Aktif;

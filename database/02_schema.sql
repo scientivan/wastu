@@ -235,9 +235,9 @@ CREATE TABLE IF NOT EXISTS prakiraan_cache (
     kelembapan_maks_pct   double precision NOT NULL,
     CONSTRAINT pk_prakiraan_cache PRIMARY KEY (id),
     CONSTRAINT prakiraan_cache_revisi_positif CHECK (revisi_lokasi >= 1),
-    CONSTRAINT prakiraan_cache_probabilitas_rentang CHECK (probabilitas_hujan_pct BETWEEN 0 AND 100),
-    CONSTRAINT prakiraan_cache_curah_hujan_nonnegatif CHECK (curah_hujan_mm >= 0),
-    CONSTRAINT prakiraan_cache_kelembapan_rentang CHECK (kelembapan_maks_pct BETWEEN 0 AND 100),
+    CONSTRAINT prakiraan_cache_probabilitas_rentang CHECK (probabilitas_hujan_pct BETWEEN 0 AND 100 OR (NOT data_lengkap AND probabilitas_hujan_pct = 'NaN'::double precision)),
+    CONSTRAINT prakiraan_cache_curah_hujan_nonnegatif CHECK ((curah_hujan_mm >= 0 AND curah_hujan_mm < 'Infinity'::double precision) OR (NOT data_lengkap AND curah_hujan_mm = 'NaN'::double precision)),
+    CONSTRAINT prakiraan_cache_kelembapan_rentang CHECK (kelembapan_maks_pct BETWEEN 0 AND 100 OR (NOT data_lengkap AND kelembapan_maks_pct = 'NaN'::double precision)),
     CONSTRAINT fk_prakiraan_cache_bangunan FOREIGN KEY (bangunan_id)
         REFERENCES bangunan (id) ON DELETE CASCADE
 );

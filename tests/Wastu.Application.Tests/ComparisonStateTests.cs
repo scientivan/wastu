@@ -13,6 +13,22 @@ namespace Wastu.Application.Tests;
 public sealed class ComparisonStateTests
 {
     [Fact]
+    public async Task ReportBothComponentsKeepsEachCategoryRankAndRequiresMaterialForBoth()
+    {
+        var state = BuatState();
+        state.Aktif.TambahKomponen(new Komponen { Jenis = JenisKomponen.Atap, Luas = 90 });
+        var wall = state.Peringkat(JenisKomponen.Dinding)[0];
+        var roof = state.Peringkat(JenisKomponen.Atap)[9];
+        var codes = new HashSet<string> { state.Item(wall.Bahan).Kode, state.Item(roof.Bahan).Kode };
+        var snapshot = await ReportSnapshotFactory.BuildAsync(state, null, 30, true, codes);
+        Assert.Equal(2, snapshot.Komponen.Count);
+        Assert.Equal(new[] { 1, 10 }, snapshot.BahanTerpilih.Select(m => m.Peringkat));
+        Assert.Equal(2, snapshot.SimulasiHorizon.Count);
+        codes.Remove(state.Item(roof.Bahan).Kode);
+        Assert.Throws<InvalidOperationException>(() => ReportSnapshotFactory.Build(state, null, 30, true, codes));
+    }
+
+    [Fact]
     public void JsonHistoryPreservesOriginalInputsAndEvaluationIdsAcrossRestartAndWeightChanges()
     {
         var state = BuatState();

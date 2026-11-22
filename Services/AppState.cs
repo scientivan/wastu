@@ -708,7 +708,8 @@ public sealed partial class AppState
 
     public static async Task<AppState> MuatAsync(bool paksaJsonLokal, CancellationToken cancellationToken = default)
     {
-        if (paksaJsonLokal)
+        var mode = paksaJsonLokal ? "local" : KoneksiSupabase.ModeDiminta();
+        if (mode == "local")
             return await MuatModeJsonLokalAsync(cancellationToken).ConfigureAwait(false);
 
         string? koneksi;
@@ -717,6 +718,11 @@ public sealed partial class AppState
         {
             return new AppState { ButuhPemulihan = true,
                 PesanStatusKoneksi = "Konfigurasi database tidak lengkap atau tidak valid. Periksa .env atau variabel lingkungan." };
+        }
+        if (string.IsNullOrWhiteSpace(koneksi) && mode == "postgres")
+        {
+            return new AppState { ButuhPemulihan = true,
+                PesanStatusKoneksi = "Mode PostgreSQL dipilih. Isi konfigurasi koneksi pada .env atau WASTU_CONNECTION_STRING." };
         }
         if (string.IsNullOrWhiteSpace(koneksi))
             return await MuatModeJsonLokalAsync(cancellationToken).ConfigureAwait(false);

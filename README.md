@@ -66,12 +66,16 @@ Verifikasi mencakup domain, repository PostgreSQL terisolasi, snapshot/pemulihan
 
 ## Alur Penggunaan
 
+Untuk paket tugas Modul 10, ekstrak ZIP ke folder yang bisa ditulis dan biarkan `.env` dan file pendukung berada bersama **Wastu.exe**. Paket Windows x64 sudah membawa runtime .NET 8.
+
+Konfigurasi paket memilih Supabase melalui `WASTU_STORAGE_MODE=postgres`. Isi `WASTU_CONNECTION_STRING` pada `.env` dengan koneksi Npgsql untuk database Supabase yang sudah menerapkan migrasi di bagian berikut. Setelah itu, klik dua kali **Wastu.exe**. Label **PostgreSQL** pada aplikasi menunjukkan penyimpanan aktif. Peluncuran mode PostgreSQL dengan konfigurasi kosong menampilkan petunjuk koneksi. Gunakan internet untuk Supabase, iklim historis dan prakiraan Open-Meteo, serta peta.
+
 1. **Buat Proyek Baru:** Beri nama, tentukan lokasi (pilih kota atau koordinat), lalu pilih satu atau kedua komponen dan isi luas bidangnya.
-2. **Perbarui Profil Iklim:** Tinjau ringkasan iklim lokasi di Beranda.
-3. **Bandingkan Bahan:** Telusuri katalog bahan, pilih dua bahan, lalu bandingkan kesesuaian dan emisinya.
-4. **Simulasikan Emisi:** Lihat dampak penggantian dini material sepanjang masa pakai rumah.
-5. **Jadwalkan Pekerjaan:** Ambil prakiraan cuaca, pilih hari yang layak, dan kunci jadwal pekerjaan.
-6. **Simpan Laporan Rekomendasi:** Ekspor laporan sebagai PDF.
+2. **Tinjau Profil Iklim:** Buka Profil Proyek untuk melihat sumber dan ringkasan iklim. Klik **Perbarui iklim** bila pengambilan awal gagal.
+3. **Bandingkan Bahan:** Cari material di Eksplor Material, pilih dua bahan sejenis, lalu baca skor, alasan, dan emisinya di Bandingkan. Mode V2 menerima empat persentase dengan total 100%.
+4. **Simulasikan Emisi:** Pilih horizon 20, 30, atau 50 tahun untuk melihat grafik emisi dan jumlah penggantian.
+5. **Jadwalkan Pekerjaan:** Perbarui prakiraan, tambahkan pekerjaan dan rentang tanggal, lalu pilih hari dan kunci jika data cuaca tersedia. Baca peringatan sebelum menyetujui hari berisiko.
+6. **Simpan Laporan Rekomendasi:** Pilih Dinding, Atap, atau Keduanya sesuai proyek dan centang material yang ingin dimasukkan. Pilih horizon, lalu **Simpan PDF**. Riwayat menyediakan **Buka PDF** dan **Buat salinan** untuk laporan yang mempunyai snapshot.
 
 ## Teknologi
 
@@ -82,6 +86,8 @@ Aplikasi desktop Windows berbasis WPF (.NET 8, C#) dengan data cuaca dan iklim d
 1. Buat database lokal dengan `database/01_create_database.sql` atau gunakan database PostgreSQL yang sudah tersedia.
 2. Siapkan skema dengan migrasi EF pada database kosong atau database dengan riwayat migrasi EF yang sudah cocok. SQL instalasi/seed di `database/` dipakai untuk pemeriksaan kesetaraan; jangan menjalankan SQL lalu langsung mengulang seluruh migrasi EF pada tabel yang sama.
 3. Isi `.env` sesuai `.env.example` dengan `host`, `port`, `database`, `user`, dan `password` dari Supabase. Aplikasi menyusun connection string Npgsql otomatis dengan SSL. Gunakan session pooler port 5432. Alternatifnya, isi `WASTU_CONNECTION_STRING` lengkap untuk mengesampingkan variabel terpisah.
+
+   `.env` pada paket tugas sudah berisi `WASTU_STORAGE_MODE=postgres` dan kolom koneksi kosong. Isi dengan kredensial di perangkat pelaksana.
 
 4. Jalankan `dotnet run --project Wastu.csproj` di Windows dengan .NET 8 SDK. Jalankan tes dengan perintah pada bagian Pengujian di bawah.
 
@@ -112,7 +118,7 @@ dotnet test tests/Wastu.Reporting.Tests -c Release --no-build
 
 Tes aplikasi mengompilasi sumber state dan adapter yang sama tanpa lapisan visual Windows. Tes tersebut tidak menjalankan jendela WPF atau dialog berkas.
 
-Tes data memakai `WASTU_TEST_CONNECTION_STRING` menuju PostgreSQL uji terisolasi. Jalankan `dotnet test tests/Wastu.Data.Tests -c Release --no-build --filter "FullyQualifiedName!~AlurSupabaseTests"`. Tes integrasi yang memerlukan database akan melaporkan skip jika koneksi uji tidak tersedia. `AlurSupabaseTests` menggunakan konfigurasi aplikasi dan menulis data, sehingga harus dijalankan hanya dengan konfigurasi database uji yang disengaja, terpisah dari database pengguna.
+Tes data memakai `WASTU_TEST_CONNECTION_STRING` menuju PostgreSQL uji terisolasi. Jalankan `dotnet test tests/Wastu.Data.Tests -c Release --no-build --filter "FullyQualifiedName!~AlurSupabaseTests"`. Untuk integrasi Supabase, build tes Data terlebih dahulu, lalu jalankan `dotnet run --project tests/Wastu.WindowsVerification -c Release -- supabase <folder-hasil>` dengan `WASTU_ALLOW_SUPABASE_TESTS=1`. Harness memakai skema sementara yang dihapus setelah pengujian dan menjalankan `AlurSupabaseTests` melalui skema tersebut. Jalur antarmuka dapat disertakan dengan `WASTU_SUPABASE_DESKTOP_SCRIPT` (skrip UI Automation Python) dan `WASTU_SUPABASE_DESKTOP_EXE` (path executable publish).
 
 ```sh
 dotnet publish Wastu.csproj -c Release -r win-x64 --self-contained true -o artifacts/win-x64

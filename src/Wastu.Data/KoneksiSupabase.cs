@@ -6,6 +6,17 @@ public static class KoneksiSupabase
 {
     public const string NamaVariabelLingkungan = "WASTU_CONNECTION_STRING";
 
+    public static string? ModeDiminta()
+    {
+        var mode = Environment.GetEnvironmentVariable("WASTU_STORAGE_MODE");
+        if (string.IsNullOrWhiteSpace(mode))
+        {
+            try { mode = KonfigurasiLingkungan.Baca().GetValueOrDefault("WASTU_STORAGE_MODE"); }
+            catch (InvalidOperationException) { return null; } // Startup displays the existing recovery message.
+        }
+        return mode?.Trim().ToLowerInvariant();
+    }
+
     public static string Ambil()
         => Cari()
             ?? throw new InvalidOperationException(

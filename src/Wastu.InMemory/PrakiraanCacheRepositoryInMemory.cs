@@ -6,12 +6,12 @@ namespace Wastu.InMemory;
 
 public sealed class PrakiraanCacheRepositoryInMemory : IPrakiraanCacheRepository
 {
-    private sealed record CacheKey(double LatRounded, double LonRounded, int RevisiLokasi);
+    private sealed record CacheKey(double Latitude, double Longitude, int RevisiLokasi);
 
     private readonly ConcurrentDictionary<CacheKey, HasilPrakiraan> _cache = new();
 
     private static CacheKey BuatKunci(double lat, double lon, int revisiLokasi)
-        => new(Math.Round(lat, 3), Math.Round(lon, 3), revisiLokasi);
+        => new(lat, lon, revisiLokasi);
 
     public Task<HasilPrakiraan?> GetCacheAsync(double lat, double lon, int revisiLokasi = 1, CancellationToken ct = default)
     {
