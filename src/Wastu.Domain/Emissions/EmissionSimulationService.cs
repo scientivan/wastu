@@ -5,31 +5,47 @@ namespace Wastu.Domain.Emissions;
 
 /// <summary>
 /// Memproyeksikan emisi kumulatif satu evaluasi sepanjang horizon tertentu
-/// (PRD §F5, §10).
+/// (PRD §F5, §10, PRD-R02, PRD-R11).
 /// </summary>
-/// <remarks>
-/// Kelas ini hanya mencari dua hal yang dibutuhkan perhitungan: skor kesesuaian
-/// dan emisi awal dari evaluasi, serta usia pakai nominal dari bahan. Selebihnya
-/// ada di <see cref="PerhitunganSimulasi"/> yang deterministik dan teruji tanpa
-/// database.
-/// </remarks>
 public sealed class EmissionSimulationService : IEmissionSimulationService
 {
     private readonly IEvaluasiRepository _evaluasi;
     private readonly IMaterialRepository _material;
+    private readonly KonfigurasiModel _konfigurasi;
+    private readonly TimeProvider _timeProvider;
 
-    public EmissionSimulationService(IEvaluasiRepository evaluasi, IMaterialRepository material)
+    public EmissionSimulationService(
+        IEvaluasiRepository evaluasi,
+        IMaterialRepository material)
+        : this(evaluasi, material, null, null)
+    {
+    }
+
+    public EmissionSimulationService(
+        IEvaluasiRepository evaluasi,
+        IMaterialRepository material,
+        KonfigurasiModel? konfigurasi = null,
+        TimeProvider? timeProvider = null)
     {
         ArgumentNullException.ThrowIfNull(evaluasi);
         ArgumentNullException.ThrowIfNull(material);
 
         _evaluasi = evaluasi;
         _material = material;
+        _konfigurasi = konfigurasi ?? KonfigurasiModel.Bawaan;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     public async Task<SimulasiEmisi> SimulateAsync(
         Guid evaluasiId, int horizonTahun, CancellationToken ct = default)
     {
+        if (horizonTahun <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(horizonTahun), horizonTahun,
+                "Horizon simulasi harus bernilai finite dan lebih dari nol tahun.");
+        }
+
         Evaluasi evaluasi = await _evaluasi.GetByIdAsync(evaluasiId, ct).ConfigureAwait(false)
             ?? throw new KeyNotFoundException($"Evaluasi {evaluasiId} tidak ditemukan.");
 
@@ -37,7 +53,12 @@ public sealed class EmissionSimulationService : IEmissionSimulationService
             ?? throw new KeyNotFoundException($"Bahan {evaluasi.BahanId} tidak ditemukan.");
 
         SimulasiEmisi hasil = PerhitunganSimulasi.Simulasikan(
-            evaluasiId, evaluasi, bahan.UsiaPakaiNominalTahun, horizonTahun);
+            evaluasiId,
+            evaluasi,
+            bahan.UsiaPakaiNominalTahun,
+            horizonTahun,
+            _konfigurasi,
+            _timeProvider.GetUtcNow());
 
         await _evaluasi.SimpanAsync(hasil, ct).ConfigureAwait(false);
 
