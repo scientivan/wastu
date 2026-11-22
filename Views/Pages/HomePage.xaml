@@ -109,6 +109,7 @@
                                     <Border Height="{Binding ImageHeight}" CornerRadius="6" Background="{Binding Image}" />
                                     <StackPanel Margin="3,16,3,5">
                                         <c:TrackedText Text="{Binding Name}" FontSize="15" FontWeight="650" Tracking="-0.525" LineHeight="19.5" Wrap="True" Margin="0,0,0,20" />
+                                        <ContentControl Content="{Binding Tag}" ContentTemplate="{StaticResource TagTemplate}" HorizontalAlignment="Left" Margin="0,0,0,12" />
                                         <Border BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="0,17,0,0">
                                             <StackPanel>
                                                 <Grid Margin="0,0,0,14">
@@ -131,6 +132,7 @@
                                                 </Grid>
                                             </StackPanel>
                                         </Border>
+                                        <c:CssText Text="{Binding Reason}" FontSize="12" Leading="1.5" Foreground="{StaticResource ReasonInk}" TextWrapping="Wrap" Margin="0,12,0,0" />
                                     </StackPanel>
                                 </StackPanel>
                             </Border>

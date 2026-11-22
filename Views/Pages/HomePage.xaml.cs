@@ -69,7 +69,7 @@ public sealed class HomeData : ViewData
         {
             var e = s.Nilai(item);
             return new ActiveMaterial(ImageCache.Cover(item.Gambar), item.Bahan.Nama, Format.Angka(e.SkorKesesuaian),
-                Format.Angka(e.EmisiAwal) + " ", imageHeight, compact);
+                Format.Angka(e.EmisiAwal) + " ", e.Alasan, TagData.Kesesuaian(e.SkorKesesuaian), imageHeight, compact);
         });
 
         ClimateHint = p.ProfilIklim?.SudahDiperbarui == true
@@ -116,12 +116,14 @@ public sealed class HomeData : ViewData
     public Thickness WorkflowPadding { get; }
 }
 
-public sealed class ActiveMaterial(Brush image, string name, string score, string emission, double imageHeight, bool stacked) : ViewData
+public sealed class ActiveMaterial(Brush image, string name, string score, string emission, string reason, TagData tag, double imageHeight, bool stacked) : ViewData
 {
     public Brush Image { get; } = image;
     public string Name { get; } = name;
     public string Score { get; } = score;
     public string Emission { get; } = emission;
+    public string Reason { get; } = reason;
+    public TagData Tag { get; } = tag;
     public double ImageHeight { get; } = imageHeight;
 
     // ≤1200 px: nilai turun ke bawah label (dl > div { display: block }).

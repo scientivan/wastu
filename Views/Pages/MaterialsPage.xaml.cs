@@ -26,6 +26,7 @@ public partial class MaterialsPage : PageBase
         WallTab.IsChecked = S.Jenis == JenisKomponen.Dinding;
         RoofTab.IsChecked = S.Jenis == JenisKomponen.Atap;
         SearchBox.Text = S.Cari;
+        WeightModeBadge.Text = S.Aktif?.GunakanBobotKustom == true ? "Bobot kustom aktif" : "Bobot sama (25%)";
         _refreshing = false;
 
         var area = S.Luas;

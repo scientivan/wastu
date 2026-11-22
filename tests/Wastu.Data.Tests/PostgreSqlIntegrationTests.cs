@@ -284,7 +284,10 @@ public class PostgreSqlIntegrationTests
             luasM2: 200.0,
             dihitungPadaUtc: DateTimeOffset.UtcNow.AddMinutes(10));
 
-        await batchRepo.SimpanBatchAsync(batch2, [evaluasi1]);
+        var evaluasiUlang = evaluasi1 with { Id = Guid.NewGuid(), Alasan = "Percobaan ulang" };
+        await Task.WhenAll(Enumerable.Range(0, 4).Select(_ =>
+            batchRepo.SimpanBatchAsync(batch2 with { Id = Guid.NewGuid() },
+                [evaluasiUlang with { Id = Guid.NewGuid() }])));
 
         // Verifikasi tidak ada duplikasi baris batch evaluasi untuk hash dan komponen yang sama
         await using (var dbFresh = dbTest.Factory.CreateDbContext())
@@ -296,6 +299,13 @@ public class PostgreSqlIntegrationTests
             Assert.Single(daftarBatch);
             Assert.Equal(batchId1, daftarBatch[0].Id);
             Assert.Equal(hashKanonik, daftarBatch[0].HashInput);
+            Assert.Equal(batch1.DihitungPadaUtc.ToUnixTimeMilliseconds(),
+                daftarBatch[0].DihitungPadaUtc.ToUnixTimeMilliseconds());
+            var evaluasiTersimpan = await dbFresh.Evaluasi.AsNoTracking()
+                .Where(e => e.KomponenId == komponenId).ToListAsync();
+            Assert.Single(evaluasiTersimpan);
+            Assert.Equal(evaluasi1.Id, evaluasiTersimpan[0].Id);
+            Assert.Equal(evaluasi1.Alasan, evaluasiTersimpan[0].Alasan);
         }
     }
 

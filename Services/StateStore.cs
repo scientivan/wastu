@@ -28,6 +28,7 @@ public sealed class StateDto
 public sealed class ProyekDto
 {
     public int Id { get; set; }
+    public Guid? StableId { get; set; }
     public Guid? DatabaseId { get; set; }
     public string Nama { get; set; } = "";
     public string Kota { get; set; } = "";
@@ -38,6 +39,11 @@ public sealed class ProyekDto
     public double JarakPesisir { get; set; }
     public int RevisiLokasi { get; set; } = 1;
     public string ZonaWaktu { get; set; } = "Asia/Jakarta";
+    public bool GunakanBobotKustom { get; set; }
+    public double BobotTermal { get; set; } = 0.25;
+    public double BobotLembap { get; set; } = 0.25;
+    public double BobotKorosi { get; set; } = 0.25;
+    public double BobotUsia { get; set; } = 0.25;
     public List<KomponenDto> Komponen { get; set; } = [];
     public IklimDto? Iklim { get; set; }
     public List<PekerjaanDto> Pekerjaan { get; set; } = [];
@@ -45,6 +51,7 @@ public sealed class ProyekDto
 
 public sealed class KomponenDto
 {
+    public Guid? Id { get; set; }
     public Guid? DatabaseId { get; set; }
     public JenisKomponen Jenis { get; set; }
     public double Luas { get; set; }

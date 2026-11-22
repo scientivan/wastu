@@ -121,12 +121,14 @@ public sealed class PdfReportBuilder
 
     private void DrawProfilProyek(ref PdfPage page, ref XGraphics gfx, PdfDocument doc, SnapshotLaporan snapshot, ref double currentY)
     {
-        EnsureSpace(ref page, ref gfx, doc, 90, ref currentY);
+        var coordinateLines = WrapText(gfx, snapshot.KoordinatDisclaimer, _fontSmall, ContentWidth / 2 - 20);
+        var areaLines = WrapText(gfx, "Luas komponen dihitung untuk analisis kebutuhan emisi awal.", _fontSmall, ContentWidth / 2 - 20);
+        double boxHeight = 44 + Math.Max(coordinateLines.Count, areaLines.Count) * 10;
+        EnsureSpace(ref page, ref gfx, doc, boxHeight + 32, ref currentY);
 
         gfx.DrawString("1. Profil Proyek & Komponen Bangunan", _fontSection, new XSolidBrush(PrimaryColor), new XPoint(MarginLeft, currentY + 12));
         currentY += 18;
 
-        var boxHeight = 56.0;
         var boxRect = new XRect(MarginLeft, currentY, ContentWidth, boxHeight);
         gfx.DrawRoundedRectangle(new XPen(BorderColor, 0.8), new XSolidBrush(CardBg), boxRect, new XSize(4, 4));
 
@@ -137,7 +139,8 @@ public sealed class PdfReportBuilder
         var latStr = snapshot.Latitude.ToString("F4", CultureInfo.InvariantCulture);
         var lonStr = snapshot.Longitude.ToString("F4", CultureInfo.InvariantCulture);
         gfx.DrawString($"{snapshot.Kota} ({latStr}, {lonStr})", _fontBody, new XSolidBrush(PrimaryColor), new XPoint(MarginLeft + 10, yText + 12));
-        gfx.DrawString(snapshot.KoordinatDisclaimer, _fontSmall, new XSolidBrush(MutedColor), new XPoint(MarginLeft + 10, yText + 24));
+        for (int i = 0; i < coordinateLines.Count; i++)
+            gfx.DrawString(coordinateLines[i], _fontSmall, new XSolidBrush(MutedColor), new XPoint(MarginLeft + 10, yText + 24 + i * 10));
 
         // Right col: Komponen & Luas
         gfx.DrawString("Komponen Bangunan Aktif:", _fontSmallBold, new XSolidBrush(SecondaryColor), new XPoint(MarginLeft + ContentWidth / 2 + 10, yText));
@@ -145,24 +148,34 @@ public sealed class PdfReportBuilder
             ? string.Join(", ", snapshot.Komponen.Select(k => $"{k.Jenis}: {k.LuasM2:F1} m²"))
             : "Belum ada komponen terdaftar.";
         gfx.DrawString(compSummary, _fontBodyBold, new XSolidBrush(PrimaryColor), new XPoint(MarginLeft + ContentWidth / 2 + 10, yText + 13));
-        gfx.DrawString("Luas komponen dihitung untuk analisis kebutuhan emisi awal.", _fontSmall, new XSolidBrush(MutedColor), new XPoint(MarginLeft + ContentWidth / 2 + 10, yText + 24));
+        for (int i = 0; i < areaLines.Count; i++)
+            gfx.DrawString(areaLines[i], _fontSmall, new XSolidBrush(MutedColor), new XPoint(MarginLeft + ContentWidth / 2 + 10, yText + 24 + i * 10));
 
         currentY += boxHeight + 14;
     }
 
     private void DrawProfilIklim(ref PdfPage page, ref XGraphics gfx, PdfDocument doc, SnapshotLaporan snapshot, ref double currentY)
     {
-        EnsureSpace(ref page, ref gfx, doc, 100, ref currentY);
+        var iklim = snapshot.Iklim;
+        var diambilStr = iklim.DiambilPada.HasValue
+            ? iklim.DiambilPada.Value.ToOffset(TimeSpan.FromHours(7)).ToString("dd/MM/yyyy HH:mm") + " WIB"
+            : "Tidak tercatat";
+        var offlineTag = iklim.IsOffline ? " [MODE LURING / OFFLINE SNAPSHOT]" : "";
+        var provText = $"Sumber: {iklim.Provider}  •  Periode: {iklim.Periode}  •  Status: {iklim.Provenance}{offlineTag}  •  Diambil: {diambilStr}";
+        var provenanceLines = WrapText(gfx, provText, _fontSmallBold, ContentWidth - 20);
+        var disclaimerLines = WrapText(gfx, iklim.PesisirDisclaimer, _fontSmall, ContentWidth - 20);
+        var warningLines = string.IsNullOrWhiteSpace(iklim.CatatanOffline)
+            ? new List<string>() : WrapText(gfx, iklim.CatatanOffline, _fontSmall, ContentWidth - 20);
+        double boxHeight = 56 + (provenanceLines.Count + disclaimerLines.Count + warningLines.Count) * 10;
+        EnsureSpace(ref page, ref gfx, doc, boxHeight + 32, ref currentY);
 
         gfx.DrawString("2. Profil Iklim Wilayah", _fontSection, new XSolidBrush(PrimaryColor), new XPoint(MarginLeft, currentY + 12));
         currentY += 18;
 
-        var boxHeight = 72.0;
         var boxRect = new XRect(MarginLeft, currentY, ContentWidth, boxHeight);
         gfx.DrawRoundedRectangle(new XPen(BorderColor, 0.8), new XSolidBrush(CardBg), boxRect, new XSize(4, 4));
 
         var yText = currentY + 14;
-        var iklim = snapshot.Iklim;
 
         // Metric pills: 4 columns
         var cellW = ContentWidth / 4;
@@ -173,11 +186,16 @@ public sealed class PdfReportBuilder
 
         // Disclaimers & Provenance
         var provY = yText + 32;
-        var diambilStr = iklim.DiambilPada.HasValue ? iklim.DiambilPada.Value.ToOffset(TimeSpan.FromHours(7)).ToString("dd/MM/yyyy HH:mm") : "-";
-        var offlineTag = iklim.IsOffline ? " [MODE LURING / OFFLINE SNAPSHOT]" : "";
-        var provText = $"Sumber: {iklim.Provider}  •  Periode: {iklim.Periode}  •  Status: {iklim.Provenance}{offlineTag}  •  Diambil: {diambilStr}";
-        gfx.DrawString(provText, _fontSmallBold, new XSolidBrush(SecondaryColor), new XPoint(MarginLeft + 10, provY));
-        gfx.DrawString(iklim.PesisirDisclaimer, _fontSmall, new XSolidBrush(MutedColor), new XPoint(MarginLeft + 10, provY + 11));
+        foreach (var line in provenanceLines)
+        {
+            gfx.DrawString(line, _fontSmallBold, new XSolidBrush(SecondaryColor), new XPoint(MarginLeft + 10, provY));
+            provY += 10;
+        }
+        foreach (var line in disclaimerLines.Concat(warningLines))
+        {
+            gfx.DrawString(line, _fontSmall, new XSolidBrush(MutedColor), new XPoint(MarginLeft + 10, provY));
+            provY += 10;
+        }
 
         currentY += boxHeight + 14;
     }
@@ -540,10 +558,20 @@ public sealed class PdfReportBuilder
 
     private void DrawTransparansiSection(ref PdfPage page, ref XGraphics gfx, PdfDocument doc, SnapshotLaporan snapshot, ref double currentY)
     {
-        EnsureSpace(ref page, ref gfx, doc, 80, ref currentY);
+        EnsureSpace(ref page, ref gfx, doc, 110, ref currentY);
 
         gfx.DrawString("6. Catatan Transparansi & Metodologi", _fontSection, new XSolidBrush(PrimaryColor), new XPoint(MarginLeft, currentY + 12));
         currentY += 18;
+
+        var b = snapshot.Bobot;
+        var bobot = FormattableString.Invariant(
+            $"Bobot kriteria: Termal {b.Termal * 100:0.#########}%, Lembap {b.Lembap * 100:0.#########}%, Korosi {b.Korosi * 100:0.#########}%, Usia {b.Usia * 100:0.#########}%.");
+        foreach (var line in WrapText(gfx, bobot, _fontSmall, ContentWidth))
+        {
+            gfx.DrawString(line, _fontSmall, new XSolidBrush(MutedColor), new XPoint(MarginLeft, currentY + 10));
+            currentY += 12;
+        }
+        currentY += 6;
 
         var boxH = 58.0;
         var bRect = new XRect(MarginLeft, currentY, ContentWidth, boxH);

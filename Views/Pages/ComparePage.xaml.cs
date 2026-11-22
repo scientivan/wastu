@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -9,6 +10,7 @@ namespace Wastu.Views.Pages;
 public partial class ComparePage : PageBase
 {
     private bool _refreshing;
+    private bool _syncingWeights;
 
     public ComparePage() => InitializeComponent();
 
@@ -28,8 +30,156 @@ public partial class ComparePage : PageBase
         RoofTab.IsChecked = S.Jenis == JenisKomponen.Atap;
         Fill(SelectA, ranked, selected.ElementAtOrDefault(0));
         Fill(SelectB, ranked, selected.ElementAtOrDefault(1));
+
+        SyncWeightControls();
+
         _refreshing = false;
         DataContext = new CompareData(S, ranked, selected);
+    }
+
+    private void SyncWeightControls()
+    {
+        if (S.Aktif is null) return;
+        _syncingWeights = true;
+        try
+        {
+            bool kustom = S.Aktif.GunakanBobotKustom;
+            MvpWeightRadio.IsChecked = !kustom;
+            V2WeightRadio.IsChecked = kustom;
+
+            MvpWeightInfoPanel.Visibility = !kustom ? Visibility.Visible : Visibility.Collapsed;
+            V2WeightControlPanel.Visibility = kustom ? Visibility.Visible : Visibility.Collapsed;
+
+            var bobot = S.Aktif.Bobot;
+            ThermalWeightBox.Text = (bobot.Termal * 100).ToString("G15", CultureInfo.InvariantCulture);
+            MoistureWeightBox.Text = (bobot.Lembap * 100).ToString("G15", CultureInfo.InvariantCulture);
+            CorrosionWeightBox.Text = (bobot.Korosi * 100).ToString("G15", CultureInfo.InvariantCulture);
+            LifespanWeightBox.Text = (bobot.Usia * 100).ToString("G15", CultureInfo.InvariantCulture);
+
+            WeightValidationMessage.Text = "";
+            UpdateWeightSumIndicator();
+
+            bool readOnly = S.ModeBacaSaja || S.ButuhPemulihan;
+            MvpWeightRadio.IsEnabled = !readOnly;
+            V2WeightRadio.IsEnabled = !readOnly;
+            ThermalWeightBox.IsEnabled = !readOnly;
+            MoistureWeightBox.IsEnabled = !readOnly;
+            CorrosionWeightBox.IsEnabled = !readOnly;
+            LifespanWeightBox.IsEnabled = !readOnly;
+            ApplyWeightsBtn.IsEnabled = !readOnly;
+            ResetWeightsBtn.IsEnabled = !readOnly;
+            WeightReadOnlyBanner.Visibility = readOnly ? Visibility.Visible : Visibility.Collapsed;
+        }
+        finally
+        {
+            _syncingWeights = false;
+        }
+    }
+
+    private void WeightMode_Click(object sender, RoutedEventArgs e)
+    {
+        if (_refreshing || _syncingWeights || S.ModeBacaSaja) return;
+        if (sender is RadioButton rb && rb.Tag is string tag)
+        {
+            bool isCustom = tag == "v2";
+            S.AturModeBobot(isCustom);
+            Shell.Render();
+        }
+    }
+
+    private void WeightInput_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_refreshing || _syncingWeights) return;
+        UpdateWeightSumIndicator();
+    }
+
+    private void UpdateWeightSumIndicator()
+    {
+        if (TryParseWeights(out double t, out double l, out double k, out double u, out _))
+        {
+            double sum = t + l + k + u;
+            if (Math.Abs(sum - 100.0) < 1e-9)
+            {
+                WeightTotalIndicator.Text = "Total: 100%";
+                WeightTotalIndicator.Foreground = Palette.Green;
+            }
+            else
+            {
+                WeightTotalIndicator.Text = $"Total: {sum:0.#}%";
+                WeightTotalIndicator.Foreground = Palette.Red;
+            }
+        }
+        else
+        {
+            WeightTotalIndicator.Text = "Total: -";
+            WeightTotalIndicator.Foreground = Palette.Red;
+        }
+    }
+
+    private bool TryParseWeights(out double termal, out double lembap, out double korosi, out double usia, out string? error)
+    {
+        termal = lembap = korosi = usia = 0;
+        error = null;
+
+        if (string.IsNullOrWhiteSpace(ThermalWeightBox.Text) ||
+            string.IsNullOrWhiteSpace(MoistureWeightBox.Text) ||
+            string.IsNullOrWhiteSpace(CorrosionWeightBox.Text) ||
+            string.IsNullOrWhiteSpace(LifespanWeightBox.Text))
+        {
+            error = "Seluruh persentase bobot harus diisi.";
+            return false;
+        }
+
+        static bool ParsePct(string text, out double val)
+        {
+            text = text.Trim().Replace(',', '.');
+            return double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out val) && double.IsFinite(val);
+        }
+
+        if (!ParsePct(ThermalWeightBox.Text, out termal) ||
+            !ParsePct(MoistureWeightBox.Text, out lembap) ||
+            !ParsePct(CorrosionWeightBox.Text, out korosi) ||
+            !ParsePct(LifespanWeightBox.Text, out usia))
+        {
+            error = "Persentase bobot harus berupa angka valid non-negatif.";
+            return false;
+        }
+
+        if (termal < 0 || lembap < 0 || korosi < 0 || usia < 0)
+        {
+            error = "Persentase bobot tidak boleh bernilai negatif.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private void ApplyWeights_Click(object sender, RoutedEventArgs e)
+    {
+        if (S.ModeBacaSaja) return;
+
+        if (!TryParseWeights(out double t, out double l, out double k, out double u, out string? error))
+        {
+            WeightValidationMessage.Text = error ?? "Nilai bobot tidak valid.";
+            return;
+        }
+
+        string? err = S.AturBobotPersentase(t, l, k, u);
+        if (err is not null)
+        {
+            WeightValidationMessage.Text = err;
+            return;
+        }
+
+        WeightValidationMessage.Text = "";
+        Shell.Render();
+    }
+
+    private void ResetWeights_Click(object sender, RoutedEventArgs e)
+    {
+        if (S.ModeBacaSaja) return;
+        S.ResetBobotAktif();
+        Shell.Render();
     }
 
     private void Fill(ComboBox box, Evaluasi[] ranked, ItemKatalog? selected)
@@ -99,8 +249,9 @@ public sealed class RankRow(ItemKatalog item, Evaluasi e, int index, int count) 
     public string Name { get; } = $"{index + 1}. {item.Bahan.Nama}";
     public string Score { get; } = Format.Angka(e.SkorKesesuaian);
     public Brush ScoreBrush { get; } = e.SkorKesesuaian < 55 ? Palette.Red : Palette.Score;
-    public double BarWidth { get; } = 65 * e.SkorKesesuaian / 100;
+    public double BarWidth { get; } = 65 * Math.Clamp(e.SkorKesesuaian, 0, 100) / 100;
     public string Emission { get; } = Format.Angka(e.EmisiAwal) + " kgCO₂e";
     public TagData Tag { get; } = TagData.Kesesuaian(e.SkorKesesuaian);
+    public string Reason { get; } = e.Alasan;
     public Thickness RowBorder { get; } = new(0, 0, 0, index == count - 1 ? 0 : 1);
 }

@@ -21,6 +21,9 @@
                 <Border Style="{StaticResource Tag}" Background="{StaticResource TagGoldBg}" TextElement.Foreground="{StaticResource TagGoldFg}">
                     <c:CssText x:Name="CountText" Leading="1.4" />
                 </Border>
+                <Border Style="{StaticResource Tag}" Background="{StaticResource TagPaleBg}" TextElement.Foreground="{StaticResource TagPaleFg}" Margin="8,0,0,0">
+                    <c:CssText x:Name="WeightModeBadge" Leading="1.4" />
+                </Border>
                 <Button x:Name="RefreshBtn" Style="{StaticResource BtnLightSm}" Content="Segarkan Katalog" Margin="12,0,0,0" Click="RefreshCatalog_Click" />
             </StackPanel>
 

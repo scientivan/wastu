@@ -35,6 +35,7 @@ public sealed record SnapshotLaporan
         DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7));
 
     public string VersiModel { get; init; } = "v2.0";
+    public KriteriaBobot Bobot { get; init; } = KriteriaBobot.Default;
     public string AtribusiSumber { get; init; } =
         "Data iklim historis bersumber dari Open-Meteo Historical Weather API. " +
         "Faktor emisi tersemat dan properti bahan bersumber dari basis data publik internasional (ICE DB, dsb.) " +

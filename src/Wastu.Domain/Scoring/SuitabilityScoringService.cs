@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Wastu.Domain.Abstractions;
 using Wastu.Domain.Services;
 
@@ -20,6 +21,7 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
     private readonly IEvaluasiRepository? _evaluasi;
     private readonly KonfigurasiModel _konfigurasi;
     private readonly TimeProvider _clock;
+    private readonly ConcurrentDictionary<Guid, SemaphoreSlim> _persistenceGates = new();
 
     /// <summary>
     /// Membuat layanan penilaian. Parameter batch/evaluasi/konfigurasi/clock opsional
@@ -45,6 +47,12 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
         _clock = clock ?? TimeProvider.System;
     }
 
+    public Task<IReadOnlyList<Evaluasi>> RankMaterialsAsync(
+        Guid komponenId,
+        KriteriaBobot? bobot = null,
+        CancellationToken ct = default)
+        => RankAsync(komponenId, bobot, ct);
+
     public async Task<IReadOnlyList<Evaluasi>> RankAsync(
         Guid komponenId,
         KriteriaBobot? bobot = null,
@@ -61,70 +69,129 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
                 $"Proyek {komponen.ProyekId} belum memiliki profil iklim. Jalankan analisis iklim lebih dulu (PRD §F3).");
 
         IReadOnlyList<Bahan> bahan = await _material.ListByKindAsync(komponen.Jenis, ct).ConfigureAwait(false);
-        Bahan[] kategori = bahan.Where(item => item is not null && item.Jenis == komponen.Jenis).ToArray();
+        return await RankSnapshotAsync(komponen, iklim, bahan, bobotEfektif, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Menilai dan menyimpan masukan yang sudah ditangkap pemanggil, tanpa membaca
+    /// ulang proyek, profil iklim, atau katalog yang dapat berubah selama antrean.
+    /// </summary>
+    public async Task<IReadOnlyList<Evaluasi>> RankSnapshotAsync(
+        Komponen komponen,
+        ProfilIklim iklim,
+        IReadOnlyList<Bahan> katalog,
+        KriteriaBobot? bobot = null,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(komponen);
+        ArgumentNullException.ThrowIfNull(iklim);
+        ArgumentNullException.ThrowIfNull(katalog);
+        ct.ThrowIfCancellationRequested();
+
+        KriteriaBobot bobotEfektif = bobot ?? KriteriaBobot.Default;
+        bobotEfektif.PastikanValid();
+        PerhitunganSkor.PastikanKomponenValid(komponen);
+        PerhitunganSkor.PastikanIklimValid(iklim);
+
+        // Salin koleksi sebelum await pertama; record domain menyimpan nilai
+        // immutable, sedangkan daftar milik pemanggil masih dapat disunting.
+        Bahan[] kategori = katalog.Where(item => item is not null && item.Jenis == komponen.Jenis).ToArray();
 
         if (kategori.Length == 0)
         {
             return [];
         }
 
-        PerhitunganSkor.PastikanKomponenValid(komponen);
-        PerhitunganSkor.PastikanIklimValid(iklim);
-
         string hash = HitungHash(komponen, iklim, kategori, bobotEfektif, _konfigurasi);
 
         if (_batch is not null && _evaluasi is not null)
         {
-            BatchEvaluasi? tersimpan = await CariBatchAsync(komponen, hash, ct).ConfigureAwait(false);
-            if (tersimpan is not null)
+            SemaphoreSlim gate = _persistenceGates.GetOrAdd(komponen.Id, _ => new SemaphoreSlim(1, 1));
+            await gate.WaitAsync(ct).ConfigureAwait(false);
+            try
             {
-                IReadOnlyList<Evaluasi> lama = await _evaluasi.ListByKomponenAsync(komponen.Id, ct)
-                    .ConfigureAwait(false);
+                BatchEvaluasi? tersimpan = await CariBatchAsync(komponen, hash, ct).ConfigureAwait(false);
+                Evaluasi[] lama = [];
+                if (tersimpan is not null)
+                {
+                    lama = await BacaEvaluasiBatchAsync(tersimpan, ct).ConfigureAwait(false);
 
-                Evaluasi[] dipakai = lama
-                    .Where(item => item.BatchId == tersimpan.Id
-                        || (string.Equals(item.HashInput, hash, StringComparison.Ordinal)
-                            && string.Equals(item.VersiModel, _konfigurasi.VersiModel, StringComparison.Ordinal)))
-                    .GroupBy(item => item.BahanId)
-                    .Select(grup => grup
-                        .OrderByDescending(item => item.DihitungPadaUtc ?? DateTimeOffset.MinValue)
-                        .First())
+                    if (Lengkap(lama, kategori))
+                    {
+                        return Urutkan(lama, kategori);
+                    }
+                }
+
+                IReadOnlyList<Evaluasi> baru = Rank(komponen, iklim, kategori, bobotEfektif, _konfigurasi);
+                DateTimeOffset dihitungPada = _clock.GetUtcNow();
+                var batchBaru = tersimpan ?? new BatchEvaluasi(
+                    Guid.NewGuid(),
+                    komponen.ProyekId,
+                    komponen.Id,
+                    iklim.RevisiLokasi,
+                    hash,
+                    _konfigurasi.VersiModel,
+                    bobotEfektif,
+                    komponen.LuasM2,
+                    dihitungPada);
+
+                Evaluasi[] terlampir = baru
+                    .Select(item => lama.FirstOrDefault(e => e.BahanId == item.BahanId) ?? item with
+                    {
+                        BatchId = batchBaru.Id,
+                        VersiModel = batchBaru.VersiModel,
+                        HashInput = batchBaru.HashInput,
+                        DihitungPadaUtc = batchBaru.DihitungPadaUtc
+                    })
                     .ToArray();
 
-                if (dipakai.Length == kategori.Length)
+                try
                 {
-                    return Urutkan(dipakai, kategori);
+                    await _batch.SimpanBatchAsync(batchBaru, terlampir, ct).ConfigureAwait(false);
                 }
-            }
-
-            IReadOnlyList<Evaluasi> baru = Rank(komponen, iklim, kategori, bobotEfektif, _konfigurasi);
-            DateTimeOffset dihitungPada = _clock.GetUtcNow();
-            var batchBaru = new BatchEvaluasi(
-                Guid.NewGuid(),
-                komponen.ProyekId,
-                komponen.Id,
-                iklim.RevisiLokasi,
-                hash,
-                _konfigurasi.VersiModel,
-                bobotEfektif,
-                komponen.LuasM2,
-                dihitungPada);
-
-            Evaluasi[] terlampir = baru
-                .Select(item => item with
+                catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    BatchId = batchBaru.Id,
-                    VersiModel = batchBaru.VersiModel,
-                    HashInput = batchBaru.HashInput,
-                    DihitungPadaUtc = batchBaru.DihitungPadaUtc
-                })
-                .ToArray();
+                    // Instance lain dapat memenangkan unique key yang sama. Jika
+                    // transaksi itu lengkap, kembalikan ID kanonikal yang tersimpan.
+                    var bersamaan = await CariHasilLengkapAsync(komponen, hash, kategori, ct).ConfigureAwait(false);
+                    if (bersamaan is not null) return bersamaan;
+                    throw;
+                }
 
-            await _batch.SimpanBatchAsync(batchBaru, terlampir, ct).ConfigureAwait(false);
-            return terlampir;
+                return await CariHasilLengkapAsync(komponen, hash, kategori, ct).ConfigureAwait(false)
+                    ?? throw new InvalidOperationException("Batch evaluasi belum tersimpan lengkap.");
+            }
+            finally
+            {
+                gate.Release();
+            }
         }
 
         return Rank(komponen, iklim, kategori, bobotEfektif, _konfigurasi);
+    }
+
+    private async Task<Evaluasi[]> BacaEvaluasiBatchAsync(BatchEvaluasi batch, CancellationToken ct)
+    {
+        var semua = await _evaluasi!.ListByKomponenAsync(batch.KomponenId, ct).ConfigureAwait(false);
+        return semua.Where(item => item.BatchId == batch.Id
+                && string.Equals(item.HashInput, batch.HashInput, StringComparison.Ordinal)
+                && string.Equals(item.VersiModel, batch.VersiModel, StringComparison.Ordinal))
+            .GroupBy(item => item.BahanId)
+            .Select(grup => grup.OrderByDescending(item => item.DihitungPadaUtc).First())
+            .ToArray();
+    }
+
+    private static bool Lengkap(IReadOnlyList<Evaluasi> evaluasi, IReadOnlyList<Bahan> kategori)
+        => evaluasi.Count == kategori.Count
+            && evaluasi.Select(item => item.BahanId).ToHashSet().SetEquals(kategori.Select(item => item.Id));
+
+    private async Task<IReadOnlyList<Evaluasi>?> CariHasilLengkapAsync(
+        Komponen komponen, string hash, IReadOnlyList<Bahan> kategori, CancellationToken ct)
+    {
+        var batch = await CariBatchAsync(komponen, hash, ct).ConfigureAwait(false);
+        if (batch is null) return null;
+        var hasil = await BacaEvaluasiBatchAsync(batch, ct).ConfigureAwait(false);
+        return Lengkap(hasil, kategori) ? Urutkan(hasil, kategori) : null;
     }
 
     /// <summary>
@@ -255,18 +322,19 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
     /// bobot, dan konfigurasi model (PRD §4.3). Perubahan salah satunya wajib
     /// menghasilkan batch baru, bukan menimpa hasil lama.
     /// </summary>
-    private static string HitungHash(
+    public static string HitungHash(
         Komponen komponen,
         ProfilIklim iklim,
         IReadOnlyList<Bahan> kategori,
         KriteriaBobot bobot,
-        KonfigurasiModel konfigurasi)
+        KonfigurasiModel? konfigurasi = null)
     {
+        KonfigurasiModel konfigurasiEfektif = konfigurasi ?? KonfigurasiModel.Bawaan;
         string identitasKatalog = string.Join("|", kategori
             .OrderBy(item => item.Id)
             .Select(item => FormattableString.Invariant(
                 $"{item.Id:N}:{item.VersiData}:{item.Nama}:{(int)item.Jenis}:{item.KonduktivitasTermal:R}:{item.KetahananLembap}:{item.KetahananKorosi}:{item.UsiaPakaiNominalTahun:R}:{item.FaktorEmisi:R}")));
 
-        return HashInputEvaluasi.Hitung(komponen.LuasM2, iklim, bobot, konfigurasi, identitasKatalog);
+        return HashInputEvaluasi.Hitung(komponen.LuasM2, iklim, bobot, konfigurasiEfektif, identitasKatalog);
     }
 }

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <ProjectReference Include="../../src/Wastu.Data/Wastu.Data.csproj" />
+    <ProjectReference Include="../../src/Wastu.InMemory/Wastu.InMemory.csproj" />
+    <ProjectReference Include="../../src/Wastu.Reporting/Wastu.Reporting.csproj" />
+  </ItemGroup>
+  <!-- Compile the actual application state and adapters without the Windows visual layer. -->
+  <ItemGroup>
+    <Compile Include="../../Models/*.cs" Link="Models/%(Filename)%(Extension)" />
+    <Compile Include="../../Services/*.cs" Exclude="../../Services/ImageCache.cs;../../Services/Lokasi.cs" Link="Services/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../Assets/coastline-indonesia.json.gz" LogicalName="Assets.coastline-indonesia.json.gz" />
+  </ItemGroup>
+</Project>
