@@ -7,6 +7,8 @@ public static class ReportSnapshotFactory
     public static SnapshotLaporan Build(AppState state, Models.JenisKomponen jenis, int horizon,
         bool includeSchedule, IReadOnlySet<string> selectedCodes)
     {
+        if (selectedCodes.Count == 0)
+            throw new InvalidOperationException("Pilih minimal satu material untuk laporan.");
         var p = state.Aktif;
         var climate = state.Iklim;
         var rank = state.Peringkat(jenis);

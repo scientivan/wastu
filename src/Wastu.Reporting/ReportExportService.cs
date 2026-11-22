@@ -90,7 +90,7 @@ public sealed class ReportExportService : IReportExportService
         }
 
         // Validate selection: must not be empty
-        if (snapshot.BahanTerpilih.Count == 0 && snapshot.Komponen.Count == 0)
+        if (snapshot.BahanTerpilih.Count == 0 || snapshot.Komponen.Count == 0)
         {
             throw new InvalidOperationException("Laporan tidak dapat diekspor dengan pilihan komponen dan material kosong.");
         }

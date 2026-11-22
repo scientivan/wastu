@@ -330,10 +330,6 @@ public sealed class ReportData : ViewData
 
         // Selected rows (no 5-item cutoff!)
         var chosenEvaluasi = rank.Where(e => selectedCodes.Contains(s.Item(e.Bahan).Kode)).ToArray();
-        if (chosenEvaluasi.Length == 0 && rank.Length > 0)
-        {
-            chosenEvaluasi = rank.Take(3).ToArray();
-        }
         Rows = chosenEvaluasi.Select((e, i) => new ReportRow(e, i == chosenEvaluasi.Length - 1)).ToList();
 
         SimulationTitle = $"Simulasi {horizon} tahun";

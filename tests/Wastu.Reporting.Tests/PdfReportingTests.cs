@@ -11,6 +11,17 @@ namespace Wastu.Reporting.Tests;
 
 public sealed class PdfReportingTests : IDisposable
 {
+    [Fact]
+    public async Task ComponentWithoutSelectedMaterialsDoesNotCreatePdfOrHistory()
+    {
+        var repository = new LaporanRepositoryInMemory();
+        var service = new ReportExportService(repository, pendingMetadataDirectory: _pendingDir);
+        var snapshot = BuatContohSnapshot(b => b with { BahanTerpilih = [] });
+        var path = Path.Combine(_testDir, "empty-materials.pdf");
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ExportSnapshotAsync(snapshot, path));
+        Assert.False(File.Exists(path));
+        Assert.Empty(await repository.ListByProyekAsync(snapshot.ProyekId));
+    }
     private readonly string _testDir;
     private readonly string _pendingDir;
 

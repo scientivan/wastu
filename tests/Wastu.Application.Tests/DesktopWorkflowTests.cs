@@ -10,6 +10,13 @@ namespace Wastu.Application.Tests;
 public sealed class DesktopWorkflowTests
 {
     [Fact]
+    public void ClearingReportSelectionCannotSilentlyExportDefaultMaterials()
+    {
+        var state = CreateState();
+        Assert.Throws<InvalidOperationException>(() =>
+            ReportSnapshotFactory.Build(state, state.Jenis, 30, true, new HashSet<string>()));
+    }
+    [Fact]
     public async Task SimulationMarksSessionDirtySoShutdownFlushesPendingSnapshot()
     {
         var state = CreateState();
