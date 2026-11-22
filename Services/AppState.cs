@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Wastu.Data;
+using Wastu.Data.Snapshots;
 using Wastu.Domain.Scoring;
 using Wastu.Domain.Services;
 using Wastu.Models;
@@ -18,6 +19,10 @@ public sealed class AppState
     private StateDto? _antrean;
     private bool _menulis;
     private PostgreSqlBackend? _backend;
+    // Satu instance toko per profil selama aplikasi hidup (kontrak SnapshotStore).
+    private SnapshotStore<StateDto>? _toko;
+    // Hanya di memori; tidak pernah masuk StateDto, nama berkas, pesan UI, atau log.
+    private string? _koneksi;
     private IReadOnlyList<ItemKatalog> _katalog = Katalog.Semua;
     private static readonly OpenMeteo IklimHistoris = new();
 
@@ -38,6 +43,44 @@ public sealed class AppState
 
     public bool AdaProyek => Proyek.Count > 0;
     public bool PostgreSql => _backend is not null;
+
+    // ===== Status mode (WP01 §6.2) =====
+    /// <summary>True bila data dibuka dari snapshot offline database (luring baca-saja).</summary>
+    public bool ModeBacaSaja { get; private set; }
+
+    /// <summary>True bila database gagal dan tidak ada snapshot yang dapat digunakan.</summary>
+    public bool ButuhPemulihan { get; private set; }
+
+    /// <summary>Status snapshot yang mendasari keputusan startup, bila ada.</summary>
+    public SnapshotStatus? StatusSnapshot { get; private set; }
+
+    public bool DipulihkanDariCadangan { get; private set; }
+
+    /// <summary>Waktu pengambilan data asli snapshot (UTC), bukan waktu pembacaan berkas.</summary>
+    public DateTimeOffset? SnapshotDiambilPadaUtc { get; private set; }
+
+    /// <summary>Ringkasan status koneksi untuk UI; teks aman tanpa kredensial atau detail mentah.</summary>
+    public string? PesanStatusKoneksi { get; private set; }
+
+    /// <summary>
+    /// Label penyimpanan untuk UI: PostgreSQL (baca-tulis), Luring (Baca-Saja), atau Lokal (JSON).
+    /// Mode JSON lokal tidak pernah dinyatakan tersimpan di PostgreSQL.
+    /// </summary>
+    public string LabelModePenyimpanan => ModeBacaSaja || ButuhPemulihan ? "Luring (Baca-Saja)"
+        : PostgreSql ? "PostgreSQL"
+        : "Lokal (JSON)";
+
+    private bool TulisanDitolak => ModeBacaSaja || ButuhPemulihan;
+
+    private const string PesanTulisDitolak =
+        "Mode luring baca-saja: perubahan tidak dapat disimpan karena database sedang tidak tersedia.";
+
+    // Penolakan untuk operasi baca-tulis; pesan tidak memuat kredensial atau detail koneksi.
+    private void TolakTulis()
+    {
+        if (TulisanDitolak)
+            throw new InvalidOperationException(PesanTulisDitolak);
+    }
     public Bangunan Aktif => Proyek.Find(p => p.Id == ProyekAktifId) ?? Proyek[0];
     public ProfilIklim Iklim => Aktif.ProfilIklim ??= Katalog.ProfilBawaan(Aktif.Kota, 30);
     public double Luas => Aktif.LuasKomponen(Jenis);
@@ -111,6 +154,7 @@ public sealed class AppState
     public async Task<string?> TambahProyekAsync(string nama, string kota, double lintang, double bujur,
         double dinding, double atap, double pesisir)
     {
+        TolakTulis();
         if (_backend is null)
         {
             TambahProyek(nama, kota, lintang, bujur, dinding, atap, pesisir);
@@ -126,6 +170,7 @@ public sealed class AppState
     public Bangunan TambahProyek(string nama, string kota, double lintang, double bujur, double dinding, double atap,
         double pesisir, Guid? databaseId = null)
     {
+        TolakTulis();
         var proyek = new Bangunan
         {
             Id = Proyek.Count == 0 ? 1 : Proyek.Max(p => p.Id) + 1,
@@ -154,6 +199,7 @@ public sealed class AppState
 
     public void HapusProyekAktif()
     {
+        TolakTulis();
         Proyek.Remove(Aktif);
         if (AdaProyek) ProyekAktifId = Proyek[0].Id;
         ResetPrakiraan();
@@ -161,14 +207,17 @@ public sealed class AppState
 
     public async Task HapusProyekAktifAsync()
     {
-        if (_backend is not null)
-            await _backend.Proyek.DeleteAsync(Aktif.DatabaseId!.Value);
+        TolakTulis();
+        // Proyek lokal (tanpa DatabaseId) tidak punya padanan di database; jangan menyentuh null.
+        if (_backend is not null && Aktif.DatabaseId is { } idDatabase)
+            await _backend.Proyek.DeleteAsync(idDatabase);
         HapusProyekAktif();
     }
 
     public async Task<string?> UbahProyekAsync(string nama, string kota, double lintang, double bujur,
         double dinding, double atap, double pesisir)
     {
+        TolakTulis();
         var proyek = Aktif;
         bool pindah = proyek.Latitude != lintang || proyek.Longitude != bujur;
         string? pesan = null;
@@ -258,61 +307,171 @@ public sealed class AppState
         };
     }
 
-    public static async Task<AppState> MuatAsync()
+    public static Task<AppState> MuatAsync() => MuatAsync(paksaJsonLokal: false, CancellationToken.None);
+
+    public static async Task<AppState> MuatAsync(bool paksaJsonLokal, CancellationToken cancellationToken = default)
     {
+        if (paksaJsonLokal)
+            return await MuatModeJsonLokalAsync(cancellationToken).ConfigureAwait(false);
+
         var koneksi = KoneksiSupabase.Cari();
         if (string.IsNullOrWhiteSpace(koneksi))
-            return MuatLokal(postgreSql: false);
+            return await MuatModeJsonLokalAsync(cancellationToken).ConfigureAwait(false);
 
-        var backend = new PostgreSqlBackend(koneksi);
-        var state = MuatLokal(postgreSql: true);
-        state._backend = backend;
-        var dinding = await backend.Material.ListByKindAsync(Domain.JenisKomponen.Dinding);
-        var atap = await backend.Material.ListByKindAsync(Domain.JenisKomponen.Atap);
-        state._katalog = dinding.Concat(atap).Select(ItemKatalog.DariDomain).ToArray();
-
-        var proyek = await backend.Proyek.ListAsync();
-        var idDatabase = proyek.Select(p => p.Id).ToHashSet();
-        int idLokal = state.Proyek.Select(p => p.Id).DefaultIfEmpty().Max();
-        state.Proyek.RemoveAll(p => p.DatabaseId is not { } id || !idDatabase.Contains(id));
-        foreach (var data in proyek)
+        var toko = StateStore.TokoPostgreSql(koneksi);
+        if (toko is null)
         {
-            var lokal = state.Proyek.Find(p => p.DatabaseId == data.Id);
-            if (lokal is null)
+            return new AppState
             {
-                lokal = new Bangunan { Id = ++idLokal, DatabaseId = data.Id };
-                state.Proyek.Add(lokal);
-            }
-            if (state.PrakiraanProyekId == lokal.Id && (lokal.Latitude != data.Latitude || lokal.Longitude != data.Longitude))
-                state.ResetPrakiraan();
+                _koneksi = koneksi,
+                ButuhPemulihan = true,
+                StatusSnapshot = SnapshotStatus.Corrupt,
+                PesanStatusKoneksi = "Format string koneksi database tidak valid. Periksa konfigurasi .env atau WASTU_CONNECTION_STRING."
+            };
+        }
 
-            lokal.Nama = data.Nama;
-            lokal.Kota = data.Kota;
-            lokal.Latitude = data.Latitude;
-            lokal.Longitude = data.Longitude;
-            var komponen = await backend.Repository.ListKomponenAsync(data.Id);
-            lokal.AturLuasKomponen(JenisKomponen.Dinding, komponen.FirstOrDefault(k => k.Jenis == Domain.JenisKomponen.Dinding)?.LuasM2 ?? 0);
-            lokal.AturLuasKomponen(JenisKomponen.Atap, komponen.FirstOrDefault(k => k.Jenis == Domain.JenisKomponen.Atap)?.LuasM2 ?? 0);
-            var profil = await backend.Repository.GetProfilIklimAsync(data.Id);
-            if (profil is not null)
-                TerapkanProfil(lokal, profil, sumber: "Profil iklim tersimpan");
-            else
-                lokal.ProfilIklim = Katalog.ProfilBawaan(data.Kota, JarakPesisir.HitungKm(data.Latitude, data.Longitude));
-        }
-        if (!state.Proyek.Any(p => p.Id == state.ProyekAktifId))
+        var koordinator = new StartupSnapshotCoordinator<StateDto>(toko);
+        PostgreSqlBackend? backend = null;
+        IReadOnlyList<ItemKatalog>? katalogDb = null;
+
+        var hasil = await koordinator.JalankanAsync(async ct =>
         {
-            state.ProyekAktifId = state.Proyek.FirstOrDefault()?.Id ?? 0;
-            state.ResetPrakiraan();
+            var be = new PostgreSqlBackend(koneksi);
+            var dinding = await be.Material.ListByKindAsync(Domain.JenisKomponen.Dinding, ct).ConfigureAwait(false);
+            var atap = await be.Material.ListByKindAsync(Domain.JenisKomponen.Atap, ct).ConfigureAwait(false);
+            katalogDb = dinding.Concat(atap).Select(ItemKatalog.DariDomain).ToArray();
+            backend = be;
+
+            var draf = await StateStore.BacaDrafAsync(toko, ct).ConfigureAwait(false) ?? StateStore.BacaLegacyPostgres();
+
+            return await BentukDtoDariDatabaseAsync(be, draf, ct).ConfigureAwait(false);
+        }, cancellationToken).ConfigureAwait(false);
+
+        var state = new AppState
+        {
+            _koneksi = koneksi,
+            _toko = toko,
+            ModeBacaSaja = hasil.Mode == ModeOperasi.LuringBacaSaja,
+            ButuhPemulihan = hasil.Mode == ModeOperasi.ButuhPemulihan,
+            StatusSnapshot = hasil.StatusSnapshot,
+            DipulihkanDariCadangan = hasil.DipulihkanDariCadangan,
+            SnapshotDiambilPadaUtc = hasil.SnapshotDiambilPadaUtc,
+            PesanStatusKoneksi = hasil.Pesan
+        };
+
+        if (hasil.Mode == ModeOperasi.DatabaseOnline)
+        {
+            state._backend = backend;
+            if (katalogDb is not null)
+                state._katalog = katalogDb;
         }
+
+        if (hasil.Data is not null)
+        {
+            TerapkanDto(state, hasil.Data);
+        }
+
         return state;
     }
 
-    private static AppState MuatLokal(bool postgreSql)
+    private static async Task<AppState> MuatModeJsonLokalAsync(CancellationToken cancellationToken)
     {
-        var state = new AppState();
-        var dto = StateStore.Load(postgreSql);
-        if (dto is null) return state;
+        var toko = StateStore.TokoJsonLokal();
+        var importer = new LegacyJsonImporter<StateDto>(
+            StateStore.BerkasLegacyJson,
+            toko,
+            StateStore.BacaLegacyPayload);
 
+        var koordinator = new StartupSnapshotCoordinator<StateDto>(toko);
+        var hasil = await koordinator.JalankanModeJsonAsync(
+            importer,
+            () => new StateDto(),
+            cancellationToken).ConfigureAwait(false);
+
+        var state = new AppState
+        {
+            _toko = toko,
+            ModeBacaSaja = false,
+            ButuhPemulihan = hasil.Mode == ModeOperasi.ButuhPemulihan,
+            StatusSnapshot = hasil.StatusSnapshot,
+            DipulihkanDariCadangan = hasil.DipulihkanDariCadangan,
+            SnapshotDiambilPadaUtc = hasil.SnapshotDiambilPadaUtc,
+            PesanStatusKoneksi = hasil.Pesan
+        };
+
+        if (hasil.Data is not null)
+        {
+            TerapkanDto(state, hasil.Data);
+        }
+
+        return state;
+    }
+
+    private static async Task<StateDto> BentukDtoDariDatabaseAsync(PostgreSqlBackend backend, StateDto? draf, CancellationToken ct)
+    {
+        var proyekDb = await backend.Proyek.ListAsync(ct).ConfigureAwait(false);
+        var hasilProyek = new List<ProyekDto>(proyekDb.Count);
+        int idLokal = draf?.Proyek.Select(p => p.Id).DefaultIfEmpty(0).Max() ?? 0;
+
+        foreach (var data in proyekDb)
+        {
+            var lokal = draf?.Proyek.Find(p => p.DatabaseId == data.Id);
+            int id = lokal?.Id ?? ++idLokal;
+
+            var komponen = await backend.Repository.ListKomponenAsync(data.Id, ct).ConfigureAwait(false);
+            var dinding = komponen.FirstOrDefault(k => k.Jenis == Domain.JenisKomponen.Dinding)?.LuasM2 ?? 0;
+            var atap = komponen.FirstOrDefault(k => k.Jenis == Domain.JenisKomponen.Atap)?.LuasM2 ?? 0;
+            var profil = await backend.Repository.GetProfilIklimAsync(data.Id, ct).ConfigureAwait(false);
+
+            hasilProyek.Add(new ProyekDto
+            {
+                Id = id,
+                DatabaseId = data.Id,
+                Nama = data.Nama,
+                Kota = data.Kota,
+                Lintang = data.Latitude,
+                Bujur = data.Longitude,
+                Dinding = dinding,
+                Atap = atap,
+                JarakPesisir = profil?.JarakPesisirKm ?? JarakPesisir.HitungKm(data.Latitude, data.Longitude),
+                Iklim = profil is not null
+                    ? new IklimDto
+                    {
+                        CurahHujan = profil.CurahHujanTahunanMm,
+                        Kelembapan = profil.KelembapanRataPct,
+                        Suhu = profil.SuhuRataC,
+                        Sumber = "Profil iklim tersimpan",
+                        Diperbarui = Format.WaktuLokal((profil.DiambilPada ?? DateTimeOffset.UtcNow).LocalDateTime)
+                    }
+                    : null,
+                Pekerjaan = lokal?.Pekerjaan ?? []
+            });
+        }
+
+        int? aktifId = draf?.ProyekAktif;
+        if (aktifId is null || !hasilProyek.Any(p => p.Id == aktifId))
+        {
+            aktifId = hasilProyek.FirstOrDefault()?.Id;
+        }
+
+        return new StateDto
+        {
+            Proyek = hasilProyek,
+            ProyekAktif = aktifId,
+            Jenis = draf?.Jenis ?? JenisKomponen.Dinding,
+            Dipilih = draf?.Dipilih is { Length: > 0 } d ? d : ["m0", "m1"],
+            Horizon = draf?.Horizon is 20 or 30 or 50 ? draf.Horizon : 30,
+            JenisKerja = draf?.JenisKerja ?? JenisPekerjaan.Pengecatan,
+            Prakiraan = draf?.Prakiraan ?? [],
+            PrakiraanDiperbarui = draf?.PrakiraanDiperbarui ?? "",
+            PrakiraanProyek = draf?.PrakiraanProyek,
+            HariDipilih = draf?.HariDipilih
+        };
+    }
+
+    private static void TerapkanDto(AppState state, StateDto dto)
+    {
+        state.Proyek.Clear();
         foreach (var p in dto.Proyek)
         {
             var proyek = new Bangunan
@@ -369,7 +528,6 @@ public sealed class AppState
         state.PrakiraanDiperbarui = dto.PrakiraanDiperbarui;
         state.PrakiraanProyekId = dto.PrakiraanProyek;
         state.HariDipilih = dto.HariDipilih?.ToDateTime(TimeOnly.MinValue);
-        return state;
     }
 
     private StateDto KeDto() => new()
@@ -432,6 +590,7 @@ public sealed class AppState
     // Penulisan berkas berjalan di thread pool; perubahan beruntun digabung menjadi satu tulisan.
     public void Simpan()
     {
+        if (TulisanDitolak || _toko is null) return;
         var dto = KeDto();
         lock (_gate)
         {
@@ -446,7 +605,7 @@ public sealed class AppState
     // pernah berubah (termasuk bila jendela ditutup sebelum data termuat) tidak ditulis ulang.
     public void SimpanSekarang()
     {
-        if (Revisi == 0) return;
+        if (TulisanDitolak || Revisi == 0 || _toko is null) return;
         var batas = Stopwatch.StartNew();
         while (true)
         {
@@ -457,7 +616,7 @@ public sealed class AppState
             if (batas.ElapsedMilliseconds > 2000) return;
             Thread.Sleep(5);
         }
-        try { StateStore.Save(KeDto(), PostgreSql); }
+        try { StateStore.Simpan(KeDto(), _toko); }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException) { Debug.WriteLine(e); }
         finally { lock (_gate) _menulis = false; }
     }
@@ -473,7 +632,8 @@ public sealed class AppState
                 _antrean = null;
                 if (dto is null) { _menulis = false; return; }
             }
-            try { StateStore.Save(dto, PostgreSql); }
+            if (_toko is null || TulisanDitolak) continue;
+            try { StateStore.Simpan(dto, _toko); }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException) { Debug.WriteLine(e); }
         }
     }
