@@ -16,21 +16,21 @@
 
 ## 1. Ringkasan Eksekutif
 
-Wastu adalah aplikasi desktop Windows yang membantu calon pemilik rumah memilih bahan dinding dan atap berdasarkan **kesesuaian dengan iklim lokasi** dan **jejak karbon tersemat**, kemudian membantu menjadwalkan pekerjaan konstruksi sensitif cuaca mengikuti prakiraan cuaca setempat.
+Wastu adalah aplikasi desktop yang membantu calon pemilik rumah memilih bahan dinding dan atap berdasarkan **kesesuaian dengan iklim lokasi** dan **jejak karbon tersemat**, lalu membantu menjadwalkan pekerjaan konstruksi mengikuti prakiraan cuaca.
 
-Perbedaannya dengan kebiasaan yang berlaku hari ini terletak pada satu hal mendasar: pemilihan bahan bangunan rumah tinggal di Indonesia hampir selalu ditentukan oleh harga beli dan kebiasaan tukang, bukan oleh kecocokan bahan dengan curah hujan, kelembapan, suhu, dan risiko korosi di lokasi bangunan berdiri. Akibatnya bahan cepat rusak, penggantian dini terjadi lebih sering dari usia nominalnya, dan setiap penggantian mengulang emisi karbon produksi bahan dari awal.
+Perbedaannya dengan kebiasaan yang berlaku hari ini terletak pada satu hal: pemilihan bahan bangunan rumah tinggal di Indonesia hampir selalu ditentukan oleh harga dan kebiasaan tukang, bukan oleh kecocokan bahan dengan curah hujan, kelembapan, suhu, dan risiko korosi di lokasi bangunan berdiri. Akibatnya bahan cepat rusak, penggantian dini terjadi lebih sering dari yang seharusnya, dan setiap penggantian mengulang emisi karbon produksi bahan.
 
-**Segmen Pengguna:** calon pemilik rumah tinggal tapak di Indonesia yang sedang merencanakan pembangunan baru atau renovasi pada komponen **dinding dan atap**. Aplikasi mendukung fleksibilitas komponen: pemilik proyek dapat mengevaluasi dinding saja, atap saja, atau kedua komponen sekaligus.
+**Segmen Pengguna:** calon pemilik rumah tinggal tapak di Indonesia yang sedang merencanakan atau merenovasi **dinding dan atap**. Aplikasi mendukung fleksibilitas komponen: pemilik proyek dapat mengevaluasi dinding saja, atap saja, atau kedua komponen sekaligus (§PRD-R10).
 
-**Prinsip Desain yang Membedakan Wastu:**
+**Tiga keputusan yang membedakan Wastu dari sekadar "kalkulator RAB" atau "kalkulator karbon":**
 
-1. **Iklim dan karbon dinilai berdampingan, bukan terpisah.** Skor kesesuaian iklim (0–100) dan emisi awal ($\text{kgCO}_2\text{e}$) ditampilkan pada satu peringkat yang sama berdampingan di setiap baris, disertai alasan tekstual berbasis properti fisik material terhadap iklim lokasi (§11.1–11.2).
-2. **Emisi dihitung sebagai konsekuensi jangka panjang dengan fungsi tangga penggantian.** Bahan yang kurang cocok dengan iklim diberi usia pakai efektif lebih pendek. Simulasi emisi jangka panjang (20, 30, 50 tahun) menghitung kejadian penggantian pada interval $0 < t < H$ dengan rumus $n = \max(0, \lceil H/L \rceil - 1)$ (§PRD-R02, §11.3).
-3. **Penjadwalan kerja menyatu dengan data lokasi dan spesifikasi teknis.** Penjadwal mengevaluasi hari kerja berdasarkan ambang jenis pekerjaan dan lembar spesifikasi produk bahan terpilih, bukan mengarang ambang otomatis dari indeks ketahanan material (§PRD-R05, §12).
-4. **Penyimpanan fleksibel dan peninjauan luring yang aman.** Mendukung PostgreSQL lokal maupun remote (Supabase). Mode remote memiliki snapshot lokal atomik read-only agar aplikasi tetap dapat dibuka saat luring tanpa risiko crash atau kehilangan data (§PRD-R06, §7).
-5. **Transparansi sumber dan batasan terbuka.** Faktor emisi dinormalisasi ke $\text{kgCO}_2\text{e/m}^2$ dengan dokumentasi asumsi ketebalan/massa; asal data diklasifikasikan ke dalam kategori provenance eksplisit (`ApiHistoris`, `Contoh`, `Manual`, `LegacyUnknown`); asumsi model perhitungan berversi dan dapat di-reset (§PRD-R03, §PRD-R09, §PRD-R11).
+1. **Iklim dan karbon dinilai berdampingan, bukan terpisah.** Skor kesesuaian iklim (0–100) dan emisi awal ($\text{kgCO}_2\text{e}$) ditampilkan pada satu peringkat yang sama berdampingan di setiap baris, disertai alasan tekstual berbasis properti fisik material terhadap iklim lokasi, sehingga pengguna awam tidak perlu menafsirkan dua angka dari dua alat berbeda (§11.1–11.2).
+2. **Emisi dihitung sebagai konsekuensi jangka panjang, bukan angka sekali hitung.** Bahan yang tidak cocok dengan iklim diberi usia pakai efektif lebih pendek. Simulasi emisi jangka panjang (20, 30, 50 tahun) menghitung kejadian penggantian pada interval $0 < t < H$ dengan rumus $n = \max(0, \lceil H/L \rceil - 1)$ (§PRD-R02, §11.3).
+3. **Penjadwalan kerja terintegrasi dengan rekomendasi bahan, bukan fitur terpisah.** Ambang cuaca layak-kerja untuk pengecoran dan pengecatan menggunakan ambang jenis pekerjaan dan lembar spesifikasi produk bahan terpilih, bukan mengarang ambang otomatis dari indeks ketahanan material (§PRD-R05, §12).
 
-Dokumen revisi ini menetapkan target spesifikasi terpadu untuk **seluruh scope produk hingga V2** tanpa mengurangi cakupan 31 Acceptance Criteria F1–F7.
+**Batasan yang dinyatakan terbuka:** basis data faktor emisi dan properti bahan bersumber dari basis data publik internasional (ICE Database, EPD generik) yang didominasi konteks Eropa/Amerika Utara. Kurasi nilai spesifik pasar Indonesia adalah pekerjaan berkelanjutan, bukan sesuatu yang selesai di MVP, dan dinyatakan sebagai batasan di antarmuka (§11.4).
+
+Dokumen revisi ini menetapkan target spesifikasi terpadu untuk **seluruh scope produk hingga V2** tanpa mengurangi cakupan 31 Acceptance Criteria F1–F7 (§PRD-R01).
 
 ---
 
@@ -38,42 +38,51 @@ Dokumen revisi ini menetapkan target spesifikasi terpadu untuk **seluruh scope p
 
 ### 2.1 Bagaimana bahan bangunan dipilih hari ini
 
-Pada konstruksi rumah tinggal non-korporat di Indonesia, keputusan bahan dinding dan atap umumnya diambil berdasarkan harga beli per satuan dan kebiasaan tukang atau kontraktor kecil, bukan berdasarkan kecocokan bahan dengan kondisi iklim setempat. Curah hujan tinggi, kelembapan ekstrem, kedekatan dengan pesisir (risiko korosi udara bergaram), dan radiasi termal harian adalah faktor lingkungan yang secara fisik menentukan kecepatan degradasi bahan, namun faktor-faktor ini jarang dipertimbangkan secara kuantitatif sebelum pembelian.
+Pada konstruksi rumah tinggal non-korporat di Indonesia, keputusan bahan dinding dan atap umumnya diambil berdasarkan harga per satuan dan kebiasaan tukang atau kontraktor kecil, bukan berdasarkan kecocokan bahan dengan kondisi iklim setempat. Curah hujan tinggi, kelembapan tinggi, kedekatan dengan pesisir (risiko korosi garam), dan fluktuasi suhu harian adalah faktor yang secara fisik menentukan seberapa cepat bahan terdegradasi, tetapi faktor-faktor ini jarang masuk ke pertimbangan pembelian.
 
 ### 2.2 Konsekuensi berganda dari pemilihan yang salah
 
-Kesalahan pemilihan bahan menimbulkan tiga konsekuensi berantai yang saling memperburuk:
+Kesalahan pemilihan bahan menimbulkan tiga konsekuensi yang saling memperkuat:
 
-1. **Kerusakan dini.** Bahan yang memiliki ketahanan lembap atau ketahanan korosi rendah di lingkungan tropis basah atau pesisir mengalami penurunan fungsi jauh sebelum usia pakai nominal tercapai.
-2. **Emisi berulang (*embodied carbon penalty*).** Setiap kali penggantian dini dilakukan, emisi produksi bahan terulang dari awal. Emisi tersemat (*embodied carbon*) bukan biaya sekali bayar: ia berlipat ganda setiap siklus penggantian terjadi.
-3. **Pengerjaan ulang akibat cuaca buruk.** Pengecoran beton saat hujan atau pengecatan pada kelembapan udara tinggi menyebabkan kegagalan hidrasi semen atau daya lekat cat terkelupas, yang berujung pada pembongkaran, biaya ekstra, dan emisi material yang terbuang sia-sia.
+1. **Kerusakan dini.** Bahan yang tidak tahan lembap atau korosi pada iklim tropis lembap atau lokasi pesisir mengalami degradasi jauh sebelum usia pakai nominalnya tercapai.
+2. **Emisi berulang.** Setiap penggantian dini mengulang emisi produksi bahan dari awal. Emisi tersemat (*embodied carbon*) bukan biaya satu kali seperti yang diasumsikan kebanyakan kalkulator karbon material — ia berulang setiap kali penggantian terjadi.
+3. **Pengerjaan ulang akibat cuaca.** Pengecoran atau pengecatan yang dilakukan pada kondisi cuaca yang salah (hujan saat curing beton, kelembapan tinggi saat pengecatan) berujung pada pengerjaan ulang, yang menambah biaya sekaligus emisi dari bahan yang terbuang.
 
 ### 2.3 Celah yang belum terisi
 
-Calon pemilik rumah di Indonesia tidak memiliki alat bantu yang membandingkan jejak karbon bahan fungsional yang setara secara berdampingan dengan kecocokan iklim lokasi. Alat yang ada saat ini terpolarisasi pada dua ekstrem:
+Calon pemilik rumah tidak memiliki alat sederhana untuk membandingkan jejak karbon antar bahan yang fungsinya setara, apalagi yang mengaitkannya dengan iklim lokasi. Alat yang tersedia hari ini terbelah menjadi dua kutub yang sama-sama tidak menjawab kebutuhan ini (rincian di §13):
 
-- Perangkat LCA komersial (One Click LCA, EC3) ditujukan bagi konsultan gedung berskala besar, memerlukan input spesifikasi yang sangat rumit, dan minim pustaka material lokal Indonesia.
-- Simulasi energi bangunan profesional (EnergyPlus) memerlukan keahlian teknik tinggi dan hanya mensimulasikan performa energi operasional, bukan memberi rekomendasi pemilihan bahan.
-- Aplikasi lokal yang beredar berfokus semata-mata pada Rencana Anggaran Biaya (RAB) dan penghitungan volume fisik, tanpa analisis iklim maupun emisi karbon.
+- Alat analisis siklus hidup bangunan yang mapan (One Click LCA, Embodied Carbon in Construction Calculator) ditujukan bagi praktisi proyek besar, berbasis web, dan basis materialnya didominasi produk pasar Eropa/Amerika Utara.
+- Alat pemodelan termal mendalam (EnergyPlus) menuntut keahlian tinggi dan tidak memberi rekomendasi bahan.
+- Aplikasi lokal yang beredar berfokus pada rencana anggaran biaya dan volume material, tanpa aspek iklim maupun karbon sama sekali.
 
 ### 2.4 Rumusan masalah
 
-1. Bagaimana merancang aplikasi desktop yang menyajikan skor kesesuaian iklim lokasi dan emisi karbon awal secara berdampingan dalam satu peringkat terpadu dengan alasan yang mudah dipahami pemilik rumah awam?
-2. Bagaimana memodelkan dampak penggantian dini material sepanjang horizon waktu pemakaian secara transparan melalui fungsi emisi kumulatif yang konsisten?
-3. Bagaimana memadukan prakiraan cuaca harian lokasi proyek dengan ambang batas teknis pekerjaan konstruksi agar risiko kegagalan pengerjaan akibat cuaca dapat diminimalkan?
+1. Bagaimana merancang alat yang membandingkan bahan dinding dan atap berdasarkan kesesuaian iklim lokasi **dan** jejak karbon tersemat secara berdampingan, sehingga pengguna non-profesional bisa membuat keputusan berbasis kedua pertimbangan sekaligus?
+2. Bagaimana merepresentasikan konsekuensi jangka panjang dari pemilihan yang salah — penggantian dini dan emisi berulang — dengan cara yang dapat dipahami tanpa latar belakang teknik?
+3. Bagaimana menghubungkan rekomendasi bahan dengan pelaksanaan di lapangan, sehingga jadwal pekerjaan yang sensitif cuaca (pengecoran, pengecatan) ikut terbantu, bukan menjadi keputusan terpisah yang diambil secara manual?
 
 ---
 
 ## 3. Target Pengguna
 
 ### Persona 1 — Bu Wulan, calon pemilik rumah (pengguna utama)
-Merencanakan pembangunan rumah tinggal tapak pertamanya di area pesisir. Sudah memiliki denah arsitektur dasar namun bingung menentukan material dinding dan penutup atap yang awet terhadap udara pantai dan tidak gerah. Membutuhkan penjelasan yang tidak memaksanya memahami rumus teknik, dengan rekomendasi tertulis yang bisa dibawa saat berdiskusi dengan tukang/kontraktor.
+
+Sedang merencanakan pembangunan rumah tapak pertamanya di kota pesisir. Sudah punya gambar arsitektur dari desainer, tapi keputusan bahan dinding dan atap masih mengikuti saran tukang. Melek aplikasi desktop dasar (spreadsheet, aplikasi RAB), tidak punya latar belakang teknik sipil atau lingkungan.
+
+**Yang ia butuhkan:** cara membandingkan pilihan bahan yang tidak memaksanya memahami istilah teknik, dengan alasan yang bisa ia sampaikan ulang ke kontraktornya.
 
 ### Persona 2 — Pak Herman, pemilik rumah yang merenovasi
-Mengalami atap bocor dan dinding berjamur setelah 6 tahun renovasi terakhir. Curiga bahwa material yang dipilih sebelumnya tidak tahan terhadap curah hujan tinggi di kotanya. Membutuhkan simulasi perbandingan jangka panjang untuk memastikan renovasi kali ini tidak mengulang siklus kerusakan dini.
 
-### Persona 3 — Kontraktor kecil / mandor (penerima laporan)
-Menerima dokumen ringkasan rekomendasi bahan dan jadwal kerja dari pemilik rumah. Tidak mengoperasikan perangkat lunak Wastu secara langsung, namun membutuhkan laporan PDF yang ringkas, memuat spesifikasi bahan terpilih, alasan ketahanan iklim, dan tanggal penguncian jadwal kerja yang aman.
+Atap rumahnya bocor dan lapuk lebih cepat dari perkiraan setelah 6 tahun, ia curiga bahan yang dipakai tidak cocok untuk daerahnya yang curah hujannya tinggi. Ingin memastikan penggantian kali ini tidak terulang masalah yang sama.
+
+**Yang ia butuhkan:** pembanding yang secara eksplisit memperhitungkan riwayat kerusakan dini sebagai bagian dari simulasi emisi dan biaya jangka panjang, bukan hanya harga beli.
+
+### Persona 3 — Kontraktor kecil / tukang (penerima laporan, bukan pengguna aplikasi)
+
+Menerima laporan rekomendasi dari pemilik rumah dan menjalankannya. Tidak membuka aplikasi Wastu sendiri.
+
+**Yang ia butuhkan:** laporan ekspor yang ringkas dan bisa dicetak atau dibawa ke lokasi proyek, memuat bahan yang direkomendasikan, alasannya, dan jadwal pekerjaan yang disarankan — bukan dashboard interaktif.
 
 ---
 
@@ -83,28 +92,29 @@ Menerima dokumen ringkasan rekomendasi bahan dan jadwal kerja dari pemilik rumah
 
 | Metrik | Target | Metode Pengukuran & Pembuktian |
 |---|---|---|
-| Waktu alur dari pembuatan proyek hingga peringkat tampil | < 3 menit | Uji pengguna kualitatif terhadap persona Bu Wulan dan Pak Herman dengan dataset proyek nyata. |
-| Basis data bahan dinding siap dinilai | $\ge 15$ bahan | Verifikasi dataset basis data (`kind = 'dinding'`) dengan properti lengkap dan tervalidasi. |
-| Basis data bahan atap siap dinilai | $\ge 10$ bahan | Verifikasi dataset basis data (`kind = 'atap'`) dengan properti lengkap dan tervalidasi. |
-| Waktu hitung peringkat perbandingan satu komponen | < 2 detik | Benchmark komputasi domain dan render UI pada perangkat kelas menengah (Core i5 / Ryzen 5, 8GB RAM). |
-| Keberhasilan pengambilan data cuaca online | $\ge 95\%$ | Pengujian otomatis berkala terhadap endpoint Open-Meteo; keberhasilan dihitung dari data yang **valid dan dapat digunakan** (bukan sekadar status HTTP 200). |
-| Pemahaman pengguna terhadap alasan rekomendasi | $\ge 80\%$ responden memahami tanpa istilah teknik | Evaluasi wawancara kualitatif pasca-alur pada pengujian pengguna V2. |
+| Waktu dari profil proyek dibuat sampai peringkat perbandingan pertama tampil | < 3 menit | Uji pengguna kualitatif terhadap persona Bu Wulan dan Pak Herman dengan dataset proyek nyata. |
+| Jumlah bahan dinding pada basis data MVP | ≥ 15 | Verifikasi dataset basis data (`kind = 'dinding'`) dengan properti lengkap dan tervalidasi. |
+| Jumlah bahan atap pada basis data MVP | ≥ 10 | Verifikasi dataset basis data (`kind = 'atap'`) dengan properti lengkap dan tervalidasi. |
+| Waktu hitung peringkat perbandingan untuk satu komponen | < 2 detik pada perangkat kelas menengah | Benchmark komputasi domain dan render UI pada perangkat kelas menengah (Core i5 / Ryzen 5, 8GB RAM). |
+| Pengguna dapat menjelaskan ulang alasan peringkat teratas tanpa istilah teknik | Diverifikasi lewat uji pengguna kualitatif, bukan otomatis | Evaluasi wawancara kualitatif pasca-alur pada pengujian pengguna V2 (§PRD-R11). |
 
-### 4.2 Metrik kualitas rekomendasi dan konsistensi matematika
+### 4.2 Metrik kualitas rekomendasi
 
-| Sifat Kualitas | Kontrak Perilaku | Bukti Pengujian |
+| Metrik | Target | Catatan |
 |---|---|---|
-| **Monotonisitas Skor Ketahanan** | Peningkatan indeks ketahanan bahan tidak boleh menurunkan skor kesesuaian terkait; peningkatan beban cuaca tidak boleh menaikkan skor. Daerah plateau pada saat kebutuhan terpenuhi dijelaskan secara terbuka (§PRD-R04). | Pengujian unit kasus sintetis numerik pada `PerhitunganSkor`. |
-| **Monotonisitas Emisi Kumulatif** | Penurunan usia pakai efektif ($L$) bersifat monoton tidak turun terhadap emisi kumulatif ($n$ tidak pernah menurun jika $L$ menurun, *ceteris paribus*). Daerah plateau terjadi karena fungsi tangga integer (§PRD-R02, §PRD-R04). | Pengujian variasi horizon dan usia efektif pada `PerhitunganSimulasi`. |
-| **Ketahanan Degradasi API** | Saat panggilan jaringan gagal atau API cuaca terputus, aplikasi tidak boleh membeku (*hang*) atau menutup paksa (*crash*), melainkan beralih ke cache lokal yang tersedia atau menampilkan status luring dengan opsi coba lagi (§PRD-R06). | Pengujian unit asinkron dan simulasi pemutusan koneksi jaringan. |
+| Konsistensi arah skor dengan intuisi domain | Bahan tahan lembap harus selalu mengungguli bahan tidak tahan lembap pada profil iklim curah hujan tinggi yang identik selain atribut itu; peningkatan ketahanan tidak menurunkan skor; daerah plateau pada saturasi dijelaskan terbuka (§PRD-R04). | Diuji dengan skenario sintetis numerik pada `PerhitunganSkor`. |
+| Sensitivitas simulasi emisi terhadap usia pakai efektif | Bahan dengan usia pakai efektif lebih pendek pada iklim tertentu harus menghasilkan emisi kumulatif horizon-panjang yang lebih tinggi atau sama ($n$ monoton tidak turun), ceteris paribus (§PRD-R04). | Uji unit pada `tests/Wastu.Domain.Tests/Emissions/PerhitunganSimulasiTests.cs` (§11.3). |
+| Keberhasilan panggilan API cuaca (prakiraan harian) | ≥ 95% saat online | Diukur dari data yang **valid dan dapat digunakan** (bukan sekadar status HTTP 200). Kegagalan harus terdegradasi dengan pesan yang jelas, bukan macet (§8.4). |
+
+**Aturan main:** karena basis data bahan dan faktor emisi bersumber dari data publik internasional (§11.4), tim wajib melaporkan secara terbuka bahan mana yang nilainya adalah perkiraan literatur, bukan pengukuran lokal — konsisten dengan batasan yang dinyatakan di §1.
 
 ---
 
-## 5. Scope Produk F1–F7 dan Rencana Rilis Bertahap
+## 5. Scope MVP dan Non-Scope
 
 ### 5.1 Scope Produk F1–F7 (Target Penuh Sampai V2) dan Pemisahan Tahapan
 
-Rencana revisi Wastu mencakup implementasi fungsional penuh dari F1 sampai F7 hingga rilis **V2**. Pemisahan tahapan rilis diatur sebagai berikut:
+Rencana revisi Wastu mencakup implementasi fungsional penuh dari F1 sampai F7 hingga rilis **V2** (§PRD-R01). Pemisahan tahapan rilis diatur sebagai berikut:
 
 | Tahapan Rilis | Fitur yang Dicakup | Karakteristik Operasional | Kriteria Selesai Tahapan |
 |---|---|---|---|
@@ -124,382 +134,343 @@ Rencana revisi Wastu mencakup implementasi fungsional penuh dari F1 sampai F7 hi
 
 ---
 
-## 6. Fitur dan User Stories Lengkap (F1 — F7)
+## 6. Fitur dan User Stories
 
-### F1 — Profil Proyek dan Komponen
+### F1 — Profil Proyek
 
-> Sebagai calon pemilik rumah, saya ingin mencatat lokasi dan komponen yang sedang saya kerjakan agar rekomendasi material dan cuaca sesuai dengan proyek saya.
+> Sebagai calon pemilik rumah, saya ingin mencatat lokasi dan komponen yang sedang saya kerjakan agar rekomendasi yang saya terima sesuai dengan proyek saya yang sebenarnya.
 
-**Acceptance Criteria:**
-- **F1-01:** Pengguna dapat membuat, melihat, mengubah, dan menghapus proyek (nama proyek, kota, koordinat latitude dan longitude). Koordinat dapat terisi otomatis dari pilihan kota atau diisi manual.
-- **F1-02:** Proyek memiliki minimal satu komponen aktif (dinding saja, atap saja, atau keduanya), masing-masing dengan nilai luas area positif ($> 0\text{ m}^2$). Pembuatan proyek tanpa komponen atau dengan luas tidak valid ($\le 0$, NaN, tak hingga) ditolak.
-- **F1-03:** Mengubah koordinat lokasi proyek memicu pembaharuan profil iklim otomatis saat online, menginvalidasi cache cuaca lokasi lama, dan menandai jadwal kerja lama untuk ditinjau ulang (§PRD-R07).
-- **F1-04:** Koordinat divalidasi pada rentang inklusif lintang $-11{,}0$ s/d $+6{,}0$ dan bujur $+95{,}0$ s/d $+141{,}0$. Data legacy yang berada pada rentang batas 94°–95° atau 141°–142° diaudit aman dengan penanda peninjauan tanpa penggagalan startup atau migrasi.
+**Acceptance criteria**
 
-### F2 — Basis Data Bahan dan Provenance
+- Pengguna dapat membuat, mengubah, dan menghapus profil proyek: nama proyek, kota, koordinat (lat/lon, otomatis dari kota atau diisi manual).
+- Satu proyek dapat memiliki satu atau lebih komponen (dinding saja, atap saja, atau keduanya), masing-masing dengan luas area positif ($> 0\text{ m}^2$). Pembuatan proyek tanpa komponen ditolak (§PRD-R10).
+- Mengubah lokasi proyek memicu pengambilan ulang profil iklim (§F3), menginvalidasi cache cuaca lokasi lama, dan menandai jadwal kerja lama untuk ditinjau ulang.
+- Validasi: koordinat divalidasi pada rentang inklusif lintang $-11{,}0$ s/d $+6{,}0$ dan bujur $+95{,}0$ s/d $+141{,}0$. Data legacy yang berada pada rentang batas 94°–95° atau 141°–142° diaudit aman dengan penanda peninjauan tanpa penggagalan startup atau migrasi (§PRD-R07).
 
-> Sebagai calon pemilik rumah, saya ingin melihat katalog bahan dinding dan atap yang lengkap dengan karakteristik fisik, faktor emisi, dan sumber datanya agar saya dapat mengevaluasi pilihan bahan secara transparan.
+### F2 — Basis Data Bahan
 
-**Acceptance Criteria:**
-- **F2-01:** Setiap bahan memuat properti: nama, jenis komponen (`dinding` atau `atap`), konduktivitas termal ($W/m\cdot K$), indeks ketahanan lembap (1–5), indeks ketahanan korosi (1–5), usia pakai nominal (tahun), dan faktor emisi karbon tersemat yang dinormalisasi ke $\text{kgCO}_2\text{e/m}^2$ untuk susunan/ketebalan tertentu (§PRD-R03).
-- **F2-02:** Pengguna dapat memfilter bahan berdasarkan kategori komponen (`dinding` atau `atap`) tanpa percampuran data antar kategori.
-- **F2-03:** Setiap properti bahan mencatat metadata provenance (`ApiHistoris`, `Contoh`, `Manual`, `LegacyUnknown`) dan sumber literatur/basis data publik (ICE Database, EPD generik). Konversi nilai dari basis per $m^3$ atau per $kg$ wajib mencatat asumsi ketebalan atau massa jenis (§PRD-R03, §PRD-R09).
-- **F2-04:** Administrator atau pengembang dapat menambah atau memperbarui data bahan melalui basis data relasional tanpa perlu melakukan *recompile* atau *rebuild* kode aplikasi.
+> Sebagai calon pemilik rumah, saya ingin melihat daftar bahan yang tersedia untuk dinding dan atap beserta karakteristiknya agar saya tahu apa saja pilihannya sebelum membandingkan.
 
-### F3 — Analisis Iklim Lokasi Otomatis
+**Acceptance criteria**
 
-> Sebagai calon pemilik rumah, saya ingin sistem menganalisis kondisi iklim lokasi proyek saya secara otomatis dari data historis agar saya tidak perlu mencari data meteorologi sendiri.
+- Setiap bahan memuat: nama, jenis komponen (dinding/atap), konduktivitas termal, indeks ketahanan lembap, indeks ketahanan korosi, usia pakai nominal (tahun), faktor emisi yang dinormalisasi wajib ke **$\text{kgCO}_2\text{e/m}^2$** untuk susunan/ketebalan tertentu (§PRD-R03).
+- Bahan dapat difilter berdasarkan jenis komponen tanpa percampuran kategori.
+- Sumber data setiap nilai dicatat bersama status perkiraan atau terverifikasi agar transparan, bukan disembunyikan sebagai angka pasti (§11.4, §PRD-R09). Jika data asal per $m^3$ atau per $kg$, konversi ke per $m^2$ wajib mencatat asumsi ketebalan atau massa jenis.
+- Admin/pengembang dapat menambah bahan baru melalui basis data tanpa mengubah kode aplikasi.
 
-**Acceptance Criteria:**
-- **F3-01:** Sistem mengambil data iklim historis 10 tahun dari Open-Meteo Historical Weather API berdasarkan koordinat proyek, mencakup agregasi curah hujan tahunan rata-rata ($\text{mm/tahun}$), kelembapan relatif rata-rata ($\%RH$), dan suhu udara rata-rata ($^\circ C$).
-- **F3-02:** Jarak ke garis pantai terdekat ($\text{km}$) dihitung secara geometris dari koordinat lokasi terhadap data vektor pesisir sebagai proksi risiko korosi udara bergaram (dengan batas efektif kalkulasi $50\text{ km}$, §PRD-R10).
-- **F3-03:** Profil iklim disimpan per proyek (multiplisitas relasi $0..1$ sebelum data berhasil diambil) dan dipakai ulang saat aplikasi dibuka kembali atau saat luring, tanpa memanggil API ulang jika koordinat tidak berubah (§PRD-R06, §PRD-R10).
-- **F3-04:** Ringkasan profil iklim beserta status kualitas data ditampilkan secara ringkas pada antarmuka sebelum pengguna masuk ke modul perbandingan bahan.
+### F3 — Analisis Iklim Lokasi
 
-### F4 — Perbandingan Berperingkat dan Pembobotan Kriteria
+> Sebagai calon pemilik rumah, saya ingin sistem menganalisis iklim lokasi proyek saya secara otomatis agar saya tidak perlu mencari data cuaca sendiri.
 
-> Sebagai calon pemilik rumah, saya ingin melihat daftar bahan diurutkan dari yang paling cocok untuk iklim lokasi saya, lengkap dengan skor kesesuaian, emisi awal, dan alasan penilaian yang jelas.
+**Acceptance criteria**
 
-**Acceptance Criteria:**
-- **F4-01:** Sistem menampilkan daftar bahan terurut berdasarkan skor kesesuaian iklim (0–100) menurun. Jika skor identik, urutan kedua adalah emisi terendah, diikuti kestabilan nama/ID bahan.
-- **F4-02:** Setiap baris kartu/tabel perbandingan menyajikan skor kesesuaian dan angka emisi awal ($\text{kgCO}_2\text{e}$) berdampingan dalam satu kesatuan tampilan.
-- **F4-03:** Setiap baris bahan menyertakan kalimat alasan penilaian (`reasoning`) yang menjelaskan kesesuaian properti bahan terhadap profil iklim lokasi dalam bahasa yang mudah dipahami.
-- **F4-04:** Pada mode rilis **MVP**, evaluasi menggunakan empat bobot kriteria tetap bernilai masing-masing $0{,}25$ (termal, lembap, korosi, usia), dan slider bobot kustom dinonaktifkan (§PRD-R01).
-- **F4-05:** Pada mode rilis **V2**, pengguna dapat mengubah bobot empat kriteria (dengan validasi jumlah total tepat $100\%$, non-negatif, dan finite) serta tombol "Kembalikan ke Default" ($0{,}25$). Perubahan bobot langsung memperbarui peringkat secara reaktif tanpa memicu pengambilan ulang data iklim dari internet (§PRD-R01).
-- **F4-06:** Ambang rekomendasi label terpusat diterapkan secara konsisten pada seluruh tampilan:
-  - Skor $< 55{,}0$: Label visual **"Tidak disarankan"** (bahan tetap ditampilkan, tidak disembunyikan).
-  - $55{,}0 \le \text{Skor} < 75{,}0$: Label visual **"Perlu pertimbangan"**.
-  - Skor $\ge 75{,}0$: Label visual **"Cocok"** (§PRD-R10).
+- Sistem mengambil data historis 10 tahun curah hujan tahunan, kelembapan rata-rata, suhu rata-rata dari API cuaca pihak ketiga (§8) berdasarkan koordinat proyek.
+- Kedekatan pesisir dihitung dari koordinat (jarak ke garis pantai terdekat) sebagai proksi risiko korosi akibat udara bergaram (dengan batas efektif kalkulasi 50 km).
+- Profil iklim disimpan per proyek (multiplisitas relasi $0..1$ sebelum data berhasil diambil) dan dipakai ulang sampai pengguna mengubah lokasi atau meminta pembaruan manual. Provenance iklim dicatat terpisah (`ApiHistoris`, `EstimasiBawaan`, `CacheHistoris`, `LegacyUnknown`) (§PRD-R09, §PRD-R10).
+- Profil iklim ditampilkan dalam bentuk ringkas (bukan grafik mentah) sebelum masuk ke perbandingan bahan.
+
+### F4 — Perbandingan Berperingkat
+
+> Sebagai calon pemilik rumah, saya ingin melihat bahan-bahan diurutkan dari yang paling cocok, lengkap dengan skor kesesuaian dan jejak karbonnya, agar saya bisa membandingkan tanpa menghitung sendiri.
+
+**Acceptance criteria**
+
+- Untuk komponen terpilih, sistem menampilkan daftar bahan terurut berdasarkan skor kesesuaian iklim (§11.1) secara menurun. Jika skor identik, urutan kedua adalah emisi terendah, diikuti kestabilan nama/ID bahan.
+- Setiap baris menampilkan skor kesesuaian (0–100) dan kgCO2e berdampingan, bukan pada tab terpisah.
+- Setiap bahan disertai alasan penilaian dalam kalimat (contoh: "Ketahanan lembap rendah untuk curah hujan tahunan tinggi di lokasi Anda").
+- Pada mode MVP, empat bobot kriteria bernilai tetap 0,25 masing-masing. Pada mode V2, pengguna dapat mengubah bobot kriteria (termal/lembap/korosi/usia pakai, tervalidasi jumlah 100% dan tombol reset) dan melihat peringkat berubah secara langsung tanpa memanggil ulang API iklim (§PRD-R01).
+- Ambang rekomendasi label terpusat: skor $< 55$ ditandai visual sebagai **"Tidak disarankan"** (bahan tetap ditampilkan, tidak disembunyikan); skor $55 \le \text{skor} < 75$ berlabel **"Perlu pertimbangan"**; skor $\ge 75$ berlabel **"Cocok"** (§PRD-R10).
 
 ### F5 — Simulasi Emisi Jangka Panjang
 
-> Sebagai calon pemilik rumah, saya ingin mengetahui proyeksi total emisi karbon dari bahan yang saya pilih sepanjang masa pakai rumah, termasuk dampak penggantian dini akibat kerusakan iklim.
+> Sebagai calon pemilik rumah, saya ingin tahu berapa total emisi karbon suatu bahan sepanjang usia rumah saya, termasuk kalau bahan itu harus diganti lebih cepat karena tidak cocok dengan iklim saya.
 
-**Acceptance Criteria:**
-- **F5-01:** Pengguna dapat memilih horizon waktu simulasi (minimal 20, 30, dan 50 tahun). Hasil simulasi berbagai horizon disimpan persisten tanpa saling menimpa (§PRD-R10).
-- **F5-02:** Usia pakai efektif bahan ($L$) dihitung dengan fungsi penurunan dari usia nominal berdasarkan skor kesesuaian: $L = \text{usia\_nominal} \times (a + (1 - a) \times \text{skor}/100)$, dengan nilai parameter default $a = 0{,}5$ (§PRD-R02, §PRD-R11).
-- **F5-03:** Jumlah penggantian dihitung strictly pada rentang kejadian $0 < t < H$:
+**Acceptance criteria**
+
+- Pengguna memilih horizon simulasi (minimal 20, 30, 50 tahun). Hasil simulasi berbagai horizon disimpan persisten tanpa saling menimpa (relasi `Evaluasi` ke `SimulasiEmisi` adalah `0..*`, §PRD-R10).
+- Usia pakai efektif bahan disesuaikan turun dari usia pakai nominal berdasarkan skor kesesuaian iklim dengan parameter dasar penuaan $a = 0{,}5$ (§11.3, §PRD-R02).
+- Sistem menghitung jumlah penggantian strictly pada interval kejadian $0 < t < H$:
   $$n = \max\left(0, \left\lceil \frac{H}{L} \right\rceil - 1\right)$$
-  dan emisi kumulatif dihitung dengan:
-  $$\text{emisi\_kumulatif} = \text{emisi\_awal} \times (1 + n)$$
-  Penggantian tepat pada batas akhir horizon ($t = H$) tidak dihitung (§PRD-R02).
-  - Kasus acuan terverifikasi: Nominal 15 thn, Skor 100, $H=30 \rightarrow L=15, n=1$ (tahun 15), emisi $\times 2$.
-  - Kasus acuan terverifikasi: Nominal 15 thn, Skor 20, $H=30 \rightarrow L=9, n=3$ (tahun 9, 18, 27), emisi $\times 4$.
-- **F5-04:** Hasil disajikan dalam bentuk perbandingan visual grafik bertingkat (*step chart*) yang menampilkan kejadian penggantian interior dan tingkat kumulatif akhir, dengan total emisi kumulatif $\text{kgCO}_2\text{e}$ sebagai sorotan utama.
-- **F5-05:** Antarmuka menyatakan secara terbuka bahwa usia pakai efektif adalah estimasi model perhitungan, bukan jaminan keawetan mutlak di lapangan (§PRD-R11).
+  dan emisi kumulatif $= \text{emisi\_awal} \times (1 + n)$. Penggantian tepat pada batas akhir horizon ($t = H$) tidak dihitung (§PRD-R02).
+- Hasil ditampilkan sebagai perbandingan visual grafik bertingkat (*step chart*) antar bahan yang menampilkan kejadian interior dan tingkat akhir, dengan angka kgCO2e kumulatif sebagai sorotan utama.
+- Antarmuka menyatakan terbuka bahwa usia pakai efektif adalah estimasi model, bukan jaminan (§11.4).
 
 ### F6 — Penjadwal Pekerjaan Sensitif Cuaca
 
-> Sebagai calon pemilik rumah, saya ingin mengetahui tanggal mana yang aman dari hujan dan cuaca buruk untuk pengecoran atau pengecatan agar terhindar dari pengerjaan ulang.
+> Sebagai calon pemilik rumah, saya ingin tahu tanggal mana yang cuacanya aman untuk pengecoran atau pengecatan, agar saya tidak perlu mengerjakan ulang karena cuaca salah.
 
-**Acceptance Criteria:**
-- **F6-01:** Pengguna dapat membuat pekerjaan konstruksi terjadwal dengan jenis pekerjaan (`pengecoran` atau `pengecatan`) dan rentang tanggal rencana pelaksanaan. Pekerjaan dapat dikaitkan dengan bahan/komponen terkait (§PRD-R05).
-- **F6-02:** Sistem mengambil data prakiraan cuaca 14 hari dari Open-Meteo Forecast API dan mengevaluasi kelayakan setiap hari berdasarkan ambang teknis pekerjaan. Evaluasi pengecatan menggunakan kelembapan maksimum harian dari data per jam (§PRD-R05, §PRD-R08).
-- **F6-03:** Keputusan evaluasi harian mengembalikan status multi-nilai:
-  - `Layak`: Memenuhi seluruh ambang keselamatan cuaca.
-  - `Waspada`: Mendekati batas atau suhu tinggi pada pengecoran dengan catatan mitigasi.
-  - `TidakLayak`: Melanggar satu atau lebih ambang cuaca (disertai alasan spesifik ambang yang dilanggar).
-  - `DataTidakTersedia`: Tanggal di luar rentang prakiraan (>14 hari) atau data provider bernilai null/parsial (§PRD-R08).
-- **F6-04:** Pengguna dapat mengunci satu tanggal sebagai jadwal final. Penguncian pada tanggal berstatus `TidakLayak` dapat dilakukan setelah pengguna memberikan konfirmasi persetujuan risiko eksplisit (§PRD-R10).
-- **F6-05:** Prakiraan cuaca disimpan dalam cache lokal dengan **TTL default 6 jam** berbasis timestamp UTC pengambilan. Tanggal evaluasi mengikuti zona waktu lokasi proyek yang dilaporkan oleh penyedia API (§PRD-R08).
+**Acceptance criteria**
 
-### F7 — Ekspor Laporan Rekomendasi PDF
+- Pengguna mendaftarkan pekerjaan terjadwal (contoh: "Pengecoran dinding", "Pengecatan atap") dengan rentang tanggal rencana, serta relasi opsional ke bahan/komponen terkait (§PRD-R05).
+- Sistem mengambil prakiraan cuaca harian 14 hari untuk lokasi proyek dan mengevaluasi tiap hari terhadap ambang layak-kerja per jenis pekerjaan (§12), menggunakan kelembapan maksimum harian untuk pengecatan.
+- Evaluasi harian mengembalikan status multi-nilai: `Layak`, `Waspada`, `TidakLayak`, dan `DataTidakTersedia`. Hari yang tidak layak ditandai jelas beserta alasannya (contoh: "Probabilitas hujan 70%, di atas ambang pengecoran").
+- Pengguna dapat mengunci satu tanggal sebagai jadwal final setelah melihat evaluasi. Penguncian pada hari `TidakLayak` memerlukan dialog konfirmasi persetujuan risiko eksplisit; penguncian pada cache cuaca kedaluwarsa memerlukan konfirmasi khusus data lama.
+- Jika prakiraan tidak tersedia (di luar rentang API >14 hari ke depan atau data cuaca null/parsial), sistem menyatakan itu secara eksplisit sebagai **"Data tidak tersedia"**, dan hari tersebut hanya dapat disimpan sebagai draft (tidak dapat dikunci final) (§PRD-R08).
 
-> Sebagai calon pemilik rumah, saya ingin mengunduh laporan rekomendasi bahan dan jadwal kerja dalam format PDF agar dapat saya cetak atau kirimkan ke kontraktor.
+### F7 — Ekspor Laporan Rekomendasi
 
-**Acceptance Criteria:**
-- **F7-01:** Menghasilkan berkas PDF yang rapi memuat: profil proyek, ringkasan iklim lokasi, daftar bahan terpilih beserta skor kesesuaian dan emisi awalnya, hasil simulasi emisi jangka panjang, dan jadwal pekerjaan yang telah dikunci.
-- **F7-02:** Dokumen mencantumkan tanggal pembuatan (timestamp UTC dan zona waktu lokal proyek), versi algoritme/model perhitungan, serta atribusi sumber data bahan dan API cuaca sebagai catatan transparansi (§PRD-R09).
-- **F7-03:** Berkas PDF disimpan ke media penyimpanan lokal pengguna, dicatat ke dalam riwayat laporan aplikasi, dan dapat dibuka kembali secara langsung dari antarmuka Wastu (§PRD-R06).
+> Sebagai calon pemilik rumah, saya ingin mengunduh ringkasan rekomendasi bahan dan jadwal dalam satu berkas agar bisa saya tunjukkan ke kontraktor.
+
+**Acceptance criteria**
+
+- Menghasilkan PDF berisi: profil proyek, profil iklim ringkas, peringkat bahan terpilih dengan skor dan kgCO2e, simulasi emisi horizon terpilih, dan jadwal pekerjaan yang telah dikunci.
+- Laporan memuat tanggal pembuatan (timestamp UTC dan waktu lokal proyek) serta sumber data (API cuaca, basis data bahan) sebagai catatan kaki transparansi (§PRD-R09).
+- Laporan disimpan sebagai berkas lokal, dicatat ke dalam riwayat laporan aplikasi, dan dapat dibuka ulang dari dalam aplikasi (termasuk saat luring) (§PRD-R06).
 
 ---
 
-## 7. Arsitektur Sistem dan Komponen
+## 7. Arsitektur Sistem
 
 ```
-┌─ ANTARMUKA PENGGUNA (WPF, .NET 8, MVVM) ───────────────────────────────────┐
-│  Views & ViewModels: Project, Materials, Compare, Simulation, Schedule, Reports  │
-│  Komunikasi asinkron non-blocking, debounced input, penanganan state luring      │
-└─────────────────────────────────────┬───────────────────────────────────────┘
-                                      │ Injeksi Layanan / Kontrak Domain
-┌─────────────────────────────────────▼───────────────────────────────────────┐
-│  LAPISAN LAYANAN APLIKASI (Application / Domain Services)                   │
-│   ├─ ProjectService, MaterialService                                        │
-│   ├─ ClimateAnalysisService (koordinasi profil iklim & cache)                │
-│   ├─ SuitabilityScoringService (perhitungan skor 4 kriteria & label)         │
-│   ├─ EmissionSimulationService (penuaan efektif & emisi kumulatif)          │
-│   ├─ WorkSchedulingService (evaluasi ambang cuaca & penguncian jadwal)      │
-│   └─ ReportExportService (pembentukan PDF & pencatatan riwayat laporan)     │
-└───────────────┬───────────────────────────────────────────┬─────────────────┘
-                │                                           │
-┌───────────────▼───────────────────────────┐   ┌───────────▼─────────────────┐
-│ LAPISAN PERSISTENSI DATA                   │   │ KLIEN CUACA & IKLIM          │
-│ EF Core + Npgsql (PostgreSQL lokal/remote)│   │ Open-Meteo API Client        │
-│  ├─ Repository & Unit of Work             │   │  ├─ IHistoricalClimateClient │
-│  ├─ Snapshot Lokal Atomik (Read-Only)     │   │  ├─ IDailyForecastClient     │
-│  └─ Kompatibilitas JSON (StateStore)      │   │  └─ Cache TTL 6 Jam UTC      │
-└───────────────────────────────────────────┘   └─────────────────────────────┘
+┌─ ANTARMUKA PENGGUNA ───────────────────────────────────────┐
+│  WPF (.NET 8 LTS, C#), pola MVVM                            │
+│   ├─ Modul Profil Proyek & Komponen                        │
+│   ├─ Modul Katalog Bahan                                    │
+│   ├─ Modul Perbandingan & Simulasi Emisi                    │
+│   ├─ Modul Penjadwal Pekerjaan                              │
+│   └─ Modul Ekspor Laporan                                   │
+└───────────────────────┬──────────────────────────────────────┘
+                        │ binding via ViewModel
+┌───────────────────────▼──────────────────────────────────────┐
+│  LAPISAN LAYANAN APLIKASI (Application/Domain Services)     │
+│   ├─ ProjectService, MaterialService                        │
+│   ├─ ClimateAnalysisService     ──┐                         │
+│   ├─ SuitabilityScoringService    │  §11                    │
+│   ├─ EmissionSimulationService  ──┘                         │
+│   ├─ WorkSchedulingService          §12                     │
+│   └─ ReportExportService (PDF)                               │
+└───────┬───────────────────────────────────┬──────────────────┘
+        │                                   │
+┌───────▼───────────────────────────┐   ┌───▼──────────────────────────┐
+│ LAPISAN DATA                      │   │ KLIEN LAYANAN CUACA          │
+│ EF Core + Npgsql                  │   │ Open-Meteo Client            │
+│ PostgreSQL (lokal/remote)         │   │  ├─ IHistoricalClimateClient │
+│  ├─ Snapshot Lokal Read-Only      │   │  └─ IDailyForecastClient     │
+│  └─ Kompatibilitas JSON           │   │  └─ Cache TTL 6 Jam UTC      │
+└───────────────────────────────────┘   └──────────────────────────────┘
 ```
 
-Aplikasi dirancang sebagai aplikasi desktop mandiri tanpa server backend perantara. Koneksi database ke PostgreSQL (lokal atau cloud Supabase) dikelola langsung oleh EF Core. Klien Open-Meteo berkomunikasi melalui protokol HTTPS dengan serializer JSON invariant culture.
+Aplikasi dirancang sebagai desktop *single-user* tanpa login. Koneksi database ke PostgreSQL (lokal atau cloud Supabase) dikelola oleh EF Core dengan mekanisme snapshot lokal atomik read-only untuk peninjauan saat luring (§PRD-R06).
 
 ---
 
-## 8. Integrasi Layanan Cuaca Pihak Ketiga (Open-Meteo)
+## 8. Integrasi Layanan Cuaca Pihak Ketiga
 
-### 8.1 Dua Kebutuhan Data Cuaca
+### 8.1 Dua kebutuhan data yang berbeda
 
 | Karakteristik | Analisis Iklim Lokasi (F3) | Prakiraan Cuaca Harian (F6) |
 |---|---|---|
-| **Kebutuhan** | Data rata-rata historis jangka panjang (10 tahun). | Prakiraan harian jangka pendek (14 hari ke depan). |
-| **Variabel Utama** | Curah hujan tahunan ($\text{mm}$), suhu rata-rata ($^\circ C$), kelembapan relatif rata-rata ($\%RH$). | Probabilitas hujan ($\%$) & presipitasi ($\text{mm}$), suhu min/maks ($^\circ C$), kelembapan maksimum ($\%RH$). |
-| **Endpoint API** | Open-Meteo Archive / Historical Weather API. | Open-Meteo Daily Forecast API. |
-| **Masa Berlaku** | Permanen per lokasi; hanya diperbarui jika lokasi berubah atau atas permintaan manual. | Cache ber-TTL 6 jam; data kedaluwarsa diberi label "Data lama". |
+| Rentang waktu | Rata-rata/agregat bertahun-tahun (10 tahun) | Harian, jangka pendek (14 hari) |
+| Frekuensi pengambilan | Sekali per proyek, diperbarui atas permintaan pengguna | Setiap kali penjadwal dibuka, dengan cache TTL 6 jam |
 
-### 8.2 Kontrak Layanan Cuaca
+### 8.2 Rekomendasi penyedia — Open-Meteo
 
-Lapisan domain tidak bergantung langsung pada kelas pustaka HTTP eksternal, melainkan melalui kontrak antarmuka abstraksi:
+Rekomendasi penyedia cuaca adalah **Open-Meteo**, dengan alasan:
+- Menyediakan **kedua** kebutuhan di atas dari satu penyedia: *Historical Weather API* (arsip harian 10 tahun, diagregasi menjadi rata-rata tahunan) dan *Forecast API* (prakiraan harian hingga 14–16 hari).
+- Tidak memerlukan API key untuk kuota non-komersial/akademik.
+- Cakupan global termasuk wilayah Indonesia dengan resolusi grid yang memadai untuk rumah tinggal.
+
+### 8.3 Kontrak internal `WeatherApiClient`
+
+Lapisan domain (`ClimateAnalysisService`, `WorkSchedulingService`) bergantung pada dua kontrak abstraksi:
 
 ```csharp
-public interface IHistoricalClimateClient
-{
-    Task<ClimateProfileResult> GetHistoricalProfileAsync(
-        double latitude,
-        double longitude,
-        CancellationToken cancellationToken = default);
+public interface IHistoricalClimateClient {
+    Task<ProfilIklim> GetAnnualProfileAsync(double lat, double lon, CancellationToken ct = default);
 }
 
-public interface IDailyForecastClient
-{
-    Task<ForecastResult> GetDailyForecastAsync(
-        double latitude,
-        double longitude,
-        int days = 14,
-        CancellationToken cancellationToken = default);
+public interface IDailyForecastClient {
+    Task<IReadOnlyList<DailyForecast>> GetForecastAsync(double lat, double lon, int days, CancellationToken ct = default);
 }
 ```
 
-Hasil pembacaan API menyertakan metadata waktu pengambilan UTC (`fetched_at`), zona waktu resmi lokasi proyek (`timezone`), serta ringkasan kualitas data.
+`ProfilIklim` memuat curah hujan tahunan, kelembapan rata-rata, suhu rata-rata, jarak pesisir, sumber, dan waktu pengambilan. `DailyForecast` memuat tanggal, probabilitas hujan, curah hujan perkiraan, suhu min/maks, kelembapan. Perluasan target untuk membawa wrapper metadata terstruktur (provider, zona waktu, kualitas data, fetched_at UTC) dapat ditambahkan sebagai implementasi konkret tanpa memecahkan kontrak ini (§PRD-R08).
 
-### 8.3 Pengelolaan Cache, TTL, dan Perilaku Luring
+### 8.4 Perilaku luring dan kegagalan
 
-1. **Durasi Cache:** Cache prakiraan cuaca memiliki masa berlaku default **6 jam** dihitung dari timestamp UTC `fetched_at`. Permintaan pada rentang umur cache $< 6\text{ jam}$ dilayani langsung dari penyimpanan lokal.
-2. **Zona Waktu:** Tanggal evaluasi harian ditafsirkan berdasarkan zona waktu lokasi proyek yang dikembalikan provider cuaca, bukan jam komputer klien Windows (§PRD-R08).
-3. **Penanganan Kegagalan:** Jika koneksi API gagal saat pembaharuan, data cache yang ada tetap dipertahankan dengan indikator "Data lama (kedaluwarsa)". Jika cache tidak tersedia, status hari ditetapkan sebagai `DataTidakTersedia`. Aplikasi tidak boleh macet atau memblokir UI thread.
+- Profil iklim historis (§F3) disimpan permanen di basis data setelah diambil sekali — pengguna tetap bisa melihat perbandingan bahan tanpa koneksi internet selama tidak meminta pembaruan.
+- Prakiraan harian (§F6) di-cache lokal dengan masa berlaku default **6 jam** dihitung dari timestamp UTC `fetched_at` (§PRD-R08). Permintaan dalam rentang umur cache memakai cache, bukan memanggil API ulang. Tanggal prakiraan ditafsirkan menurut zona waktu lokasi proyek dari respons penyedia API.
+- Kegagalan panggilan API ditangani dengan pesan eksplisit dan fallback ke data cache terakhir berpenanda "Data lama". Jika cache tidak ada, hari diberi status `DataTidakTersedia`. Aplikasi tidak boleh membeku menunggu respons tanpa batas waktu.
 
 ---
 
-## 9. Skema Data Relasional dan Pemetaan Fisik
+## 9. Skema Data
 
-Basis data utama menggunakan PostgreSQL. Naming convention skema fisik tabel di database menggunakan Bahasa Indonesia, dipetakan secara terstruktur dengan entitas C# domain.
-
-### 9.1 Definisi Skema Fisik Tabel (Bahasa Indonesia)
+PostgreSQL. Penamaan tabel fisik pada database menggunakan Bahasa Indonesia, dipetakan secara terstruktur dengan entitas domain (§PRD-R10).
 
 ```sql
--- Tabel Proyek Bangunan
+-- Tabel Proyek Bangunan (menggantikan projects)
 CREATE TABLE bangunan (
-    id UUID PRIMARY KEY,
-    nama VARCHAR(200) NOT NULL,
-    kota VARCHAR(100) NOT NULL,
-    latitude DOUBLE PRECISION NOT NULL CHECK (latitude BETWEEN -11.0 AND 6.0),
-    longitude DOUBLE PRECISION NOT NULL CHECK (longitude BETWEEN 95.0 AND 141.0),
-    dibuat_pada TIMESTAMPTZ NOT NULL DEFAULT now(),
-    diperbarui_pada TIMESTAMPTZ NOT NULL DEFAULT now()
+  id                uuid PRIMARY KEY,
+  nama              text NOT NULL,
+  kota              text NOT NULL,
+  latitude          double precision NOT NULL CHECK (latitude BETWEEN -11.0 AND 6.0),
+  longitude         double precision NOT NULL CHECK (longitude BETWEEN 95.0 AND 141.0),
+  created_at        timestamptz NOT NULL DEFAULT now()
 );
 
 -- Tabel Profil Iklim Lokasi
 CREATE TABLE profil_iklim (
-    bangunan_id UUID PRIMARY KEY REFERENCES bangunan(id) ON DELETE CASCADE,
-    curah_hujan_tahunan REAL NOT NULL CHECK (curah_hujan_tahunan >= 0),
-    kelembapan_rata REAL NOT NULL CHECK (kelembapan_rata BETWEEN 0 AND 100),
-    suhu_rata REAL NOT NULL,
-    jarak_pesisir_km REAL NOT NULL CHECK (jarak_pesisir_km >= 0),
-    tingkat_korosi VARCHAR(20) NOT NULL, -- 'rendah' | 'sedang' | 'tinggi'
-    sumber VARCHAR(100) NOT NULL,
-    provenance VARCHAR(50) NOT NULL DEFAULT 'ApiHistoris',
-    diambil_pada_utc TIMESTAMPTZ NOT NULL
+  bangunan_id           uuid PRIMARY KEY REFERENCES bangunan(id) ON DELETE CASCADE,
+  curah_hujan_tahunan   real NOT NULL CHECK (curah_hujan_tahunan >= 0),
+  kelembapan_rata       real NOT NULL CHECK (kelembapan_rata BETWEEN 0 AND 100),
+  suhu_rata             real NOT NULL,
+  jarak_pesisir_km      real NOT NULL CHECK (jarak_pesisir_km >= 0),
+  tingkat_korosi        text NOT NULL,      -- 'rendah' | 'sedang' | 'tinggi'
+  sumber                text NOT NULL,
+  provenance            text NOT NULL DEFAULT 'ApiHistoris',
+  diambil_pada_utc      timestamptz NOT NULL
 );
 
 -- Tabel Komponen Proyek
 CREATE TABLE komponen (
-    id UUID PRIMARY KEY,
-    bangunan_id UUID NOT NULL REFERENCES bangunan(id) ON DELETE CASCADE,
-    jenis VARCHAR(20) NOT NULL CHECK (jenis IN ('dinding', 'atap')),
-    luas_m2 REAL NOT NULL CHECK (luas_m2 > 0),
-    UNIQUE (bangunan_id, jenis)
+  id                uuid PRIMARY KEY,
+  bangunan_id       uuid NOT NULL REFERENCES bangunan(id) ON DELETE CASCADE,
+  jenis             text NOT NULL CHECK (jenis IN ('dinding', 'atap')),
+  luas_m2           real NOT NULL CHECK (luas_m2 > 0),
+  UNIQUE (bangunan_id, jenis)
 );
 
--- Tabel Katalog Bahan
+-- Tabel Basis Data Bahan
 CREATE TABLE bahan (
-    id UUID PRIMARY KEY,
-    nama VARCHAR(200) NOT NULL,
-    jenis VARCHAR(20) NOT NULL CHECK (jenis IN ('dinding', 'atap')),
-    konduktivitas_termal REAL NOT NULL CHECK (konduktivitas_termal > 0),
-    ketahanan_lembap SMALLINT NOT NULL CHECK (ketahanan_lembap BETWEEN 1 AND 5),
-    ketahanan_korosi SMALLINT NOT NULL CHECK (ketahanan_korosi BETWEEN 1 AND 5),
-    usia_nominal_tahun REAL NOT NULL CHECK (usia_nominal_tahun > 0),
-    faktor_emisi_m2 REAL NOT NULL CHECK (faktor_emisi_m2 >= 0), -- kgCO2e per m2
-    susunan_ketebalan VARCHAR(200),
-    sumber VARCHAR(255) NOT NULL,
-    provenance VARCHAR(50) NOT NULL DEFAULT 'Contoh'
+  id                    uuid PRIMARY KEY,
+  nama                  text NOT NULL,
+  jenis                 text NOT NULL CHECK (jenis IN ('dinding', 'atap')),
+  konduktivitas_termal  real NOT NULL CHECK (konduktivitas_termal > 0),
+  ketahanan_lembap      smallint NOT NULL CHECK (ketahanan_lembap BETWEEN 1 AND 5),
+  ketahanan_korosi      smallint NOT NULL CHECK (ketahanan_korosi BETWEEN 1 AND 5),
+  usia_nominal_tahun    real NOT NULL CHECK (usia_nominal_tahun > 0),
+  faktor_emisi_m2       real NOT NULL CHECK (faktor_emisi_m2 >= 0), -- kgCO2e per m2
+  susunan_ketebalan     text,
+  sumber                text NOT NULL,
+  status_verifikasi     text NOT NULL DEFAULT 'perkiraan' -- 'perkiraan' | 'terverifikasi'
 );
 
--- Tabel Evaluasi Kesesuaian Bahan
+-- Tabel Evaluasi Kesesuaian
 CREATE TABLE evaluasi (
-    id UUID PRIMARY KEY,
-    komponen_id UUID NOT NULL REFERENCES komponen(id) ON DELETE CASCADE,
-    bahan_id UUID NOT NULL REFERENCES bahan(id) ON DELETE RESTRICT,
-    skor_kesesuaian REAL NOT NULL CHECK (skor_kesesuaian BETWEEN 0 AND 100),
-    emisi_awal_kg REAL NOT NULL CHECK (emisi_awal_kg >= 0),
-    alasan TEXT NOT NULL,
-    bobot_termal REAL NOT NULL DEFAULT 0.25,
-    bobot_lembap REAL NOT NULL DEFAULT 0.25,
-    bobot_korosi REAL NOT NULL DEFAULT 0.25,
-    bobot_usia REAL NOT NULL DEFAULT 0.25,
-    dihitung_pada_utc TIMESTAMPTZ NOT NULL DEFAULT now()
+  id                    uuid PRIMARY KEY,
+  komponen_id          uuid NOT NULL REFERENCES komponen(id) ON DELETE CASCADE,
+  bahan_id              uuid NOT NULL REFERENCES bahan(id) ON DELETE RESTRICT,
+  skor_kesesuaian       real NOT NULL CHECK (skor_kesesuaian BETWEEN 0 AND 100),
+  emisi_awal_kg         real NOT NULL CHECK (emisi_awal_kg >= 0),
+  alasan                text NOT NULL,
+  bobot_termal          real NOT NULL DEFAULT 0.25,
+  bobot_lembap          real NOT NULL DEFAULT 0.25,
+  bobot_korosi          real NOT NULL DEFAULT 0.25,
+  bobot_usia            real NOT NULL DEFAULT 0.25,
+  dihitung_pada_utc     timestamptz NOT NULL DEFAULT now()
 );
 
--- Tabel Simulasi Emisi Jangka Panjang
+-- Tabel Simulasi Emisi Jangka Panjang (relasi Evaluasi ke SimulasiEmisi: 0..*)
 CREATE TABLE simulasi_emisi (
-    id UUID PRIMARY KEY,
-    evaluasi_id UUID NOT NULL REFERENCES evaluasi(id) ON DELETE CASCADE,
-    horizon_tahun SMALLINT NOT NULL CHECK (horizon_tahun IN (20, 30, 50)),
-    usia_efektif_tahun REAL NOT NULL CHECK (usia_efektif_tahun > 0),
-    jumlah_penggantian SMALLINT NOT NULL CHECK (jumlah_penggantian >= 0),
-    emisi_kumulatif_kg REAL NOT NULL CHECK (emisi_kumulatif_kg >= 0),
-    versi_model VARCHAR(50) NOT NULL DEFAULT 'v2.0',
-    UNIQUE (evaluasi_id, horizon_tahun, versi_model)
+  id                    uuid PRIMARY KEY,
+  evaluasi_id           uuid NOT NULL REFERENCES evaluasi(id) ON DELETE CASCADE,
+  horizon_tahun         smallint NOT NULL CHECK (horizon_tahun IN (20, 30, 50)),
+  usia_efektif_tahun    real NOT NULL CHECK (usia_efektif_tahun > 0),
+  jumlah_penggantian    smallint NOT NULL CHECK (jumlah_penggantian >= 0),
+  emisi_kumulatif_kg    real NOT NULL CHECK (emisi_kumulatif_kg >= 0),
+  versi_model           text NOT NULL DEFAULT 'v2.0',
+  UNIQUE (evaluasi_id, horizon_tahun, versi_model)
 );
 
--- Tabel Pekerjaan Konstruksi
+-- Tabel Pekerjaan Konstruksi Terjadwal
 CREATE TABLE pekerjaan (
-    id UUID PRIMARY KEY,
-    bangunan_id UUID NOT NULL REFERENCES bangunan(id) ON DELETE CASCADE,
-    nama VARCHAR(200) NOT NULL,
-    jenis VARCHAR(50) NOT NULL CHECK (jenis IN ('pengecoran', 'pengecatan')),
-    tanggal_mulai DATE NOT NULL,
-    tanggal_selesai DATE NOT NULL CHECK (tanggal_selesai >= tanggal_mulai),
-    tanggal_dikunci DATE,
-    status VARCHAR(30) NOT NULL DEFAULT 'draft', -- 'draft' | 'terkunci' | 'selesai'
-    persetujuan_risiko BOOLEAN NOT NULL DEFAULT FALSE,
-    komponen_id UUID REFERENCES komponen(id) ON DELETE SET NULL,
-    bahan_id UUID REFERENCES bahan(id) ON DELETE SET NULL
+  id                uuid PRIMARY KEY,
+  bangunan_id       uuid NOT NULL REFERENCES bangunan(id) ON DELETE CASCADE,
+  nama              text NOT NULL,
+  jenis             text NOT NULL CHECK (jenis IN ('pengecoran', 'pengecatan')),
+  tanggal_mulai     date NOT NULL,
+  tanggal_selesai   date NOT NULL CHECK (tanggal_selesai >= tanggal_mulai),
+  tanggal_dikunci   date,
+  status            text NOT NULL DEFAULT 'draft', -- 'draft' | 'terkunci' | 'selesai'
+  persetujuan_risiko boolean NOT NULL DEFAULT false,
+  komponen_id       uuid REFERENCES komponen(id) ON DELETE SET NULL,
+  bahan_id          uuid REFERENCES bahan(id) ON DELETE SET NULL
 );
 
--- Tabel Cache Prakiraan Cuaca
+-- Tabel Cache Prakiraan Cuaca Harian
 CREATE TABLE prakiraan_cache (
-    id UUID PRIMARY KEY,
-    bangunan_id UUID NOT NULL REFERENCES bangunan(id) ON DELETE CASCADE,
-    tanggal_cuaca DATE NOT NULL,
-    probabilitas_hujan REAL,
-    curah_hujan_mm REAL,
-    suhu_min_c REAL,
-    suhu_maks_c REAL,
-    kelembapan_maks_pct REAL,
-    zona_waktu VARCHAR(50) NOT NULL,
-    diambil_pada_utc TIMESTAMPTZ NOT NULL,
-    UNIQUE (bangunan_id, tanggal_cuaca)
+  id                    uuid PRIMARY KEY,
+  bangunan_id           uuid NOT NULL REFERENCES bangunan(id) ON DELETE CASCADE,
+  tanggal_cuaca         date NOT NULL,
+  probabilitas_hujan    real,
+  curah_hujan_mm        real,
+  suhu_min_c            real,
+  suhu_maks_c           real,
+  kelembapan_maks_pct   real,
+  zona_waktu            text NOT NULL,
+  diambil_pada_utc      timestamptz NOT NULL,
+  UNIQUE (bangunan_id, tanggal_cuaca)
 );
 
 -- Tabel Riwayat Laporan Ekspor
 CREATE TABLE laporan (
-    id UUID PRIMARY KEY,
-    bangunan_id UUID NOT NULL REFERENCES bangunan(id) ON DELETE CASCADE,
-    path_berkas TEXT NOT NULL,
-    format VARCHAR(10) NOT NULL DEFAULT 'PDF',
-    dibuat_pada_utc TIMESTAMPTZ NOT NULL DEFAULT now()
+  id                uuid PRIMARY KEY,
+  bangunan_id       uuid NOT NULL REFERENCES bangunan(id) ON DELETE CASCADE,
+  path_berkas       text NOT NULL,
+  format            text NOT NULL DEFAULT 'PDF',
+  dibuat_pada_utc   timestamptz NOT NULL DEFAULT now()
 );
 ```
+
+**Catatan implementasi:**
+- Seluruh identitas entitas menggunakan tipe `Guid` konsisten (§PRD-R10).
+- `bahan.sumber` dan status verifikasi wajib diisi untuk transparansi data (§PRD-R09).
+- Bounding box bujur 95–141 dan lintang -11–6 diterapkan sebagai constraint SQL dan validasi domain (§PRD-R07).
 
 ---
 
 ## 10. Spesifikasi Modul dan Kontrak Layanan
 
-| Modul Layanan | Antarmuka Kontrak Utama | Tanggung Jawab Operasional |
+Kontrak antarmuka internal antar lapisan yang dipakai ViewModel dan Domain Services:
+
+| Layanan | Metode Kontrak Aktual | Tanggung Jawab Operasional |
 |---|---|---|
-| `ProjectService` | `CreateProjectAsync`, `UpdateLocationAsync`, `SetComponentsAsync`, `DeleteProjectAsync` | Validasi koordinat wilayah layanan, manajemen komponen (dinding/atap), penandaan invalidasi cache iklim saat lokasi berubah. |
-| `ClimateAnalysisService` | `GetOrFetchProfileAsync`, `RefreshProfileAsync` | Pengambilan profil iklim historis via `IHistoricalClimateClient`, komputasi proksi jarak pesisir, penyimpanan relasi profil 0..1. |
-| `MaterialService` | `GetMaterialsByKindAsync`, `AddMaterialAsync`, `GetMaterialDetailAsync` | Penyediaan katalog bahan dinding/atap, penapisan kategori, pembacaan metadata provenance dan rincian faktor emisi. |
-| `SuitabilityScoringService` | `EvaluateComponentMaterialsAsync(componentId, weights, config)` | Komputasi empat sub-skor, penentuan alasan tekstual per baris, perankingan stabil, penerapan ambang label rekomendasi 55/75. |
-| `EmissionSimulationService` | `RunSimulationAsync(evaluationId, horizon, config)` | Komputasi usia efektif $L$, komputasi penggantian interior $n = \max(0, \lceil H/L \rceil - 1)$, proyeksi emisi kumulatif multi-horizon. |
-| `WorkSchedulingService` | `EvaluateWorkDaysAsync(workId)`, `LockWorkDateAsync(workId, date, confirmRisk)` | Evaluasi kelayakan cuaca harian 14 hari, manajemen cache TTL 6 jam UTC, penguncian tanggal dengan konfirmasi risiko. |
-| `ReportExportService` | `ExportRecommendationPdfAsync(projectId, options)` | Pembuatan dokumen PDF dari snapshot hasil evaluasi, pencatatan metadata laporan, penyediaan akses buka berkas lokal. |
+| `IMaterialService` | `ListByKindAsync(jenis)`, `GetByIdAsync(id)` | Sumber untuk katalog bahan dinding/atap (§F2) |
+| `IProjectService` | `CreateProjectAsync`, `UpdateProjectAsync`, `UpdateLocationAsync`, `AddComponentAsync`, `DeleteAsync`, `ListAsync` | Manajemen proyek dan komponen; perubahan lokasi memicu refresh iklim (§F1) |
+| `IClimateAnalysisService` | `GetOrFetchProfileAsync(proyekId)`, `RefreshProfileAsync(proyekId)` | Mengembalikan profil iklim tersimpan atau mengambil baru via `IHistoricalClimateClient` (§F3, §8.3) |
+| `ISuitabilityScoringService` | `RankAsync(komponenId, bobot)` | Menghasilkan daftar `Evaluasi` terurut berdasarkan 4 sub-skor (§F4, §11.1) |
+| `IEmissionSimulationService` | `SimulateAsync(evaluasiId, horizonTahun)` | Menghasilkan `SimulasiEmisi` dengan rumus penggantian $0 < t < H$ (§F5, §11.3) |
+| `IWorkSchedulingService` | `EvaluateDaysAsync(pekerjaanId)`, `LockDateAsync(pekerjaanId, tanggal)` | Mengevaluasi kelayakan tiap hari via `IDailyForecastClient` dan mengunci jadwal (§F6, §12) |
+| `IReportExportService` | `ExportAsync(proyekId, opsi)` | Menghasilkan PDF rekomendasi dan mencatat riwayat laporan (§F7) |
 
 ---
 
 ## 11. Metode Penilaian Kesesuaian Iklim dan Emisi Karbon
 
-### 11.1 Perhitungan Skor Kesesuaian Iklim
+### 11.1 Skor kesesuaian
 
-Skor kesesuaian komposit dihitung sebagai kombinasi linier berbobot dari empat sub-skor (masing-masing berskala 0 s/d 100):
+Skor kesesuaian per bahan dihitung sebagai jumlah berbobot dari empat sub-skor (skala 0–100):
 
 $$\text{skor\_kesesuaian} = w_{\text{termal}} \cdot s_{\text{termal}} + w_{\text{lembap}} \cdot s_{\text{lembap}} + w_{\text{korosi}} \cdot s_{\text{korosi}} + w_{\text{usia}} \cdot s_{\text{usia}}$$
 
-dengan syarat $\sum w = 1{,}0$. Pada MVP, $w_{\text{termal}} = w_{\text{lembap}} = w_{\text{korosi}} = w_{\text{usia}} = 0{,}25$.
+dengan syarat $w_{\text{termal}} + w_{\text{lembap}} + w_{\text{korosi}} + w_{\text{usia}} = 1{,}0$. Pada MVP, bobot bernilai tepat $0{,}25$ masing-masing (§PRD-R01).
 
-#### 1. Sub-Skor Lembap ($s_{\text{lembap}}$) — Model Terkoreksi (§PRD-R04)
+| Sub-skor | Dihitung dari | Model Perhitungan & Perilaku Monoton |
+|---|---|---|
+| `skor_termal` | Konduktivitas termal bahan ($\lambda$) relatif terhadap suhu rata-rata lokasi | Pita bawah 0,10 W/m·K. Batas atas $\lambda_{\max}$ bergeser dari 0,60 (suhu $\le 26^\circ\text{C}$) ke 0,30 (suhu $\ge 32^\circ\text{C}$). Skor $= \operatorname{clamp}(100 \cdot \lambda_{\max}/\lambda, 0, 100)$ jika $\lambda > \lambda_{\max}$, dan 100 jika dalam pita. |
+| `skor_lembap` | Ketahanan lembap (1–5) relatif terhadap curah hujan tahunan dan kelembapan rata-rata | Rumus terkoreksi (§PRD-R04): $r = \operatorname{clamp}(\text{hujan}/3000, 0, 1)$, $h = \operatorname{clamp}(\text{RH}/100, 0, 1)$, $\text{beban} = 0{,}5 \cdot r + 0{,}5 \cdot h$, $\text{kebutuhan} = 1 + 4 \cdot \text{beban}$, skor $= \operatorname{clamp}(100 \cdot \text{ketahanan}/\text{kebutuhan}, 0, 100)$. |
+| `skor_korosi` | Ketahanan korosi (1–5) relatif terhadap jarak pesisir | Jarak efektif $d = \min(\text{jarakKm}, 50)$. Kebutuhan $= 1 + 4 \cdot (1 - d/50)$. Skor $= \operatorname{clamp}(100 \cdot \text{ketahanan}/\text{kebutuhan}, 0, 100)$. Jarak $\ge 50\text{ km}$ memberi skor 100 untuk semua bahan. |
+| `skor_usia` | Usia pakai nominal dinormalisasi relatif terhadap seluruh bahan di kategori yang sama | Normalisasi min-maks seluruh katalog kategori: $100 \cdot (\text{usia} - \min)/(\max - \min)$. Pencarian atau perbandingan dua bahan tidak mengubah nilai referensi. |
 
-Untuk mengatasi kejenuhan dini pada rumus lama, komposisi beban menggabungkan curah hujan tahunan dan kelembapan relatif dengan bobot seimbang $\alpha = 0{,}5$ dan acuan hujan $3000\text{ mm/tahun}$:
+*Ambang Batas Rekomendasi Terpusat (§PRD-R10):*
+- Skor $< 55{,}0$: **Tidak disarankan** (ditandai visual, tetap ditampilkan).
+- $55{,}0 \le \text{Skor} < 75{,}0$: **Perlu pertimbangan**.
+- Skor $\ge 75{,}0$: **Cocok**.
 
-$$\begin{aligned}
-r &= \operatorname{clamp}\left(\frac{\text{curah\_hujan\_tahunan}}{3000}, 0, 1\right) \\
-h &= \operatorname{clamp}\left(\frac{\text{kelembapan\_rata}}{100}, 0, 1\right) \\
-\text{beban} &= \alpha \cdot r + (1 - \alpha) \cdot h, \quad \text{default } \alpha = 0{,}5 \\
-\text{kebutuhan} &= 1 + 4 \cdot \text{beban} \\
-s_{\text{lembap}} &= \operatorname{clamp}\left(\frac{100 \cdot \text{ketahanan\_lembap}}{\text{kebutuhan}}, 0, 100\right)
-\end{aligned}$$
+### 11.2 kgCO2e awal
 
-*Kasus Uji Acuan (RH = 80%, Ketahanan Lembap = 3):*
-- Hujan $700\text{ mm/thn}$: $\text{beban} \approx 0{,}5167 \rightarrow \text{kebutuhan} \approx 3{,}0667 \rightarrow s_{\text{lembap}} \approx 97{,}83$.
-- Hujan $3000\text{ mm/thn}$: $\text{beban} = 0{,}9000 \rightarrow \text{kebutuhan} = 4{,}6000 \rightarrow s_{\text{lembap}} \approx 65{,}22$.
-Terjadi diferensiasi skor yang jelas (~32,6 poin sub-skor, atau ~8,15 poin skor akhir pada bobot 0,25) tanpa saturasi dini.
+$$\text{emisi\_awal} = \text{faktor\_emisi} (\text{kgCO}_2\text{e/m}^2) \times \text{luas\_komponen} (\text{m}^2)$$
 
-#### 2. Sub-Skor Termal ($s_{\text{termal}}$)
+Faktor emisi yang masuk perhitungan wajib ternormalisasi ke $\text{kgCO}_2\text{e/m}^2$ untuk susunan/ketebalan tertentu (§PRD-R03). Ditampilkan berdampingan dengan skor kesesuaian pada peringkat (§F4).
 
-Mengevaluasi konduktivitas termal bahan ($\lambda$ dalam $W/m\cdot K$) terhadap suhu rata-rata lokasi ($T$ dalam $^\circ C$):
-- Pita bawah konduktivitas ideal: $\lambda_{\min} = 0{,}10\text{ W/m}\cdot\text{K}$.
-- Batas atas ideal bergeser linier terhadap suhu:
-  $$\lambda_{\max}(T) = \begin{cases}
-  0{,}60, & T \le 26^\circ\text{C} \\
-  0{,}60 - 0{,}05 \cdot (T - 26), & 26^\circ\text{C} < T < 32^\circ\text{C} \\
-  0{,}30, & T \ge 32^\circ\text{C}
-  \end{cases}$$
-- Jika $\lambda \le \lambda_{\max}(T)$, maka $s_{\text{termal}} = 100$. Jika $\lambda > \lambda_{\max}(T)$, maka $s_{\text{termal}} = \operatorname{clamp}\left(100 \cdot \frac{\lambda_{\max}(T)}{\lambda}, 0, 100\right)$.
+### 11.3 Simulasi emisi jangka panjang — pengganda penggantian dini
 
-#### 3. Sub-Skor Korosi ($s_{\text{korosi}}$)
-
-Mengevaluasi indeks ketahanan korosi bahan (1–5) terhadap jarak ke garis pantai ($d$ dalam $\text{km}$):
-$$\begin{aligned}
-d_{\text{efektif}} &= \min(d, 50) \\
-\text{kebutuhan\_korosi} &= 1 + 4 \cdot \left(1 - \frac{d_{\text{efektif}}}{50}\right) \\
-s_{\text{korosi}} &= \operatorname{clamp}\left(\frac{100 \cdot \text{ketahanan\_korosi}}{\text{kebutuhan\_korosi}}, 0, 100\right)
-\end{aligned}$$
-Lokasi pesisir ($d = 0$) membutuhkan ketahanan 5 untuk mencapai skor 100; lokasi daratan jauh ($d \ge 50\text{ km}$) memiliki kebutuhan 1 sehingga seluruh bahan memperoleh sub-skor 100.
-
-#### 4. Sub-Skor Usia Pakai ($s_{\text{usia}}$)
-
-Dinormalisasi secara min-maks terhadap sebaran usia pakai nominal seluruh bahan valid pada kategori yang sama:
-$$s_{\text{usia}} = \begin{cases}
-100 \cdot \frac{\text{usia} - \text{usia}_{\min}}{\text{usia}_{\max} - \text{usia}_{\min}}, & \text{usia}_{\max} > \text{usia}_{\min} \\
-100, & \text{usia}_{\max} = \text{usia}_{\min}
-\end{cases}$$
-Rentang acuan $\text{usia}_{\min}$ dan $\text{usia}_{\max}$ ditentukan dari seluruh katalog aktif kategori tersebut, dan tidak berubah saat pengguna melakukan pencarian atau memilih dua bahan untuk dibandingkan.
-
-### 11.2 Perhitungan Emisi Karbon Awal
-
-Emisi karbon tersemat awal ($\text{kgCO}_2\text{e}$) dihitung secara langsung dari perkalian faktor emisi ternormalisasi dengan luas bidang komponen:
-
-$$\text{emisi\_awal} = \text{faktor\_emisi\_m2} \times \text{luas\_area\_m2}$$
-
-Skor kesesuaian dan angka emisi awal disajikan berdampingan pada setiap kartu dan baris tabel rekomendasi.
-
-### 11.3 Simulasi Emisi Jangka Panjang dan Penggantian Dini (§PRD-R02)
-
-Usia pakai efektif ($L$) diturunkan dari usia pakai nominal menggunakan fungsi monoton naik:
+Usia pakai efektif diturunkan dari usia pakai nominal menggunakan fungsi penyesuaian:
 
 $$L = \text{usia\_nominal} \times \left(a + (1 - a) \cdot \frac{\text{skor\_kesesuaian}}{100}\right), \quad \text{default } a = 0{,}5$$
 
-Jumlah penggantian ($n$) dihitung strictly untuk kejadian penggantian pada interval $0 < t < H$:
+Jumlah penggantian dalam horizon simulasi dihitung strictly pada interval kejadian $0 < t < H$:
 
 $$n = \max\left(0, \left\lceil \frac{H}{L} \right\rceil - 1\right)$$
 
@@ -507,65 +478,153 @@ dan total emisi kumulatif dihitung dengan:
 
 $$\text{emisi\_kumulatif} = \text{emisi\_awal} \times (1 + n)$$
 
-#### Tabel Acuan Simulasi (Horizon $H = 30$ tahun, $a = 0{,}5$):
+Penggantian tepat pada batas akhir horizon ($t = H$) tidak dihitung (§PRD-R02).
 
-| Bahan | Usia Nominal | Skor Kesesuaian | Usia Efektif ($L$) | Penggantian ($n$) & Waktu Kejadian | Total Emisi Relatif |
-|---|---:|---:|---:|---|---:|
-| Bahan A (Cocok) | 15 tahun | 100 | 15,0 tahun | 1 penggantian (pada tahun 15) | $\times 2$ (Awal + 1) |
-| Bahan B (Kurang Cocok) | 15 tahun | 20 | 9,0 tahun | 3 penggantian (pada tahun 9, 18, 27) | $\times 4$ (Awal + 3) |
-| Bahan C (Sangat Tahan) | 30 tahun | 100 | 30,0 tahun | 0 penggantian (tidak ada di $0 < t < 30$) | $\times 1$ (Awal saja) |
-| Bahan D (Batas Horizon) | 15 tahun | 100 ($H=31$) | 15,0 tahun | 2 penggantian (pada tahun 15 dan 30) | $\times 3$ (Awal + 2) |
+**Tabel Pemeriksaan Kewajaran (Horizon $H = 30$ tahun, $a = 0{,}5$):**
+- Pada skor kesesuaian 100 ($L = 15\text{ tahun}$): terjadi **1 penggantian** pada tahun 15 (total emisi $\times 2$).
+- Pada skor kesesuaian 20 ($L = 9\text{ tahun}$): terjadi **3 penggantian** pada tahun 9, 18, dan 27 (total emisi $\times 4$).
+- Pada skor kesesuaian 100, horizon 15 tahun: terjadi **0 penggantian** (total emisi $\times 1$).
+- Pada skor kesesuaian 100, horizon 31 tahun: terjadi **2 penggantian** pada tahun 15 dan 30 (total emisi $\times 3$).
 
-Penggantian tepat pada batas horizon ($t = H$) tidak dihitung sebagai beban dalam horizon bersangkutan. Pada grafik emisi kumulatif, kejadian penggantian interior ditampilkan sebagai lonjakan tangga, dan level kumulatif dipertahankan konstan hingga batas horizon $H$.
+### 11.4 Batasan yang harus dinyatakan di antarmuka
+
+> Nilai properti bahan dan faktor emisi bersumber dari basis data publik internasional (mis. ICE Database, EPD generik), yang menjadi estimasi awal untuk pasar Indonesia. Fungsi penyesuaian usia pakai efektif (§11.3) adalah model matematis sederhana, bukan hasil studi lapangan. Seluruh parameter asumsi perhitungan berversi dan dapat dilihat pada panel antarmuka serta di-reset ke nilai default (§PRD-R11).
 
 ---
 
 ## 12. Penjadwal Pekerjaan Sensitif Cuaca — Logika Keputusan
 
-### 12.1 Ambang Batas Keselamatan Cuaca Standar
+### 12.1 Ambang layak-kerja cuaca (Asumsi generik)
 
-| Jenis Pekerjaan | Parameter Cuaca | Ambang 'Tidak Layak' | Ambang 'Waspada' | Dasar Pertimbangan Teknis |
+Setiap jenis pekerjaan dievaluasi terhadap prakiraan cuaca harian 14 hari dengan ambang batas asumsi generik awal:
+
+| `work_type` | Parameter Cuaca | Ambang Tidak Layak | Status Waspada | Dasar Pertimbangan Teknis |
 |---|---|---|---|---|
-| **Pengecoran** | Probabilitas Hujan | $> 60\%$ | $40\% - 60\%$ | Hujan lebat merusak hidrasi semen dan mengikis permukaan beton segar. |
-| **Pengecoran** | Curah Hujan Harian | $> 5{,}0\text{ mm}$ | $2{,}0 - 5{,}0\text{ mm}$ | Akumulasi air berlebih mengganggu rasio air-semen struktural. |
-| **Pengecoran** | Suhu Maksimum | — | $> 35{,}0^\circ\text{C}$ | Suhu tinggi memicu penguapan kilat dan retak susut termal; perlu mitigasi curing basah. |
-| **Pengecatan** | Kelembapan Maksimum | $> 85\%$ | $75\% - 85\%$ | Kelembapan tinggi menghalangi penguapan pelarut/air cat, lapisan menggelembung (*blistering*). |
-| **Pengecatan** | Probabilitas Hujan | $> 40\%$ | $25\% - 40\%$ | Tetesan hujan merusak lapisan cat arsitektur yang belum kering sempurna (*washout*). |
-| **Pengecatan** | Suhu Udara Harian | $< 10^\circ\text{C}$ atau $> 35^\circ\text{C}$ | — | Di luar rentang daya lekat dan waktu kering optimal cat dinding/atap. |
+| `pengecoran` | Probabilitas hujan | $> 60\%$ | — | Hujan saat curing awal beton mengganggu proses hidrasi semen dan merusak permukaan |
+| `pengecoran` | Curah hujan | $> 5{,}0\text{ mm}$ | — | Akumulasi air berlebih merusak rasio air-semen campuran beton |
+| `pengecoran` | Suhu maksimum | — | $> 35{,}0^\circ\text{C}$ | Suhu tinggi mempercepat penguapan air campuran, berisiko retak susut (peringatan mitigasi, bukan larangan keras) |
+| `pengecatan` | Kelembapan maksimum | $> 85\%$ | — | Kelembapan aplikasi di atas batas menghalangi pengeringan sempurna |
+| `pengecatan` | Probabilitas hujan | $> 40\%$ | — | Cat yang belum kering tersapu hujan, memicu pengerjaan ulang |
+| `pengecatan` | Suhu udara | Di luar $10{,}0 - 35{,}0^\circ\text{C}$ | — | Rentang aplikasi umum cat; di luar rentang ini daya rekat menurun |
 
-### 12.2 Prioritas Penentuan Ambang Batas
+*Batas Tepat:* Nilai cuaca yang tepat berada pada batas (misalnya probabilitas 60% atau curah hujan 5,0 mm pada pengecoran; probabilitas 40%, kelembapan 85%, suhu 10°C atau 35°C pada pengecatan) **tidak melanggar** (masih berstatus `Layak`). Nilai di atasnya baru dinyatakan `TidakLayak`. Status `Waspada` secara default hanya muncul pada suhu pengecoran $> 35^\circ\text{C}$ saat tidak ada pelanggaran keras.
 
-Evaluasi kelayakan menerapkan hierarki bertingkat:
-1. **Override Spesifik Pekerjaan:** Jika pengguna memasukkan batas khusus pada form pekerjaan.
-2. **Spesifikasi Produk Material:** Jika pekerjaan dikaitkan dengan material yang memiliki lembar data teknis spesifikasi pabrik.
-3. **Ambang Asumsi Standar Konstruksi:** Nilai bawaan pada tabel §12.1 berlabel transparan sebagai asumsi generik.
+*Hierarki Ambang:* Override Pekerjaan $\rightarrow$ Spesifikasi Produk Bahan Terpilih $\rightarrow$ Default Asumsi Generik (§PRD-R05).
 
-### 12.3 Alur Evaluasi dan Penguncian Jadwal
+### 12.2 Aturan Penguncian Jadwal dan Penanganan Data
 
-1. Evaluasi harian mengembalikan status: `Layak` (hijau), `Waspada` (kuning), `TidakLayak` (merah), atau `DataTidakTersedia` (abu-abu).
-2. Hari berstatus `TidakLayak` memuat alasan eksplisit pelanggaran parameter cuaca (contoh: *"Probabilitas hujan 70% melampaui batas aman pengecoran (60%)"*).
-3. Pengguna dapat mengunci tanggal yang berstatus `Layak` atau `Waspada` secara langsung.
-4. Jika pengguna memilih mengunci tanggal pada hari `TidakLayak`, sistem menampilkan dialog konfirmasi risiko: *"Kondisi cuaca berisiko tinggi terhadap mutu pekerjaan. Apakah Anda tetap ingin mengunci jadwal ini dengan menanggung risiko pengerjaan ulang?"*. Jika disetujui, jadwal terkunci dengan flag `persetujuan_risiko = true`.
+- **Status Multi-Nilai:** Evaluasi harian menghasilkan status `Layak`, `Waspada`, `TidakLayak`, atau `DataTidakTersedia`.
+- **Penguncian Hari Tidak Layak:** Pengguna dapat mengunci tanggal yang ditandai tidak layak hanya setelah menyetujui dialog konfirmasi risiko eksplisit (§PRD-R10).
+- **Penguncian Cache Kedaluwarsa:** Penguncian pada data cuaca yang berumur $\ge 6\text{ jam}$ memerlukan konfirmasi khusus data lama (§PRD-R08).
+- **Data Tidak Tersedia:** Tanggal di luar jangkauan prakiraan (>14 hari ke depan) atau hari dengan data null/parsial hanya dapat disimpan sebagai **draft**, tidak dapat dikunci final.
+- **Perubahan Lokasi:** Saat koordinat proyek diubah, keputusan jadwal yang lama tidak dihapus otomatis, melainkan diberi status **"Perlu ditinjau"** (*pending review*).
 
 ---
 
 ## 13. Analisis Kompetitor
 
-| Aspek Komparasi | One Click LCA / EC3 | EnergyPlus | Aplikasi RAB / Toko Bangunan | Wastu |
-|---|---|---|---|---|
-| **Target Utama** | Konsultan profesional & gedung komersial besar | Akademisi & insinyur fisika bangunan | Kontraktor & estimator anggaran | Pemilik rumah tinggal tapak & perencana awam |
-| **Platform** | Berbasis web / SaaS berbayar | CLI / GUI desktop teknik | Aplikasi mobile / desktop lokal | Desktop Windows WPF mandiri |
-| **Pertimbangan Iklim** | Tidak mengaitkan iklim dengan degradasi material | Pemodelan termal operasional mendalam | Tidak ada analisis iklim | Menghubungkan data iklim dengan ketahanan material |
-| **Konsekuensi Jangka Panjang** | Analisis LCA cradle-to-grave standar | Beban energi pendingin ruangan | Perhitungan volume biaya saat ini | Simulasi penggantian dini dan emisi karbon berulang |
-| **Penjadwalan Lapangan** | Tidak ada | Tidak ada | Jadwal kurva S berbasis biaya | Jadwal berbasis prakiraan cuaca harian 14 hari |
+### 13.1 One Click LCA dan Embodied Carbon in Construction Calculator — kompetitor tidak langsung
+Alat analisis siklus hidup bangunan komersial berbasis web untuk pelaporan formal proyek besar. Basis material didominasi Eropa/Amerika Utara dan menuntut keahlian LCA mendalam.
+
+### 13.2 EnergyPlus — kompetitor tidak langsung
+Simulasi performa termal bangunan mendalam. Tidak merekomendasikan bahan dan tidak menghitung jejak karbon tersemat maupun jadwal kerja.
+
+### 13.3 Aplikasi RAB/volume material lokal — kompetitor tidak langsung
+Berfokus pada estimasi biaya dan volume bahan, tanpa analisis iklim maupun pertimbangan karbon.
+
+### 13.4 Status quo — mengikuti saran tukang
+Kebiasaan mengikuti saran tukang tanpa verifikasi independen. Laporan rekomendasi Wastu (§F7) dirancang agar mudah dibawa dan didiskusikan dengan tukang/kontraktor.
 
 ---
 
-## 14. Matriks Lengkap Acceptance Criteria dan Penelusuran Kebutuhan
+## 14. Risiko dan Mitigasi
 
-Matriks berikut memetakan seluruh **31 Acceptance Criteria F1–F7**, **17 Ketentuan Lintas Fitur X01–X17**, dan **40 Skenario Pengujian T01–T40** yang mengikat pelaksanaan paket implementasi WP01 sampai WP08.
+| # | Risiko | Dampak | Mitigasi |
+|---|---|---|---|
+| **R1** | Basis data bahan dan faktor emisi bersumber dari data publik internasional, belum representatif pasar Indonesia | Rekomendasi dituding tidak relevan secara lokal | Sumber data dicatat per bahan (`data_source`) dan dinyatakan sebagai batasan di antarmuka (§11.4); kurasi lokal masuk pekerjaan lanjutan |
+| **R2** | Fungsi penyesuaian usia pakai efektif (§11.3) adalah model sederhana tanpa validasi lapangan | Simulasi emisi jangka panjang bisa menyesatkan jika dianggap presisi | Konstanta fungsi dinyatakan sebagai asumsi yang dapat dikonfigurasi; hasil disajikan sebagai estimasi, bukan angka pasti |
+| **R3** | API cuaca pihak ketiga berubah format, membatasi kuota, atau tidak tersedia | Fitur analisis iklim (F3) dan penjadwal (F6) berhenti berfungsi | `WeatherApiClient` diabstraksi lewat `IHistoricalClimateClient`/`IDailyForecastClient` (§8.3) sehingga penyedia dapat diganti tanpa mengubah domain; cache lokal menjaga fungsi dasar tetap berjalan (§8.4) |
+| **R4** | Ambang layak-kerja cuaca (§12) bersifat generik, tidak spesifik merek bahan | Rekomendasi jadwal bisa terlalu konservatif atau longgar untuk produk tertentu | Ambang dinyatakan dapat dikonfigurasi per jenis pekerjaan, bukan konstanta tersembunyi |
+| **R5** | Kedekatan pesisir dihitung sebagai proksi jarak geometris ke garis pantai, bukan pengukuran salinitas udara aktual | Skor ketahanan korosi bisa meleset di lokasi dengan mikroklimat khusus | Dinyatakan sebagai proksi, bukan pengukuran langsung, di alasan penilaian (§F4) |
+| **R6** | Instans PostgreSQL lokal per pengguna menyulitkan berbagi data lintas perangkat | Pengguna yang berganti perangkat kehilangan riwayat proyek | Dinyatakan eksplisit sebagai non-scope MVP (§5.2); mode remote dilengkapi snapshot lokal read-only untuk peninjauan luring (§PRD-R06) |
+| **R7** | Pengguna awam mengunci jadwal pada hari yang ditandai "tidak layak" tanpa memahami konsekuensinya | Pengerjaan ulang tetap terjadi meski sudah diperingatkan | Peringatan disertai alasan tekstual yang jelas (§12); penguncian diizinkan setelah konfirmasi persetujuan risiko eksplisit, bukan diblokir paksa |
 
-### 14.1 F1 — Profil Proyek
+---
+
+## 15. Rencana Rilis Bertahap
+
+### MVP — alur inti berjalan ujung ke ujung
+Tujuan: dari profil proyek sampai peringkat bahan tampil, dengan data iklim nyata.
+- Skema basis data relasional PostgreSQL dan snapshot lokal luring (§9, §PRD-R06).
+- Seed basis data bahan dinding dan atap (≥ 15 dan ≥ 10 entri, §4.1) dengan faktor emisi $\text{kgCO}_2\text{e/m}^2$ (§PRD-R03).
+- Implementasi `IHistoricalClimateClient` terhadap Open-Meteo (§8).
+- F1 — profil proyek dan komponen (dinding saja, atap saja, atau keduanya) (§PRD-R10).
+- F3 — analisis iklim lokasi dan jarak pesisir.
+- F2 — katalog bahan dan penapisan kategori.
+- F4 — perbandingan berperingkat dengan skor kesesuaian dan kgCO2e berdampingan, **bobot tetap 0,25** (§PRD-R01).
+
+### V1 — konsekuensi jangka panjang dan pelaksanaan
+Tujuan: menjawab "kalau saya salah pilih, apa akibatnya" dan "kapan sebaiknya saya kerjakan".
+- F5 — simulasi emisi jangka panjang dengan fungsi penggantian $0 < t < H$ (§11.3, §PRD-R02).
+- Implementasi `IDailyForecastClient` terhadap Open-Meteo, cache prakiraan TTL 6 jam UTC (§8.4, §PRD-R08).
+- F6 — penjadwal pekerjaan sensitif cuaca dengan status multi-nilai dan dialog konfirmasi risiko (§12).
+
+### V2 — pelaporan dan penghalusan
+Tujuan: hasil aplikasi bisa dibawa keluar aplikasi dan pengalaman pengguna dihaluskan.
+- F7 — ekspor laporan PDF dan peninjauan riwayat lokal luring (§PRD-R06).
+- Pembobotan kriteria kustom yang dapat diubah pengguna pada F4 dengan validasi jumlah 100% dan reset (§PRD-R01).
+- Panel peninjauan asumsi perhitungan dan reset parameter model (§PRD-R11).
+- Uji pengguna kualitatif dengan persona non-teknis Bu Wulan dan Pak Herman (§4.1, §PRD-R11).
+- Penghalusan alasan tekstual (`reasoning`) berdasarkan umpan balik uji pengguna.
+
+### Pasca-MVP — didokumentasikan, tidak dibangun
+Kurasi faktor emisi dan properti bahan khusus pasar Indonesia; kalibrasi fungsi penyesuaian usia pakai efektif terhadap data lapangan; komponen selain dinding/atap; sinkronisasi multi-perangkat; integrasi pemesanan bahan ke pemasok; aplikasi mobile pendamping.
+
+---
+
+## 16. Lampiran
+
+### 16.1 Peran tim
+
+| Nama | NIM | Peran | Tanggung jawab utama di PRD ini |
+|---|---|---|---|
+| Dien Muhammad Scientivan Kurniapramono | 24/533571/TK/59114 | Software Architect | Arsitektur sistem (§7), integrasi cuaca (§8), skema data (§9), kontrak modul (§10) |
+| Ramzi Alfito Rizky | 24/540550/TK/60008 | Backend Developer | Lapisan layanan dan domain (§10, §11), simulasi emisi (§11.3) |
+| Yohanes Anthony Saputra | 24/536327/TK/59524 | Frontend Developer | Antarmuka WPF dan pengalaman pengguna (§6), penjadwal pekerjaan (§12) |
+
+Metode penilaian kesesuaian dan simulasi emisi (§11) serta logika penjadwalan (§12) dikerjakan bersama, karena keduanya menjadi titik temu antara data bahan, data iklim, dan pengalaman pengguna akhir.
+
+### 16.2 Rujukan awal
+
+1. Open-Meteo — Historical Weather API & Forecast API. https://open-meteo.com/
+2. BMKG Open Data (alternatif/pelengkap prakiraan). https://data.bmkg.go.id/
+3. Inventory of Carbon and Energy (ICE) Database, University of Bath — faktor emisi tersemat material konstruksi umum.
+4. Environmental Product Declaration (EPD) generik untuk kategori bahan dinding dan atap yang relevan.
+5. One Click LCA — https://www.oneclicklca.com/
+6. Embodied Carbon in Construction Calculator (EC3) — https://www.buildingtransparency.org/
+7. EnergyPlus — https://energyplus.net/
+
+### 16.3 Keterkaitan dengan diagram UML
+
+Entitas dan alur pada dokumen ini konsisten dengan [`docs/uml-wastu.md`](uml-wastu.md) dan sumber visual [`docs/uml-wastu.drawio`](uml-wastu.drawio):
+
+| Aspek | Diagram UML Awal | Penyelarasan Normatif Target | Alasan Penyelarasan |
+|---|---|---|---|
+| `Pengguna.login` | Terdapat metode login di UML historis | Dihapus dari use case, activity, dan class diagram | Wastu adalah aplikasi desktop single-user tanpa kebutuhan autentikasi (§PRD-R10) |
+| Multiplisitas `Proyek` ke `ProfilIklim` | `1` ke `1` kaku | Diubah menjadi `1` ke `0..1` | Profil iklim bernilai null sebelum berhasil diambil dari API (§PRD-R10) |
+| Multiplisitas `Proyek` ke `Komponen` | `1` ke `*` | Diperjelas menjadi `1` ke `1..*` | Proyek minimal memiliki 1 komponen aktif (dinding saja, atap saja, atau keduanya) (§PRD-R10) |
+| Multiplisitas `Evaluasi` ke `SimulasiEmisi` | `1` ke `0..1` | Diubah menjadi `1` ke `0..*` | Evaluasi dapat belum disimulasikan (`0`) atau menyimpan banyak hasil simulasi horizon 20, 30, 50 tahun (`*`) (§PRD-R10) |
+| Aktor Layanan Cuaca | Hanya terhubung ke Ambil Prakiraan Cuaca | Terhubung ke Analisis Iklim Lokasi dan Ambil Prakiraan Cuaca | Open-Meteo melayani data iklim historis 10 tahun dan prakiraan harian 14 hari (§PRD-R10) |
+| Alur Ubah Bobot pada Activity Diagram | Mengarah kembali ke pembuatan proyek | Mengarah kembali langsung ke Hitung Skor Kesesuaian | Mengubah kriteria/bobot tidak membuat proyek baru, melainkan menghitung ulang skor (§PRD-R10) |
+| Alur Kelayakan Cuaca pada Activity Diagram | Hanya Ya/Tidak | Menangani `Data tidak tersedia` dan alur persetujuan risiko untuk penguncian hari `Tidak layak` | Mencerminkan status multi-nilai dan dialog konfirmasi risiko pada jadwal (§PRD-R10) |
+
+---
+
+## 17. Matriks Seluruh Acceptance Criteria dan Penelusuran Kebutuhan
+
+Matriks berikut mencatat seluruh **31 Acceptance Criteria F1–F7**, **17 Ketentuan Lintas Fitur X01–X17**, dan **40 Skenario Pengujian T01–T40** yang mengikat pelaksanaan paket implementasi WP01 sampai WP08.
+
+### 17.1 F1 — Profil Proyek
 
 | ID | Acceptance Criteria Normatif | Paket | Skenario Uji | Status |
 |---|---|---|---|---|
@@ -574,16 +633,16 @@ Matriks berikut memetakan seluruh **31 Acceptance Criteria F1–F7**, **17 Keten
 | **F1-03** | Perubahan koordinat lokasi proyek memicu pengambilan ulang profil iklim, menginvalidasi cache lama, dan menandai jadwal untuk ditinjau. | WP03 | T07, T08, T31 | Terpetakan |
 | **F1-04** | Validasi koordinat pada rentang inklusif lintang $[-11, 6]$ dan bujur $[95, 141]$. Penanganan data legacy aman tanpa crash migrasi. | WP02 | T03, T37 | Terpetakan |
 
-### 14.2 F2 — Basis Data Bahan
+### 17.2 F2 — Basis Data Bahan
 
 | ID | Acceptance Criteria Normatif | Paket | Skenario Uji | Status |
 |---|---|---|---|---|
 | **F2-01** | Properti nama, jenis, termal, ketahanan lembap/korosi, usia nominal, dan faktor emisi ($\text{kgCO}_2\text{e/m}^2$) tersedia lengkap dan valid. | WP02 | T15, T39 | Terpetakan |
 | **F2-02** | Filter katalog berdasarkan jenis komponen (`dinding` atau `atap`) tanpa percampuran kategori. | WP02 | T14, T39 | Terpetakan |
-| **F2-03** | Sumber rujukan dan kategori provenance (`ApiHistoris`, `Contoh`, `Manual`, `LegacyUnknown`) tercatat transparan per nilai. | WP02 | T39 | Terpetakan |
+| **F2-03** | Sumber rujukan dan status verifikasi (perkiraan/terverifikasi) tercatat transparan per nilai; konversi satuan dicatat. | WP02 | T39 | Terpetakan |
 | **F2-04** | Administrator/pengembang dapat menambah bahan baru melalui database tanpa kompilasi ulang kode. | WP02 | T39 | Terpetakan |
 
-### 14.3 F3 — Analisis Iklim Lokasi
+### 17.3 F3 — Analisis Iklim Lokasi
 
 | ID | Acceptance Criteria Normatif | Paket | Skenario Uji | Status |
 |---|---|---|---|---|
@@ -592,7 +651,7 @@ Matriks berikut memetakan seluruh **31 Acceptance Criteria F1–F7**, **17 Keten
 | **F3-03** | Profil iklim disimpan per proyek (multiplisitas 0..1) dan dipakai ulang luring tanpa memanggil API kembali. | WP01, WP03 | T04, T06, T36 | Terpetakan |
 | **F3-04** | Ringkasan profil iklim dan status kualitas data ditampilkan pada antarmuka sebelum perbandingan bahan. | WP03 | T04, T05 | Terpetakan |
 
-### 14.4 F4 — Perbandingan Berperingkat
+### 17.4 F4 — Perbandingan Berperingkat
 
 | ID | Acceptance Criteria Normatif | Paket | Skenario Uji | Status |
 |---|---|---|---|---|
@@ -603,17 +662,17 @@ Matriks berikut memetakan seluruh **31 Acceptance Criteria F1–F7**, **17 Keten
 | **F4-05** | Rilis V2 menyediakan pengaturan bobot kustom tervalidasi ($\sum = 100\%$) dan reset, langsung merangking tanpa request iklim ulang. | WP04 | T16 | Terpetakan |
 | **F4-06** | Ambang label rekomendasi konsisten: $< 55$ "Tidak disarankan", $55..74,999$ "Perlu pertimbangan", $\ge 75$ "Cocok". | WP04 | T17 | Terpetakan |
 
-### 14.5 F5 — Simulasi Emisi Jangka Panjang
+### 17.5 F5 — Simulasi Emisi Jangka Panjang
 
 | ID | Acceptance Criteria Normatif | Paket | Skenario Uji | Status |
 |---|---|---|---|---|
-| **F5-01** | Pengguna dapat memilih horizon simulasi (20, 30, 50 tahun); banyak simulasi disimpan persisten tanpa saling menimpa. | WP05 | T20 | Terpetakan |
+| **F5-01** | Pengguna dapat memilih horizon simulasi (20, 30, 50 tahun); relasi 0..* menyimpan hasil per horizon tanpa menimpa. | WP05 | T20 | Terpetakan |
 | **F5-02** | Usia efektif $L$ dihitung dari usia nominal dan skor kesesuaian dengan parameter dasar penuaan $a = 0{,}5$. | WP05 | T18 | Terpetakan |
 | **F5-03** | Jumlah penggantian dihitung strictly pada $0 < t < H$: $n = \max(0, \lceil H/L \rceil - 1)$ dan emisi kumulatif $= \text{emisi\_awal} \times (1 + n)$. | WP05 | T18, T19 | Terpetakan |
 | **F5-04** | Perbandingan visual disajikan dalam step chart interaktif yang menampilkan titik interior dan level akhir. | WP05 | T19 | Terpetakan |
 | **F5-05** | Antarmuka menyatakan secara terbuka bahwa usia pakai efektif adalah estimasi model perhitungan. | WP05 | T18 | Terpetakan |
 
-### 14.6 F6 — Penjadwal Pekerjaan Sensitif Cuaca
+### 17.6 F6 — Penjadwal Pekerjaan Sensitif Cuaca
 
 | ID | Acceptance Criteria Normatif | Paket | Skenario Uji | Status |
 |---|---|---|---|---|
@@ -621,9 +680,9 @@ Matriks berikut memetakan seluruh **31 Acceptance Criteria F1–F7**, **17 Keten
 | **F6-02** | Evaluasi prakiraan cuaca 14 hari per hari terhadap ambang teknis pekerjaan dengan kelembapan maksimum harian untuk cat. | WP06 | T24, T25, T26 | Terpetakan |
 | **F6-03** | Status kelayakan multi-nilai: `Layak`, `Waspada`, `TidakLayak` (dengan alasan pelanggaran ambang), dan `DataTidakTersedia`. | WP06 | T24, T25, T27 | Terpetakan |
 | **F6-04** | Pengguna dapat mengunci jadwal final; penguncian hari `TidakLayak` memerlukan konfirmasi persetujuan risiko eksplisit. | WP06 | T30 | Terpetakan |
-| **F6-05** | Tanggal tanpa prakiraan (>14 hari) atau cuaca null/parsial diberi penjelasan eksplisit `Data tidak tersedia`. | WP06 | T27, T29 | Terpetakan |
+| **F6-05** | Tanggal tanpa prakiraan (>14 hari) atau cuaca null/parsial diberi penjelasan eksplisit `Data tidak tersedia` (hanya draft). | WP06 | T27, T29 | Terpetakan |
 
-### 14.7 F7 — Ekspor Laporan Rekomendasi
+### 17.7 F7 — Ekspor Laporan Rekomendasi
 
 | ID | Acceptance Criteria Normatif | Paket | Skenario Uji | Status |
 |---|---|---|---|---|
@@ -631,7 +690,7 @@ Matriks berikut memetakan seluruh **31 Acceptance Criteria F1–F7**, **17 Keten
 | **F7-02** | Laporan memuat tanggal pembuatan (UTC dan waktu lokal proyek) serta atribusi sumber data transparansi. | WP07 | T33 | Terpetakan |
 | **F7-03** | Berkas PDF disimpan lokal, dicatat ke dalam database/state, dan dapat dibuka kembali dari aplikasi. | WP07 | T34, T35 | Terpetakan |
 
-### 14.8 Ketentuan Lintas Fitur (X01 — X17)
+### 17.8 Ketentuan Lintas Fitur (X01 — X17)
 
 | ID | Ketentuan Lintas Fitur Normatif | Paket Terkait | Skenario Uji |
 |---|---|---|---|
@@ -653,7 +712,7 @@ Matriks berikut memetakan seluruh **31 Acceptance Criteria F1–F7**, **17 Keten
 | **X16** | Target performa (<3 mnt, <2 dtk, API $\ge 95\%$) dibuktikan melalui instrumen ukur riil dan uji pengguna nyata. | WP08 | Uji Performa/Pengguna |
 | **X17** | Seluruh penyelarasan PRD-R01 sampai PRD-R11 terdokumentasi lengkap dan selaras dengan UML. | WP00, WP08 | Review WP00 |
 
-### 14.9 Daftar Skenario Pengujian Wajib (T01 — T40)
+### 17.9 Daftar Skenario Pengujian Wajib (T01 — T40)
 
 - **T01:** Buat proyek atap saja ($90\text{ m}^2$) $\rightarrow$ tersimpan dengan satu komponen atap; navigasi menyesuaikan.
 - **T02:** Pembuatan proyek tanpa komponen, atau luas $\le 0$, NaN, Infinity $\rightarrow$ ditolak dengan pesan validasi jelas.
@@ -678,12 +737,12 @@ Matriks berikut memetakan seluruh **31 Acceptance Criteria F1–F7**, **17 Keten
 - **T21:** Cache prakiraan cuaca segar pada umur 5 jam 59 menit; kedaluwarsa tepat pada umur 6 jam 00 menit.
 - **T22:** Navigasi antar proyek tidak menukar atau menghilangkan cache prakiraan cuaca masing-masing proyek.
 - **T23:** Penentuan tanggal hari ini dan penguncian jadwal mengikuti zona waktu lokasi proyek dari provider.
-- **T24:** Pengecoran dengan hujan $>5\text{ mm}$ atau probabilitas hujan $>60\%$ menghasilkan status `TidakLayak`; suhu $>35^\circ\text{C}$ menghasilkan `Waspada`.
-- **T25:** Pengecatan dengan kelembapan $>85\%$ atau probabilitas $>40\%$ menghasilkan status `TidakLayak`.
+- **T24:** Pengecoran dengan hujan $>5\text{ mm}$ atau probabilitas hujan $>60\%$ menghasilkan status `TidakLayak`; suhu $>35^\circ\text{C}$ saja menghasilkan `Waspada`; batas tepat 60% dan 5 mm tidak melanggar.
+- **T25:** Pengecatan dengan kelembapan $>85\%$ atau probabilitas $>40\%$ atau suhu di luar $10-35^\circ\text{C}$ menghasilkan status `TidakLayak`; batas tepat diterima.
 - **T26:** Kelembapan maksimum harian digunakan untuk evaluasi pengecatan meskipun nilai rata-rata berada di bawah 85%.
 - **T27:** Data cuaca bernilai null atau parsial menghasilkan status `DataTidakTersedia`, bukan nilai 0 atau Layak.
 - **T28:** Override ambang pengecatan ke batas probabilitas 30% menyebabkan kondisi cuaca 35% berstatus `TidakLayak`.
-- **T29:** Rentang pekerjaan melampaui 14 hari menampilkan seluruh hari dengan keterangan jelas untuk hari tanpa prakiraan.
+- **T29:** Rentang pekerjaan melampaui 14 hari menampilkan seluruh hari dengan keterangan jelas untuk hari tanpa prakiraan; hari tanpa cuaca hanya bisa disimpan sebagai draft.
 - **T30:** Mengunci hari `TidakLayak` menampilkan dialog konfirmasi risiko; pembatalan tidak mengunci, persetujuan mengunci tanggal beserta alasan.
 - **T31:** Mengubah lokasi setelah tanggal dikunci menandai jadwal lama dengan status "Perlu ditinjau".
 - **T32:** Ekspor PDF menyertakan bahan yang dipilih pengguna meskipun bahan tersebut berperingkat rendah.
@@ -695,59 +754,3 @@ Matriks berikut memetakan seluruh **31 Acceptance Criteria F1–F7**, **17 Keten
 - **T38:** Perubahan bobot atau evaluasi baru tidak mengubah berkas PDF atau snapshot evaluasi lama.
 - **T39:** Penambahan bahan baru langsung ke database PostgreSQL tampil pada katalog setelah refresh tanpa rebuild aplikasi.
 - **T40:** Pembersihan (*pruning*) cache cuaca lama tidak menghapus snapshot keputusan jadwal historis yang telah dikunci.
-
----
-
-## 15. Rencana Rilis Bertahap (MVP, V1, V2, dan Pasca-V2)
-
-### MVP — Alur Inti Pemilihan Bahan Berbasis Iklim
-- Skema database EF Core dan snapshot lokal luring (§9).
-- Pustaka seed bahan $\ge 15$ dinding dan $\ge 10$ atap dengan faktor emisi $\text{kgCO}_2\text{e/m}^2$ (§F2).
-- Klien Open-Meteo Historical Weather API dan kalkulasi jarak pesisir (§F3).
-- Antarmuka manajemen proyek dan komponen (dinding saja, atap saja, atau keduanya) (§F1).
-- Perbandingan berperingkat dengan skor kesesuaian iklim dan emisi awal berdampingan, **bobot kriteria tetap 0,25** (§F4).
-
-### V1 — Konsekuensi Jangka Panjang dan Pelaksanaan Konstruksi
-- Simulasi emisi jangka panjang (20, 30, 50 tahun) dengan fungsi penggantian terkoreksi $0 < t < H$ (§F5).
-- Klien Open-Meteo Daily Forecast API dengan cache TTL 6 jam UTC dan penanganan zona waktu (§F6, §8).
-- Penjadwal pekerjaan sensitif cuaca (pengecoran dan pengecatan) dengan evaluasi status multi-nilai dan dialog konfirmasi risiko penguncian (§F6, §12).
-
-### V2 — Pelaporan Rekomendasi, Kustomisasi Bobot, dan Uji Pengguna
-- Ekspor laporan rekomendasi PDF dan pembukaan riwayat laporan (§F7).
-- Pembobotan kriteria kustom tervalidasi pada modul perbandingan bahan F4 (§F4, §11.1).
-- Panel peninjauan asumsi perhitungan dan tombol reset ke default model (§11.4).
-- Pelaksanaan pengujian pengguna kualitatif terhadap persona Bu Wulan dan Pak Herman untuk memvalidasi keterpahaman alasan rekomendasi (§4.1).
-
-### Pasca-V2 — Rencana Pengembangan Lanjutan (Di Luar Scope Saat Ini)
-- Kurasi faktor emisi dan basis data material spesifik produsen lokal Indonesia dengan sertifikasi EPD lokal.
-- Integrasi data BMKG Open Data sebagai sumber pelengkap prakiraan cuaca lokal.
-- Kalibrasi empiris fungsi penurunan usia pakai efektif material melalui riset penuaan material di iklim tropis.
-
----
-
-## 16. Lampiran dan Keterkaitan dengan Diagram UML
-
-### 16.1 Peran dan Pembagian Tugas Tim
-
-| Anggota Tim | NIM | Peran Utama | Fokus Tanggung Jawab |
-|---|---|---|---|
-| **Dien Muhammad Scientivan Kurniapramono** | 24/533571/TK/59114 | Software Architect | Arsitektur sistem, integrasi layanan cuaca, persistensi data relasional, dan spesifikasi kontrak modul. |
-| **Ramzi Alfito Rizky** | 24/540550/TK/60008 | Backend Developer | Layanan domain, logika perhitungan skor iklim, simulasi emisi jangka panjang, dan pengujian unit domain. |
-| **Yohanes Anthony Saputra** | 24/536327/TK/59524 | Frontend Developer | Antarmuka pengguna WPF MVVM, modul penjadwal cuaca, pembuatan laporan PDF, dan pengalaman interaksi pengguna. |
-
-### 16.2 Keterkaitan dengan Diagram UML
-
-Seluruh spesifikasi pada dokumen ini selaras secara normatif dengan diagram UML pada [`docs/uml-wastu.md`](uml-wastu.md) dan berkas sumber visual [`docs/uml-wastu.drawio`](uml-wastu.drawio):
-
-1. **Use Case Diagram:**
-   - Menghapus use-case login pengguna (Wastu adalah aplikasi desktop single-user).
-   - Menghubungkan aktor sistem Layanan Cuaca ke dua use case: `Analisis Iklim Lokasi` (data historis 10 tahun) dan `Ambil Prakiraan Cuaca` (prakiraan harian 14 hari).
-2. **Activity Diagram:**
-   - Keputusan "Ubah kriteria/bobot?" mengarahkan alur kembali langsung ke aktivitas "Hitung skor kesesuaian dan kgCO2e", bukan membuat proyek ulang dari awal.
-   - Penanganan cuaca harian mencakup penanganan "Data tidak tersedia" serta jalur persetujuan risiko untuk penguncian tanggal berstatus "Tidak layak".
-3. **Class Diagram & Domain Model:**
-   - Menghilangkan metode `Pengguna.login()`.
-   - Mengubah multiplisitas `Proyek` ke `ProfilIklim` menjadi `0..1` (profil iklim bernilai null sebelum berhasil diambil).
-   - Mengubah multiplisitas `Proyek` ke `Komponen` menjadi `1..*` (proyek dapat memuat dinding saja, atap saja, atau keduanya; minimal 1 komponen aktif).
-   - Mengubah multiplisitas `Evaluasi` ke `SimulasiEmisi` menjadi `1..*` (mendukung banyak horizon simulasi 20, 30, 50 tahun yang disimpan secara persisten).
-   - Menyelaraskan identitas entitas menggunakan tipe `Guid` konsisten.

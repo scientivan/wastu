@@ -1,47 +1,44 @@
 # Implementasi Class Diagram — WPF
 
-Dokumen ini menjelaskan pemetaan antara spesifikasi diagram kelas UML normatif Wastu dan implementasi kode pada folder `Models/` di root repository.
+Dokumen ini menjelaskan hubungan antara spesifikasi diagram kelas UML normatif Wastu dan implementasi kode pada folder `Models/` di root repository.
 
 > [!NOTE]
-> Berkas gambar [`docs/class-diagram.png`](class-diagram.png) adalah **diagram historis tugas awal Modul 3** dan dipertahankan semata-mata sebagai arsip historis. Diagram normatif yang mengikat implementasi dan pengujian sistem saat ini didefinisikan secara resmi pada [`docs/uml-wastu.md`](uml-wastu.md) dan sumber visual [`docs/uml-wastu.drawio`](uml-wastu.drawio) (§PRD-R10).
+> Berkas gambar [`docs/class-diagram.png`](class-diagram.png) adalah **diagram kelas historis tugas awal Modul 3** dan dipertahankan semata-mata sebagai arsip historis. Spesifikasi diagram normatif sistem didefinisikan secara resmi pada [`docs/uml-wastu.md`](uml-wastu.md) dan sumber visual [`docs/uml-wastu.drawio`](uml-wastu.drawio) (§PRD-R10).
 
-Setiap atribut UML dibuat sebagai instance variable `private` dan dibungkus oleh property `public`. Model domain Wastu menggunakan istilah entitas fisik Indonesia yang selaras dengan skema basis data PostgreSQL: `Bangunan` (mewakili proyek bangunan rumah tinggal), `Komponen` (menyimpan luas bidang dinding atau atap), `Bahan` (katalog material), `Evaluasi` (skor kesesuaian komposit dan emisi awal), `SimulasiEmisi` (proyeksi emisi multi-horizon), `Pekerjaan` (jadwal konstruksi), dan `PrakiraanCuaca` (evaluasi kelayakan cuaca harian).
+## 1. Kondisi Implementasi Baseline Saat Ini (Folder `Models/`)
 
-## Pemetaan UML ke C# (.NET 8)
+Model pada folder `Models/` awalnya diadaptasi dari tugas Modul 3 dan saat ini menjadi representasi data domain aplikasi di antarmuka WPF:
 
-- **Identitas:** Seluruh ID entitas domain dan database menggunakan tipe `Guid` yang konsisten (§PRD-R10).
-- **Tipe Primitif:** `string`, `int`, dan `double` dipetakan langsung ke tipe C#.
-- **Tanggal & Waktu:** `date` / `DateTime` dipetakan ke `DateTime` (dengan konvensi UTC pada penyimpanan dan zona waktu lokasi proyek pada tampilan).
-- **Relasi & Multiplisitas:**
-  - `Bangunan "1" --> "0..1" ProfilIklim`: Profil iklim dipetakan sebagai nullable reference property `ProfilIklim?` (bernilai null sebelum data iklim berhasil diambil dari API atau sebelum proyek selesai dianalisis).
-  - `Bangunan "1" --> "1..*" Komponen`: Komponen dikelola sebagai koleksi minimal satu komponen aktif (dinding saja, atap saja, atau keduanya) dengan luas valid $> 0\text{ m}^2$.
-  - `Komponen "1" --> "*" Evaluasi`: Dipetakan ke koleksi `IReadOnlyList<Evaluasi>`.
-  - `Evaluasi "1" --> "*" SimulasiEmisi`: Dipetakan ke koleksi `IReadOnlyList<SimulasiEmisi>` untuk mendukung penyimpanan hasil simulasi simultan pada berbagai horizon waktu (20, 30, 50 tahun) dan versi model.
-  - Multiplicity `*` lainnya dipetakan ke `List<T>` internal yang diekspos sebagai `IReadOnlyList<T>`.
-- **Berkas Artefak:** `File` dipetakan menjadi `System.IO.FileInfo` (karena `System.IO.File` adalah static class).
-- **Tipe Enumerasi:** `JenisKomponen` (`dinding`, `atap`), `JenisPekerjaan` (`pengecoran`, `pengecatan`), dan `StatusKelayakan` (`Layak`, `Waspada`, `TidakLayak`, `DataTidakTersedia`) diterapkan sebagai C# `enum`.
-- **Autentikasi:** Entitas `Pengguna` tidak memiliki method `login()` karena aplikasi beroperasi secara *single-user desktop* tanpa kewajiban autentikasi.
+- **Identitas:** Model pada `Models/` (`Bangunan`, `Bahan`, `Pengguna`, `Pekerjaan`) masih menggunakan tipe `int id` warisan Modul 3, sedangkan lapisan basis data EF Core (`Wastu.Data`) dan service domain (`Wastu.Domain`) menggunakan `Guid`. Pemetaan antara `int` dan `Guid` saat ini dijembatani pada lapisan adapter penyimpanan.
+- **Tipe Primitif:** `string`, `int`, dan `double` dipetakan langsung ke tipe data C#.
+- **Tanggal & Waktu:** `date` dipetakan menjadi `DateTime`.
+- **Berkas Artefak:** `File` dipetakan menjadi `System.IO.FileInfo` (karena `System.IO.File` adalah static class C#).
+- **Relasi & Multiplisitas Baseline:**
+  - `Bangunan` ke `Komponen`: `Bangunan` menyimpan luas komponen melalui `LuasKomponen` dan mewajibkan luas dinding serta atap sekaligus.
+  - `Komponen` ke `Evaluasi`: `Evaluasi[]` dipetakan menjadi array atau `IReadOnlyList<Evaluasi>`.
+  - `Evaluasi` ke `SimulasiEmisi`: Multiplicity pada model baseline adalah `0..1` (`SimulasiEmisi?` tunggal pada `Models/Evaluasi.cs`).
+  - `Pekerjaan` ke `PrakiraanCuaca`: Menggunakan dependensi use untuk mengevaluasi kelayakan kerja.
+- **Tipe Enumerasi Baseline:** `JenisKomponen`, `JenisPekerjaan`, dan `StatusKelayakan` diterapkan sebagai C# `enum`. Pada `Models/PrakiraanCuaca.cs`, evaluasi mengembalikan kelayakan dasar (`bool` / status dua nilai Layak dan Tidak Layak).
+- **Rumus & Ambang Baseline:**
+  - `Evaluasi.HitungSkor` diselaraskan dengan prototipe awal HTML (`app.js`).
+  - `SimulasiEmisi.Proyeksikan` di domain telah mengadopsi $\lceil H/L \rceil - 1$, namun UI memiliki duplikasi perhitungan dengan penanganan epsilon terpisah.
+  - Ambang penjadwalan cuaca di UI masih menggunakan konstanta generik per jenis pekerjaan.
+  - `Pekerjaan.TanggalDikunci` bertipe `DateTime?`, dengan dukungan penguncian hari tidak layak setelah konfirmasi pengguna.
 
-## Penyesuaian Rumus dan Aturan Domain
+## 2. Target Revisi Spesifikasi Normatif (WP01 — WP08)
 
-Rumus pada model diselaraskan penuh dengan PRD v2.0 (PRD-R01 sampai PRD-R11):
+Paket implementasi WP01 sampai WP08 akan menyelaraskan model baseline di atas dengan spesifikasi normatif PRD v2.0:
 
-- **Perhitungan Skor Kesesuaian:**
-  - Menggunakan `SuitabilityScoringService` dengan bobot default MVP bernilai tepat 0,25 per kriteria (termal, lembap, korosi, usia).
-  - Sub-skor lembap menggunakan model terkoreksi dengan $\alpha = 0{,}5$ dan acuan curah hujan $3000\text{ mm/tahun}$ (§PRD-R04, PRD §11.1).
-  - Ambang batas rekomendasi terpusat pada skor 55 dan 75: `< 55` *Tidak disarankan*, `55 s/d 74,999` *Perlu pertimbangan*, dan `≥ 75` *Cocok* (§PRD-R10).
-- **Emisi Karbon Awal:**
-  - `emisi_awal = faktor_emisi_m2 × luas_komponen` dengan faktor emisi yang wajib dinormalisasi ke $\text{kgCO}_2\text{e/m}^2$ (§PRD-R03).
-- **Penurunan Usia Pakai Efektif:**
-  - `Evaluasi.ProyeksikanEmisi` menghitung usia efektif $L = \text{usia\_nominal} \times (a + (1 - a) \times \text{skor}/100)$ dengan parameter dasar penuaan $a = 0{,}5$ (§PRD-R02, §PRD-R11).
-- **Simulasi Emisi Jangka Panjang:**
-  - `SimulasiEmisi.Proyeksikan` menghitung jumlah penggantian strictly pada interval kejadian $0 < t < H$:
-    $$n = \max\left(0, \left\lceil \frac{H}{L} \right\rceil - 1\right)$$
-    dan emisi kumulatif $= \text{emisi\_awal} \times (1 + n)$ (§PRD-R02).
-  - Kasus acuan: nominal 15 thn, skor 20, horizon 30 thn $\rightarrow L = 9$ thn, $n = 3$ penggantian (thn 9, 18, 27), total emisi $\times 4$.
-- **Penjadwalan Cuaca & Persetujuan Risiko:**
-  - `PrakiraanCuaca.EvaluasiKelayakan(JenisPekerjaan, OverrideAmbang?)` mengevaluasi hari kerja dengan dukungan status multi-nilai (`Layak`, `Waspada`, `TidakLayak`, `DataTidakTersedia`) menggunakan kelembapan maksimum harian untuk pengecatan (§PRD-R05, §PRD-R08).
-  - `Pekerjaan.TanggalDikunci` bertipe `DateTime?`, dan method `Jadwalkan(cuaca, persetujuanRisiko)` mengizinkan penguncian tanggal pada hari berstatus `TidakLayak` setelah pengguna menyetujui konfirmasi risiko secara eksplisit (§PRD-R10).
+1. **Standardisasi Identitas:** Menyeragamkan seluruh ID entitas domain, model antarmuka, dan persistensi database menggunakan tipe `Guid` yang konsisten (§PRD-R10).
+2. **Fleksibilitas Komponen Proyek:** Mengubah relasi `Proyek` ke `Komponen` menjadi `1..*` dinamis (mendukung proyek dinding saja, atap saja, atau keduanya) dengan validasi luas positif $> 0\text{ m}^2$ (§PRD-R10).
+3. **Multiplisitas Profil Iklim:** Memperjelas relasi `Proyek` ke `ProfilIklim` menjadi `0..1` (profil iklim bernilai null sebelum berhasil diambil dari API atau sebelum koordinat baru selesai dianalisis) (§PRD-R10).
+4. **Riwayat Simulasi Multi-Horizon:** Mengubah relasi `Evaluasi` ke `SimulasiEmisi` menjadi `0..*` (evaluasi dapat belum disimulasikan `0`, atau menyimpan banyak hasil simulasi horizon 20, 30, 50 tahun `*` secara simultan tanpa saling menimpa) (§PRD-R10).
+5. **Status Kelayakan Cuaca Multi-Nilai:** Memperluas `StatusKelayakan` menjadi empat status: `Layak`, `Waspada` (suhu pengecoran > 35°C), `TidakLayak` (pelanggaran ambang keras), dan `DataTidakTersedia` (hari tanpa prakiraan atau data null yang hanya dapat disimpan sebagai draft) (§PRD-R05, §PRD-R08).
+6. **Hierarki Ambang Penjadwalan:** Mendukung override spesifikasi produk material di atas ambang asumsi generik bawaan (§PRD-R05).
+7. **Penyelarasan Rumus dan Ambang Label:**
+   - Rumus sub-skor lembap dengan $\alpha = 0{,}5$ dan acuan hujan 3000 mm/tahun (§PRD-R04).
+   - Ambang label rekomendasi terpusat: `< 55` *Tidak disarankan*, `55 s/d 74,999` *Perlu pertimbangan*, dan `≥ 75` *Cocok* (§PRD-R10).
+   - Rumus penggantian strictly $0 < t < H$: $n = \max(0, \lceil H/L \rceil - 1)$ dan emisi kumulatif $= \text{emisi\_awal} \times (1 + n)$ (§PRD-R02).
 
 ## Build dan Target Framework
 

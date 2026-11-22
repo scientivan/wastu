@@ -321,7 +321,8 @@
         <mxCell id="r7b" value="1" style="edgeLabel;html=1;resizable=0;points=[];" vertex="1" connectable="0" parent="r7"><mxGeometry x="0.8" relative="1" as="geometry"><mxPoint y="-10" as="offset" /></mxGeometry></mxCell>
 
         <mxCell id="r8" value="diproyeksikan" style="endArrow=open;endSize=12;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-eval" target="c-sim"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="r8b" value="*" style="edgeLabel;html=1;resizable=0;points=[];" vertex="1" connectable="0" parent="r8"><mxGeometry x="0.8" relative="1" as="geometry"><mxPoint y="-10" as="offset" /></mxGeometry></mxCell>
+        <mxCell id="r8a" value="1" style="edgeLabel;html=1;resizable=0;points=[];" vertex="1" connectable="0" parent="r8"><mxGeometry x="-0.8" relative="1" as="geometry"><mxPoint y="-10" as="offset" /></mxGeometry></mxCell>
+        <mxCell id="r8b" value="0..*" style="edgeLabel;html=1;resizable=0;points=[];" vertex="1" connectable="0" parent="r8"><mxGeometry x="0.8" relative="1" as="geometry"><mxPoint y="-10" as="offset" /></mxGeometry></mxCell>
 
         <mxCell id="r9" value="&#171;use&#187; memakai" style="endArrow=open;endSize=12;dashed=1;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-kerja" target="c-cuaca"><mxGeometry relative="1" as="geometry" /></mxCell>
       </root>

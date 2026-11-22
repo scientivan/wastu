@@ -87,7 +87,7 @@ flowchart TD
 Entitas inti dan relasi domain Wastu. Diagram ini mencerminkan struktur domain logis setelah koreksi PRD-R10:
 - `Proyek` memiliki relasi `0..1` ke `ProfilIklim` (profil iklim bernilai null sebelum berhasil diambil dari API atau saat koordinat baru belum selesai dianalisis).
 - `Proyek` memiliki minimal satu `Komponen` (`1..*`), mendukung evaluasi dinding saja, atap saja, atau keduanya.
-- `Evaluasi` memiliki relasi `1..*` ke `SimulasiEmisi` (dapat menyimpan hasil simulasi untuk berbagai horizon waktu 20, 30, dan 50 tahun secara bersamaan).
+- `Evaluasi` memiliki relasi `0..*` ke `SimulasiEmisi` (evaluasi awal/draft boleh belum memiliki hasil simulasi emisi, dan setelah dieksekusi dapat menyimpan hasil proyeksi untuk berbagai horizon waktu 20, 30, dan 50 tahun secara bersamaan).
 - Entitas `Pengguna` tidak lagi memiliki operasi `login()` karena aplikasi beroperasi secara *single-user desktop*.
 
 ```mermaid
@@ -110,7 +110,7 @@ classDiagram
     Proyek "1" --> "*" Laporan : menghasilkan
     Komponen "1" --> "*" Evaluasi : dievaluasi
     Evaluasi "*" --> "1" Bahan : menilai
-    Evaluasi "1" --> "*" SimulasiEmisi : diproyeksikan
+    Evaluasi "1" --> "0..*" SimulasiEmisi : diproyeksikan
     Pekerjaan "1" ..> "*" PrakiraanCuaca : memakai
 ```
 
@@ -223,7 +223,7 @@ classDiagram
     Proyek "1" --> "*" Laporan : menghasilkan
     Komponen "1" --> "*" Evaluasi : dievaluasi
     Evaluasi "*" --> "1" Bahan : menilai
-    Evaluasi "1" --> "*" SimulasiEmisi : diproyeksikan
+    Evaluasi "1" --> "0..*" SimulasiEmisi : diproyeksikan
     Pekerjaan "1" ..> "*" PrakiraanCuaca : memakai
 ```
 
