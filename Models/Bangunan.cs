@@ -10,15 +10,24 @@ public class Bangunan
     private readonly List<Komponen> _komponen = [];
     private readonly List<Laporan> _laporan = [];
     private readonly List<Pekerjaan> _pekerjaan = [];
+    private Guid _localGuid = Guid.NewGuid();
 
     public int Id { get => _id; set => _id = value; }
     public Guid? DatabaseId { get; init; }
+
+    public Guid StableId
+    {
+        get => DatabaseId is { } id && id != Guid.Empty ? id : _localGuid;
+        set => _localGuid = value == Guid.Empty ? Guid.NewGuid() : value;
+    }
+
     public string Nama { get => _nama; set => _nama = value; }
     public string Kota { get => _kota; set => _kota = value; }
     public double Latitude { get => _latitude; set => _latitude = value; }
     public double Longitude { get => _longitude; set => _longitude = value; }
     public int RevisiLokasi { get; set; } = 1;
     public string ZonaWaktu { get; set; } = "Asia/Jakarta";
+    public bool GunakanBobotKustom { get; set; } = false;
     public Domain.KriteriaBobot Bobot { get; set; } = Domain.KriteriaBobot.Default;
     public ProfilIklim? ProfilIklim { get; set; }
     public IReadOnlyList<Komponen> Komponen => _komponen.AsReadOnly();

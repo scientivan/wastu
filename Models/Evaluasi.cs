@@ -23,18 +23,20 @@ public class Evaluasi
     public Bahan Bahan { get; }
     public SimulasiEmisi? SimulasiEmisi { get; private set; }
 
-    public double HitungSkor(ProfilIklim iklim) =>
-        HitungSkor(iklim, Bahan.UsiaPakaiTahun, Bahan.UsiaPakaiTahun);
+    public double HitungSkor(ProfilIklim iklim, Domain.KriteriaBobot? bobot = null) =>
+        HitungSkor(iklim, Bahan.UsiaPakaiTahun, Bahan.UsiaPakaiTahun, bobot);
 
-    public double HitungSkor(ProfilIklim iklim, double usiaMinKelompok, double usiaMaksKelompok)
+    public double HitungSkor(ProfilIklim iklim, double usiaMinKelompok, double usiaMaksKelompok, Domain.KriteriaBobot? bobot = null)
     {
         ArgumentNullException.ThrowIfNull(iklim);
-        var bahan = new Domain.Bahan(Guid.Empty, Bahan.Nama, Domain.JenisKomponen.Dinding,
+        var bobotEfektif = bobot ?? Domain.KriteriaBobot.Default;
+        bobotEfektif.PastikanValid();
+        var bahan = new Domain.Bahan(Bahan.DomainId, Bahan.Nama, Bahan.JenisDomain,
             Bahan.KonduktivitasTermal, Bahan.KetahananLembap, Bahan.KetahananKorosi, Bahan.UsiaPakaiTahun,
             Bahan.FaktorEmisi, string.IsNullOrWhiteSpace(Bahan.DataSource) ? "Estimasi awal" : Bahan.DataSource);
         var profil = iklim.KeDomain();
         var skor = Domain.Scoring.PerhitunganSkor.HitungSubSkor(bahan, profil, usiaMinKelompok, usiaMaksKelompok);
-        SkorKesesuaian = Domain.Scoring.PerhitunganSkor.SkorKesesuaian(skor, Domain.KriteriaBobot.Default);
+        SkorKesesuaian = Domain.Scoring.PerhitunganSkor.SkorKesesuaian(skor, bobotEfektif);
         Alasan = Domain.Scoring.PerhitunganSkor.SusunAlasan(bahan, profil, skor);
         return SkorKesesuaian;
     }

@@ -6,7 +6,7 @@ public sealed record ItemKatalog(Bahan Bahan, JenisKomponen Jenis, string Gambar
 {
     public string Kode => DatabaseId?.ToString("D") ?? "m" + Bahan.Id;
 
-    internal Domain.Bahan DataDomain { get; } = new(DatabaseId ?? Guid.NewGuid(), Bahan.Nama,
+    internal Domain.Bahan DataDomain { get; init; } = new(DatabaseId ?? Guid.NewGuid(), Bahan.Nama,
         (Domain.JenisKomponen)Jenis, Bahan.KonduktivitasTermal, Bahan.KetahananLembap,
         Bahan.KetahananKorosi, Bahan.UsiaPakaiTahun, Bahan.FaktorEmisi, Bahan.DataSource,
         Bahan.SusunanKetebalan, 1, Bahan.SumberProperti);
@@ -16,6 +16,8 @@ public sealed record ItemKatalog(Bahan Bahan, JenisKomponen Jenis, string Gambar
         var jenis = (JenisKomponen)data.Jenis;
         return new ItemKatalog(new Bahan
         {
+            DomainId = data.Id,
+            JenisDomain = data.Jenis,
             Id = index,
             Nama = data.Nama,
             KonduktivitasTermal = data.KonduktivitasTermal,
@@ -26,7 +28,7 @@ public sealed record ItemKatalog(Bahan Bahan, JenisKomponen Jenis, string Gambar
             DataSource = data.SumberData,
             SusunanKetebalan = data.SusunanKetebalan,
             SumberProperti = data.SumberProperti ?? []
-        }, jenis, TentukanGambar(data), data.Id);
+        }, jenis, TentukanGambar(data), data.Id) { DataDomain = data };
     }
 
     internal static string TentukanGambar(Domain.Bahan data)

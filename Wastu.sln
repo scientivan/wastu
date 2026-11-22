@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wastu.Reporting", "src\Wast
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wastu.Reporting.Tests", "tests\Wastu.Reporting.Tests\Wastu.Reporting.Tests.csproj", "{37368F65-565C-4DAE-9E19-D99821722D7A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wastu.Application.Tests", "tests\Wastu.Application.Tests\Wastu.Application.Tests.csproj", "{7F1347FD-A054-4A36-B9E9-B1C7AABE2CCC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -64,6 +66,10 @@ Global
 		{37368F65-565C-4DAE-9E19-D99821722D7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{37368F65-565C-4DAE-9E19-D99821722D7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{37368F65-565C-4DAE-9E19-D99821722D7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F1347FD-A054-4A36-B9E9-B1C7AABE2CCC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F1347FD-A054-4A36-B9E9-B1C7AABE2CCC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F1347FD-A054-4A36-B9E9-B1C7AABE2CCC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F1347FD-A054-4A36-B9E9-B1C7AABE2CCC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{CEB22A51-934B-48DC-A534-909EEDED091D} = {131F734D-9595-4660-82C7-C6B992778373}
@@ -73,5 +79,6 @@ Global
 		{B959FFB7-F5BE-4CAD-AFC4-2B816157D6C2} = {8B9C1CFB-10DC-4282-B8E8-4242E0064431}
 		{779AE011-4DD1-4231-B390-69E02ECF1603} = {131F734D-9595-4660-82C7-C6B992778373}
 		{37368F65-565C-4DAE-9E19-D99821722D7A} = {8B9C1CFB-10DC-4282-B8E8-4242E0064431}
+		{7F1347FD-A054-4A36-B9E9-B1C7AABE2CCC} = {8B9C1CFB-10DC-4282-B8E8-4242E0064431}
 	EndGlobalSection
 EndGlobal

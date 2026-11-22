@@ -2,6 +2,8 @@ namespace Wastu.Models;
 
 public class Bahan
 {
+    internal Guid DomainId { get; init; } = Guid.NewGuid();
+    internal Domain.JenisKomponen JenisDomain { get; init; }
     private int _id;
     private string _nama = string.Empty;
     private double _konduktivitasTermal;

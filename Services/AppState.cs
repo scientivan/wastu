@@ -163,20 +163,115 @@ public sealed class AppState
         return evaluasi;
     }
 
+    public KriteriaBobot BobotAktif => Aktif is { GunakanBobotKustom: true } p ? p.Bobot : KriteriaBobot.Default;
+
+    public void AturModeBobot(bool kustom)
+    {
+        TolakTulis();
+        if (Aktif is null) return;
+        Aktif.GunakanBobotKustom = kustom;
+        if (!kustom)
+        {
+            Aktif.Bobot = KriteriaBobot.Default;
+        }
+        Ubah();
+    }
+
+    public string? AturBobotPersentase(double termalPct, double lembapPct, double korosiPct, double usiaPct)
+    {
+        TolakTulis();
+        if (Aktif is null) return "Tidak ada proyek aktif.";
+
+        KriteriaBobot bobotBaru;
+        try
+        {
+            bobotBaru = KriteriaBobot.DariPersentase(termalPct, lembapPct, korosiPct, usiaPct);
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return ex.Message;
+        }
+        Aktif.Bobot = bobotBaru;
+        Aktif.GunakanBobotKustom = true;
+        Ubah();
+        return null;
+    }
+
+    public void ResetBobotAktif()
+    {
+        TolakTulis();
+        if (Aktif is null) return;
+        Aktif.Bobot = KriteriaBobot.Default;
+        Aktif.GunakanBobotKustom = false;
+        Ubah();
+    }
+
+    private sealed class PeringkatTersimpan(string hash, Evaluasi[] hasil)
+    {
+        public string Hash { get; } = hash;
+        public Evaluasi[] Hasil { get; } = hasil;
+        public Task? Penyimpanan { get; set; }
+    }
+
+    private readonly Dictionary<Guid, PeringkatTersimpan> _peringkat = [];
+    private readonly SuitabilityScoringService? _skoring;
+
+    public AppState() { }
+
+    internal AppState(SuitabilityScoringService skoring) => _skoring = skoring;
+
     public Evaluasi[] Peringkat() => Peringkat(Jenis);
 
     private Evaluasi[] Peringkat(JenisKomponen jenis)
     {
         if (!AdaProyek || Aktif is null) return [];
-        double luas = Aktif.LuasKomponen(jenis);
+        var komp = Aktif.Komponen.FirstOrDefault(k => k.Jenis == jenis);
+        if (komp is null) return [];
+        double luas = komp.Luas;
         if (!double.IsFinite(luas) || luas <= 0)
             return [];
 
-        var komponen = new Domain.Komponen(Guid.Empty, Aktif.DatabaseId ?? Guid.Empty, (Domain.JenisKomponen)jenis, luas);
-        var bahan = _katalog.Where(item => item.Jenis == jenis).ToDictionary(item => item.DataDomain.Id);
-        return SuitabilityScoringService.Rank(komponen, Iklim.KeDomain(),
-                bahan.Values.Select(item => item.DataDomain).ToArray())
-            .Select(e => new Evaluasi(bahan[e.BahanId].Bahan, e)).ToArray();
+        var domainKomponen = new Domain.Komponen(komp.Id, Aktif.StableId, (Domain.JenisKomponen)jenis, luas);
+        var bahanDict = _katalog.Where(item => item.Jenis == jenis).ToDictionary(item => item.DataDomain.Id);
+        var bahanList = bahanDict.Values.Select(item => item.DataDomain).ToArray();
+        if (bahanList.Length == 0) return [];
+        var bobot = BobotAktif;
+        var iklim = Iklim.KeDomain();
+        string hash = SuitabilityScoringService.HitungHash(domainKomponen, iklim, bahanList, bobot);
+
+        if (!_peringkat.TryGetValue(komp.Id, out var cache) || cache.Hash != hash)
+        {
+            var hasil = SuitabilityScoringService.Rank(domainKomponen, iklim, bahanList, bobot)
+                .Select(e => new Evaluasi(bahanDict[e.BahanId].Bahan, e)).ToArray();
+            cache = new PeringkatTersimpan(hash, hasil);
+            _peringkat[komp.Id] = cache;
+        }
+
+        var skoring = _skoring ?? _backend?.SuitabilityScoring;
+        if (skoring is not null && !TulisanDitolak
+            && Aktif.DatabaseId is { } dbId && dbId != Guid.Empty
+            && komp.DatabaseId is { } kompDbId && kompDbId != Guid.Empty
+            && (cache.Penyimpanan is null || cache.Penyimpanan.IsFaulted || cache.Penyimpanan.IsCanceled))
+        {
+            // Capture the exact displayed inputs before any asynchronous work or project switch.
+            cache.Penyimpanan = skoring.RankSnapshotAsync(domainKomponen, iklim, bahanList, bobot);
+            _ = AmatiPenyimpananAsync(cache.Penyimpanan);
+        }
+
+        return cache.Hasil;
+    }
+
+    private static async Task AmatiPenyimpananAsync(Task penyimpanan)
+    {
+        try
+        {
+            await penyimpanan.ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            // The faulted task remains retryable on the next render; never mark a failure as saved.
+            Debug.WriteLine("Gagal menyimpan evaluasi batch: " + ex.GetType().Name);
+        }
     }
 
     public List<ItemKatalog> Terpilih()
@@ -277,12 +372,15 @@ public sealed class AppState
         {
             Id = Proyek.Count == 0 ? 1 : Proyek.Max(p => p.Id) + 1,
             DatabaseId = databaseId,
+            StableId = databaseId ?? Guid.NewGuid(),
             Nama = nama,
             Kota = kota,
             Latitude = lintang,
             Longitude = bujur,
             RevisiLokasi = 1,
             ZonaWaktu = "Asia/Jakarta",
+            GunakanBobotKustom = false,
+            Bobot = Domain.KriteriaBobot.Default,
             ProfilIklim = Katalog.ProfilBawaan(kota, pesisir)
         };
         proyek.ProfilIklim.PesisirTersedia = JarakPesisir.CobaHitungKm(lintang, bujur).HasValue;
@@ -679,6 +777,7 @@ public sealed class AppState
 
             var komponenList = komponen.Select(k => new KomponenDto
             {
+                Id = k.Id,
                 DatabaseId = k.Id,
                 Jenis = (JenisKomponen)k.Jenis,
                 Luas = k.LuasM2
@@ -689,6 +788,7 @@ public sealed class AppState
             hasilProyek.Add(new ProyekDto
             {
                 Id = id,
+                StableId = data.Id,
                 DatabaseId = data.Id,
                 Nama = data.Nama,
                 Kota = data.Kota,
@@ -699,6 +799,11 @@ public sealed class AppState
                 JarakPesisir = jarakPesisir,
                 RevisiLokasi = data.RevisiLokasi,
                 ZonaWaktu = data.ZonaWaktu ?? "Asia/Jakarta",
+                GunakanBobotKustom = lokal?.GunakanBobotKustom ?? false,
+                BobotTermal = lokal?.BobotTermal ?? 0.25,
+                BobotLembap = lokal?.BobotLembap ?? 0.25,
+                BobotKorosi = lokal?.BobotKorosi ?? 0.25,
+                BobotUsia = lokal?.BobotUsia ?? 0.25,
                 Komponen = komponenList,
                 Iklim = profil is not null
                     ? new IklimDto
@@ -754,12 +859,14 @@ public sealed class AppState
             {
                 Id = p.Id,
                 DatabaseId = p.DatabaseId,
+                StableId = p.StableId ?? p.DatabaseId ?? Guid.NewGuid(),
                 Nama = p.Nama,
                 Kota = p.Kota,
                 Latitude = p.Lintang,
                 Longitude = p.Bujur,
                 RevisiLokasi = p.RevisiLokasi > 0 ? p.RevisiLokasi : 1,
                 ZonaWaktu = !string.IsNullOrWhiteSpace(p.ZonaWaktu) ? p.ZonaWaktu : "Asia/Jakarta",
+                GunakanBobotKustom = p.GunakanBobotKustom,
                 ProfilIklim = p.Iklim is { } i
                     ? new ProfilIklim
                     {
@@ -784,11 +891,34 @@ public sealed class AppState
                     : Katalog.ProfilBawaan(p.Kota, p.JarakPesisir)
             };
 
+            try
+            {
+                if (p.GunakanBobotKustom)
+                {
+                    proyek.Bobot = new Domain.KriteriaBobot(p.BobotTermal, p.BobotLembap, p.BobotKorosi, p.BobotUsia);
+                }
+                else
+                {
+                    proyek.Bobot = Domain.KriteriaBobot.Default;
+                }
+            }
+            catch
+            {
+                proyek.GunakanBobotKustom = false;
+                proyek.Bobot = Domain.KriteriaBobot.Default;
+            }
+
             if (p.Komponen.Count > 0)
             {
                 foreach (var k in p.Komponen)
                 {
-                    proyek.TambahKomponen(new Komponen { DatabaseId = k.DatabaseId, Jenis = k.Jenis, Luas = k.Luas });
+                    proyek.TambahKomponen(new Komponen
+                    {
+                        Id = k.Id ?? k.DatabaseId ?? Guid.NewGuid(),
+                        DatabaseId = k.DatabaseId,
+                        Jenis = k.Jenis,
+                        Luas = k.Luas
+                    });
                 }
             }
             else
@@ -842,6 +972,7 @@ public sealed class AppState
         Proyek = Proyek.ConvertAll(p => new ProyekDto
         {
             Id = p.Id,
+            StableId = p.StableId,
             DatabaseId = p.DatabaseId,
             Nama = p.Nama,
             Kota = p.Kota,
@@ -852,8 +983,14 @@ public sealed class AppState
             JarakPesisir = p.ProfilIklim?.JarakPesisirKm ?? 0,
             RevisiLokasi = p.RevisiLokasi,
             ZonaWaktu = p.ZonaWaktu,
+            GunakanBobotKustom = p.GunakanBobotKustom,
+            BobotTermal = p.Bobot.Termal,
+            BobotLembap = p.Bobot.Lembap,
+            BobotKorosi = p.Bobot.Korosi,
+            BobotUsia = p.Bobot.Usia,
             Komponen = p.Komponen.Select(k => new KomponenDto
             {
+                Id = k.Id,
                 DatabaseId = k.DatabaseId,
                 Jenis = k.Jenis,
                 Luas = k.Luas
