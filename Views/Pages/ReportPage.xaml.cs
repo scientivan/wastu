@@ -19,6 +19,8 @@ public partial class ReportPage : PageBase
     private bool _includeSchedule = true;
     private readonly HashSet<string> _selectedMaterialCodes = [];
     private readonly ReportExportService _exportService;
+    private bool _syncingControls;
+    private int? _lastProjectId;
 
     public ReportPage()
     {
@@ -28,22 +30,38 @@ public partial class ReportPage : PageBase
 
     protected override void Refresh()
     {
-        _selectedJenis = S.Jenis;
-        _selectedHorizon = S.Horizon;
+        var currentProjectId = S.AdaProyek ? S.Aktif.Id : (int?)null;
+        if (_lastProjectId != currentProjectId)
+        {
+            _lastProjectId = currentProjectId;
+            _selectedMaterialCodes.Clear();
+            _selectedJenis = S.Jenis;
+            _selectedHorizon = S.Horizon;
+        }
 
-        if (CompWallRadio is not null) CompWallRadio.IsChecked = _selectedJenis == JenisKomponen.Dinding;
-        if (CompRoofRadio is not null) CompRoofRadio.IsChecked = _selectedJenis == JenisKomponen.Atap;
+        _syncingControls = true;
+        try
+        {
+            if (CompWallRadio is not null) CompWallRadio.IsChecked = _selectedJenis == JenisKomponen.Dinding;
+            if (CompRoofRadio is not null) CompRoofRadio.IsChecked = _selectedJenis == JenisKomponen.Atap;
 
-        if (Hor20Radio is not null) Hor20Radio.IsChecked = _selectedHorizon == 20;
-        if (Hor30Radio is not null) Hor30Radio.IsChecked = _selectedHorizon == 30;
-        if (Hor50Radio is not null) Hor50Radio.IsChecked = _selectedHorizon == 50;
+            if (Hor20Radio is not null) Hor20Radio.IsChecked = _selectedHorizon == 20;
+            if (Hor30Radio is not null) Hor30Radio.IsChecked = _selectedHorizon == 30;
+            if (Hor50Radio is not null) Hor50Radio.IsChecked = _selectedHorizon == 50;
 
-        if (IncludeScheduleCheck is not null) IncludeScheduleCheck.IsChecked = _includeSchedule;
+            if (IncludeScheduleCheck is not null) IncludeScheduleCheck.IsChecked = _includeSchedule;
+        }
+        finally
+        {
+            _syncingControls = false;
+        }
+
+        S.AturJenis(_selectedJenis);
+        S.Horizon = _selectedHorizon;
 
         // Default to all selected materials in state if empty
         if (_selectedMaterialCodes.Count == 0)
         {
-            S.AturJenis(_selectedJenis);
             var rank = S.Peringkat();
             foreach (var item in S.Terpilih())
             {
@@ -63,30 +81,37 @@ public partial class ReportPage : PageBase
 
     private void Comp_Checked(object sender, RoutedEventArgs e)
     {
-        if (sender is RadioButton rb && rb.Tag is string tag)
+        if (_syncingControls) return;
+        if (sender is RadioButton rb && rb.Tag is string tag && Enum.TryParse<JenisKomponen>(tag, out var jenis))
         {
-            _selectedJenis = Enum.Parse<JenisKomponen>(tag);
+            _selectedJenis = jenis;
+            S.AturJenis(_selectedJenis);
+            _selectedMaterialCodes.Clear();
             Refresh();
         }
     }
 
     private void Horizon_Checked(object sender, RoutedEventArgs e)
     {
+        if (_syncingControls) return;
         if (sender is RadioButton rb && rb.Tag is string tag && int.TryParse(tag, out var h))
         {
             _selectedHorizon = h;
+            S.Horizon = _selectedHorizon;
             Refresh();
         }
     }
 
     private void ScheduleCheck_Click(object sender, RoutedEventArgs e)
     {
-        _includeSchedule = IncludeScheduleCheck.IsChecked == true;
+        if (_syncingControls) return;
+        _includeSchedule = IncludeScheduleCheck?.IsChecked == true;
         Refresh();
     }
 
     private void MaterialCheck_Click(object sender, RoutedEventArgs e)
     {
+        if (_syncingControls) return;
         if (sender is CheckBox cb && cb.DataContext is SelectableMaterialItem item)
         {
             if (cb.IsChecked == true)
@@ -101,10 +126,31 @@ public partial class ReportPage : PageBase
     private async void ExportPdf_Click(object sender, RoutedEventArgs e)
     {
         var p = S.Aktif;
+        if (p is null)
+        {
+            MessageBox.Show("Tidak ada proyek aktif untuk diekspor.", "Peringatan", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (_selectedMaterialCodes.Count == 0)
+        {
+            MessageBox.Show(
+                "Pilih minimal satu material untuk diekspor ke dalam laporan PDF.",
+                "Pilihan Material Kosong",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
+
+        var rawName = string.IsNullOrWhiteSpace(p.Nama) ? "Proyek" : p.Nama;
+        var invalidChars = Path.GetInvalidFileNameChars();
+        var cleanName = new string(rawName.Select(ch => invalidChars.Contains(ch) ? '_' : ch).ToArray()).Trim();
+        if (string.IsNullOrWhiteSpace(cleanName)) cleanName = "Proyek";
+
         var dialog = new SaveFileDialog
         {
             Filter = "Berkas PDF (*.pdf)|*.pdf",
-            FileName = $"Laporan-Wastu-{p.Nama}-{DateTime.Now:yyyyMMdd-HHmm}.pdf",
+            FileName = $"Laporan-Wastu-{cleanName}-{DateTime.Now:yyyyMMdd-HHmm}.pdf",
             Title = "Simpan Laporan Rekomendasi PDF"
         };
 
@@ -132,14 +178,28 @@ public partial class ReportPage : PageBase
                 Status = laporanExport.Status
             };
 
-            p.TambahLaporan(modelLaporan);
-            Refresh();
+            if (!S.ModeBacaSaja)
+            {
+                p.TambahLaporan(modelLaporan);
+                S.Ubah();
+                Refresh();
 
-            MessageBox.Show(
-                $"Laporan PDF berhasil disimpan ke:\n{laporanExport.PathBerkas}",
-                "Ekspor PDF Berhasil",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+                MessageBox.Show(
+                    $"Laporan PDF berhasil disimpan ke:\n{laporanExport.PathBerkas}",
+                    "Ekspor PDF Berhasil",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            else
+            {
+                Refresh();
+
+                MessageBox.Show(
+                    $"Laporan PDF berhasil disimpan ke:\n{laporanExport.PathBerkas}\n\nCatatan: Riwayat laporan pada proyek tidak diubah karena aplikasi sedang berada dalam mode luring baca-saja.",
+                    "Ekspor PDF Berhasil (Mode Baca-Saja)",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
         }
         catch (Exception ex)
         {
@@ -191,12 +251,17 @@ public partial class ReportPage : PageBase
     {
         var climate = S.Iklim;
         S.AturJenis(_selectedJenis);
+        S.Horizon = _selectedHorizon;
         var rank = S.Peringkat();
 
         // Map components
         var compList = p.Komponen.Select(k => new SnapshotKomponen(
             k.Jenis == Models.JenisKomponen.Dinding ? Wastu.Domain.JenisKomponen.Dinding : Wastu.Domain.JenisKomponen.Atap,
             k.Luas)).ToList();
+
+        var tingkatKorosi = !string.IsNullOrWhiteSpace(climate.TingkatKorosi)
+            ? climate.TingkatKorosi
+            : climate.KeDomain().TingkatKorosi.ToString();
 
         // Map climate
         var snapIklim = new SnapshotIklim
@@ -205,7 +270,7 @@ public partial class ReportPage : PageBase
             KelembapanRataPct = climate.KelembapanRata,
             SuhuRataC = climate.SuhuRata,
             JarakPesisirKm = climate.JarakPesisirKm,
-            TingkatKorosi = climate.JarakPesisirKm <= 10 ? "Tinggi" : climate.JarakPesisirKm <= 30 ? "Sedang" : "Rendah",
+            TingkatKorosi = tingkatKorosi,
             Provider = "Open-Meteo Historical Climate API",
             Periode = "10 tahun historis (agregasi)",
             Provenance = climate.SudahDiperbarui ? "ApiHistoris" : "EstimasiBawaan",
@@ -260,7 +325,7 @@ public partial class ReportPage : PageBase
                         JumlahPenggantian = sim.JumlahPenggantian,
                         EmisiAwalKg = evaluasi.EmisiAwal,
                         EmisiKumulatifKg = sim.EmisiKumulatif,
-                        FaktorPenuaanA = 0.5,
+                        FaktorPenuaanA = sim.FaktorPenuaanA,
                         VersiModel = "v2.0"
                     });
                 }
@@ -376,6 +441,7 @@ public sealed class ReportData : ViewData
         RankingTitle = "Peringkat material " + (jenis == JenisKomponen.Dinding ? "dinding" : "atap");
 
         s.AturJenis(jenis);
+        s.Horizon = horizon;
         var rank = s.Peringkat();
         SelectableMaterials = rank.Select((e, i) =>
         {
