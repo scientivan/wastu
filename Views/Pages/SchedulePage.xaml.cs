@@ -10,7 +10,6 @@ namespace Wastu.Views.Pages;
 
 public partial class SchedulePage : PageBase
 {
-    private bool _inReset;
     private Models.JenisPekerjaan? _lastSyncedKind;
 
     public SchedulePage() => InitializeComponent();
@@ -54,7 +53,6 @@ public partial class SchedulePage : PageBase
 
     private void SyncOverrideInputs(Models.JenisPekerjaan jenis)
     {
-        if (_inReset) return;
         var ambang = AmbangLayakKerja.Untuk(jenis == Models.JenisPekerjaan.Pengecatan
             ? Domain.Weather.JenisPekerjaan.Pengecatan
             : Domain.Weather.JenisPekerjaan.Pengecoran);
@@ -89,18 +87,10 @@ public partial class SchedulePage : PageBase
 
     private void ResetOverride_Click(object sender, RoutedEventArgs e)
     {
-        _inReset = true;
-        try
-        {
-            var jenis = JobKind.SelectedIndex == 0 ? Models.JenisPekerjaan.Pengecatan : Models.JenisPekerjaan.Pengecoran;
-            SyncOverrideInputs(jenis);
-            _lastSyncedKind = jenis;
-            Shell.Toast("Ambang dikembalikan ke asumsi generik default.");
-        }
-        finally
-        {
-            _inReset = false;
-        }
+        var jenis = JobKind.SelectedIndex == 0 ? Models.JenisPekerjaan.Pengecatan : Models.JenisPekerjaan.Pengecoran;
+        SyncOverrideInputs(jenis);
+        _lastSyncedKind = jenis;
+        Shell.Toast("Ambang dikembalikan ke asumsi generik default.");
     }
 
     private void Day_Click(object sender, RoutedEventArgs e)
