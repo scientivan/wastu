@@ -513,7 +513,16 @@ public sealed class PdfReportBuilder
             if (j.KonfirmasiDataLama) konfStr += " [Konfirmasi Data Lama]";
             if (!string.IsNullOrEmpty(j.Catatan)) konfStr += $" ({j.Catatan})";
 
-            var fullKet = alasanStr + konfStr;
+            if (j.Keputusan is { } decision)
+            {
+                if (decision.AmbangEfektif is { } limits)
+                    konfStr += $" Ambang: hujan {limits.ProbabilitasHujanMaksPct}% / {limits.CurahHujanMaksMm} mm; RH {limits.KelembapanMaksPct}%; suhu {limits.SuhuMinC}?{limits.SuhuMaksC} ?C.";
+                if (decision.Cuaca is { } weather)
+                    konfStr += $" Cuaca: hujan {weather.ProbabilitasHujanPct}% / {weather.CurahHujanMm} mm; RH maks {weather.KelembapanPct}%; suhu {weather.SuhuMinC}?{weather.SuhuMaksC} ?C.";
+                if (decision.DiambilPadaUtc is { } fetched)
+                    konfStr += $" Diambil {fetched:dd/MM/yyyy HH:mm} UTC.";
+            }
+            var fullKet = alasanStr + konfStr + " Sumber ambang: " + j.SumberAmbang + ".";
             var ketLines = WrapText(gfx, fullKet, _fontSmall, wKet - 8);
             var rowH = Math.Max(22.0, ketLines.Count * 10.5 + 8);
 

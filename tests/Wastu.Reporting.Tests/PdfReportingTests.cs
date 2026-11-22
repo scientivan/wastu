@@ -23,6 +23,33 @@ public sealed class PdfReportingTests : IDisposable
     }
 
     [Fact]
+    public async Task LockedRiskDecisionExportsActualWeatherAndThresholdSnapshot()
+    {
+        var date = new DateOnly(2026, 11, 22);
+        var decision = new KeputusanJadwal(date, StatusKelayakanCuaca.TidakLayak,
+            ["Peluang hujan melampaui ambang"], Terkunci: true, PersetujuanRisiko: true,
+            AmbangEfektif: new AmbangPekerjaan(30, null, 85, 10, 35),
+            Cuaca: new Wastu.Domain.Abstractions.DailyForecast(date, 35, 0, 20, 30, 70));
+        var snapshot = BuatContohSnapshot(b => b with { SertakanJadwal = true,
+            JadwalTerkunci = [new SnapshotPekerjaan
+            {
+                Nama = "Cat risiko", Jenis = JenisPekerjaan.Pengecatan, TanggalDikunci = date,
+                StatusCuaca = "TidakLayak", AlasanCuaca = decision.Catatan, Keputusan = decision,
+                KonfirmasiRisiko = true, SumberAmbang = "Override pekerjaan"
+            }] });
+        var service = new ReportExportService(pendingMetadataDirectory: _pendingDir);
+        var path = Path.Combine(_testDir, "risk.pdf");
+        await service.ExportSnapshotAsync(snapshot, path);
+        using var pdf = PdfDocument.Open(path);
+        var text = string.Join(" ", pdf.GetPages().SelectMany(p => p.GetWords()).Select(w => w.Text));
+        Assert.Contains("TidakLayak", text);
+        Assert.Contains("Persetujuan Risiko Pengguna", text);
+        Assert.Contains("hujan 30%", text);
+        Assert.Contains("hujan 35%", text);
+        Assert.Contains("Override pekerjaan", text);
+    }
+
+    [Fact]
     public async Task BobotKustomTersimpanDalamSnapshotDanTampilTanpaMemperpanjangVersiModel()
     {
         var awal = BuatContohSnapshot();
