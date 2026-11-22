@@ -84,7 +84,10 @@ public static class Katalog
             KelembapanRata = k?.Kelembapan ?? 80,
             SuhuRata = k?.Suhu ?? 28,
             JarakPesisirKm = jarakPesisir,
-            Sumber = "Estimasi iklim bawaan"
+            Sumber = "Estimasi iklim bawaan",
+            Provenance = Domain.ProvenanceIklim.EstimasiBawaan,
+            StatusPengambilan = Domain.StatusPengambilanIklim.BelumTersedia,
+            KualitasCache = Domain.KualitasCacheIklim.CocokLokasi
         };
     }
 

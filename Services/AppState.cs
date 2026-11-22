@@ -6,9 +6,17 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Wastu.Data;
 using Wastu.Data.Snapshots;
+using Wastu.Domain;
+using Wastu.Domain.Climate;
 using Wastu.Domain.Scoring;
 using Wastu.Domain.Services;
 using Wastu.Models;
+using JenisKomponen = Wastu.Models.JenisKomponen;
+using ProfilIklim = Wastu.Models.ProfilIklim;
+using Bangunan = Wastu.Models.Bangunan;
+using Komponen = Wastu.Models.Komponen;
+using Bahan = Wastu.Models.Bahan;
+using Evaluasi = Wastu.Models.Evaluasi;
 
 namespace Wastu.Services;
 
@@ -25,6 +33,7 @@ public sealed class AppState
     private string? _koneksi;
     private IReadOnlyList<ItemKatalog> _katalog = Katalog.Semua;
     private static readonly OpenMeteo IklimHistoris = new();
+    private CancellationTokenSource? _climateFetchCts;
 
     public List<Bangunan> Proyek { get; } = [];
     public int ProyekAktifId { get; set; }
@@ -81,11 +90,32 @@ public sealed class AppState
         if (TulisanDitolak)
             throw new InvalidOperationException(PesanTulisDitolak);
     }
-    public Bangunan Aktif => Proyek.Find(p => p.Id == ProyekAktifId) ?? Proyek[0];
-    public ProfilIklim Iklim => Aktif.ProfilIklim ??= Katalog.ProfilBawaan(Aktif.Kota, 30);
-    public double Luas => Aktif.LuasKomponen(Jenis);
+    public Bangunan Aktif => Proyek.Find(p => p.Id == ProyekAktifId) ?? (Proyek.Count > 0 ? Proyek[0] : null!);
+    public ProfilIklim Iklim
+    {
+        get
+        {
+            if (Aktif is null) return Katalog.ProfilBawaan("Jakarta", 30);
+            return Aktif.ProfilIklim ??= Katalog.ProfilBawaan(Aktif.Kota ?? "Jakarta", 30);
+        }
+    }
+    public double Luas => Aktif?.LuasKomponen(Jenis) ?? 0;
 
     public IReadOnlyList<ItemKatalog> KatalogAktif => _katalog;
+
+    public void EnsureJenisValid()
+    {
+        if (!AdaProyek || Aktif is null) return;
+        if (!Aktif.AdaKomponen(Jenis))
+        {
+            var aktif = Aktif.JenisKomponenAktif;
+            if (aktif.Count > 0)
+            {
+                Jenis = aktif[0];
+                Dipilih = Peringkat().Take(2).Select(e => Item(e.Bahan).Kode).ToArray();
+            }
+        }
+    }
 
     public async Task<bool> SegarkanKatalogAsync(CancellationToken ct = default)
     {
@@ -137,6 +167,7 @@ public sealed class AppState
 
     private Evaluasi[] Peringkat(JenisKomponen jenis)
     {
+        if (!AdaProyek || Aktif is null) return [];
         double luas = Aktif.LuasKomponen(jenis);
         if (!double.IsFinite(luas) || luas <= 0)
             return [];
@@ -158,6 +189,7 @@ public sealed class AppState
 
     public void AturJenis(JenisKomponen jenis)
     {
+        if (AdaProyek && Aktif is not null && !Aktif.AdaKomponen(jenis)) return;
         Jenis = jenis;
         Dipilih = Peringkat().Take(2).Select(e => Item(e.Bahan).Kode).ToArray();
     }
@@ -170,7 +202,7 @@ public sealed class AppState
 
     public List<PrakiraanCuaca> PrakiraanAktif()
     {
-        if (!AdaProyek || PrakiraanProyekId != Aktif.Id) return [];
+        if (!AdaProyek || Aktif is null || PrakiraanProyekId != Aktif.Id) return [];
         var hariIni = DateTime.Today;
         return Prakiraan.FindAll(d => d.Tanggal >= hariIni);
     }
@@ -185,27 +217,53 @@ public sealed class AppState
     public void PilihProyek(int id)
     {
         ProyekAktifId = id;
+        EnsureJenisValid();
         ResetPrakiraan();
     }
 
-    public async Task<string?> TambahProyekAsync(string nama, string kota, double lintang, double bujur,
+    public Task<string?> TambahProyekAsync(string nama, string kota, double lintang, double bujur,
         double dinding, double atap, double pesisir)
+        => TambahProyekAsync(nama, kota, lintang, bujur,
+            [(JenisKomponen.Dinding, dinding), (JenisKomponen.Atap, atap)],
+            pesisir);
+
+    public async Task<string?> TambahProyekAsync(string nama, string kota, double lintang, double bujur,
+        IReadOnlyList<(JenisKomponen Jenis, double Luas)> komponen, double? pesisirManual = null)
     {
         TolakTulis();
+        double pesisir = pesisirManual ?? JarakPesisir.CobaHitungKm(lintang, bujur) ?? 0;
+
+        Bangunan lokal;
         if (_backend is null)
         {
-            TambahProyek(nama, kota, lintang, bujur, dinding, atap, pesisir);
-            return null;
+            lokal = TambahProyek(nama, kota, lintang, bujur, komponen, pesisir);
+        }
+        else
+        {
+            var domainKomponen = komponen.Select(k => new Domain.InputKomponen((Domain.JenisKomponen)k.Jenis, k.Luas)).ToArray();
+            var data = await _backend.Proyek.CreateProjectAsync(nama, kota, lintang, bujur, domainKomponen);
+            lokal = TambahProyek(nama, kota, lintang, bujur, komponen, pesisir, data.Id);
         }
 
-        pesisir = JarakPesisir.HitungKm(lintang, bujur);
-        var data = await _backend.Proyek.CreateProjectAsync(nama, kota, lintang, bujur, dinding, atap);
-        var lokal = TambahProyek(nama, kota, lintang, bujur, dinding, atap, pesisir, data.Id);
-        return await PerbaruiIklimAsync(lokal);
+        Ubah();
+
+        // Trigger automatic async climate fetch in background in ALL writable modes (local & PG)
+        _ = Task.Run(async () =>
+        {
+            await PerbaruiIklimAsync(lokal);
+        });
+
+        return null;
     }
 
     public Bangunan TambahProyek(string nama, string kota, double lintang, double bujur, double dinding, double atap,
         double pesisir, Guid? databaseId = null)
+        => TambahProyek(nama, kota, lintang, bujur,
+            [(JenisKomponen.Dinding, dinding), (JenisKomponen.Atap, atap)],
+            pesisir, databaseId);
+
+    public Bangunan TambahProyek(string nama, string kota, double lintang, double bujur,
+        IReadOnlyList<(JenisKomponen Jenis, double Luas)> komponen, double pesisir, Guid? databaseId = null)
     {
         TolakTulis();
         var proyek = new Bangunan
@@ -216,14 +274,16 @@ public sealed class AppState
             Kota = kota,
             Latitude = lintang,
             Longitude = bujur,
+            RevisiLokasi = 1,
+            ZonaWaktu = "Asia/Jakarta",
             ProfilIklim = Katalog.ProfilBawaan(kota, pesisir)
         };
-        proyek.TambahKomponen(new Komponen { Jenis = JenisKomponen.Dinding, Luas = dinding });
-        proyek.TambahKomponen(new Komponen { Jenis = JenisKomponen.Atap, Luas = atap });
+        proyek.ProfilIklim.PesisirTersedia = JarakPesisir.CobaHitungKm(lintang, bujur).HasValue;
+        proyek.AturKomponen(komponen);
         Proyek.Add(proyek);
 
         ProyekAktifId = proyek.Id;
-        Jenis = JenisKomponen.Dinding;
+        EnsureJenisValid();
         Dipilih = databaseId is null ? ["m0", "m1"] : [];
         Horizon = 30;
         Cari = "";
@@ -237,93 +297,209 @@ public sealed class AppState
     public void HapusProyekAktif()
     {
         TolakTulis();
-        Proyek.Remove(Aktif);
-        if (AdaProyek) ProyekAktifId = Proyek[0].Id;
+        if (Aktif is not null)
+        {
+            Proyek.Remove(Aktif);
+            if (AdaProyek)
+            {
+                ProyekAktifId = Proyek[0].Id;
+                EnsureJenisValid();
+            }
+        }
         ResetPrakiraan();
     }
 
     public async Task HapusProyekAktifAsync()
     {
         TolakTulis();
-        // Proyek lokal (tanpa DatabaseId) tidak punya padanan di database; jangan menyentuh null.
-        if (_backend is not null && Aktif.DatabaseId is { } idDatabase)
+        if (_backend is not null && Aktif?.DatabaseId is { } idDatabase)
             await _backend.Proyek.DeleteAsync(idDatabase);
         HapusProyekAktif();
     }
 
-    public async Task<string?> UbahProyekAsync(string nama, string kota, double lintang, double bujur,
+    public Task<string?> UbahProyekAsync(string nama, string kota, double lintang, double bujur,
         double dinding, double atap, double pesisir)
+        => UbahProyekAsync(nama, kota, lintang, bujur,
+            [(JenisKomponen.Dinding, dinding), (JenisKomponen.Atap, atap)],
+            pesisir);
+
+    public async Task<string?> UbahProyekAsync(string nama, string kota, double lintang, double bujur,
+        IReadOnlyList<(JenisKomponen Jenis, double Luas)> komponen, double? pesisirManual = null)
     {
         TolakTulis();
         var proyek = Aktif;
+        if (proyek is null) return null;
+
         bool pindah = proyek.Latitude != lintang || proyek.Longitude != bujur;
         string? pesan = null;
         Domain.ProfilIklim? profil = null;
 
+        double pesisir = pesisirManual ?? JarakPesisir.CobaHitungKm(lintang, bujur) ?? 0;
+
         if (_backend is not null)
         {
-            if (pindah)
-                pesisir = JarakPesisir.HitungKm(lintang, bujur);
             Guid id = proyek.DatabaseId!.Value;
+            var domainKomponen = komponen.Select(k => new Domain.InputKomponen((Domain.JenisKomponen)k.Jenis, k.Luas)).ToArray();
             try
             {
-                profil = await _backend.Proyek.UpdateProjectAsync(id, nama, kota, lintang, bujur, dinding, atap);
+                profil = await _backend.Proyek.UpdateProjectAsync(id, nama, kota, lintang, bujur, domainKomponen);
             }
             catch (GagalMemperbaruiProfilIklimException e)
             {
                 pesan = e.Message;
+                if (e.ProfilTersimpan is { } tersimpan)
+                {
+                    profil = tersimpan;
+                }
             }
         }
 
         proyek.Nama = nama;
         proyek.Kota = kota;
-        proyek.Latitude = lintang;
-        proyek.Longitude = bujur;
-        proyek.AturLuasKomponen(JenisKomponen.Dinding, dinding);
-        proyek.AturLuasKomponen(JenisKomponen.Atap, atap);
+        proyek.AturKomponen(komponen);
+        EnsureJenisValid();
+
         if (pindah)
         {
-            proyek.ProfilIklim = Katalog.ProfilBawaan(kota, pesisir);
+            proyek.Latitude = lintang;
+            proyek.Longitude = bujur;
+            proyek.RevisiLokasi++;
             ResetPrakiraan();
+
+            if (proyek.ProfilIklim is not null)
+            {
+                proyek.ProfilIklim.KualitasCache = KualitasCacheIklim.TidakCocokLokasi;
+                proyek.ProfilIklim.StatusPengambilan = StatusPengambilanIklim.BelumTersedia;
+                proyek.ProfilIklim.JarakPesisirKm = pesisir;
+                proyek.ProfilIklim.PesisirTersedia = JarakPesisir.CobaHitungKm(lintang, bujur).HasValue;
+            }
+
             if (_backend is null)
-                return await PerbaruiIklimAsync(proyek);
+            {
+                proyek.ProfilIklim = Katalog.ProfilBawaan(kota, pesisir);
+                proyek.ProfilIklim.KualitasCache = KualitasCacheIklim.TidakCocokLokasi;
+                proyek.ProfilIklim.PesisirTersedia = JarakPesisir.CobaHitungKm(lintang, bujur).HasValue;
+                Ubah();
+                _ = Task.Run(async () =>
+                {
+                    await PerbaruiIklimAsync(proyek);
+                });
+                return null;
+            }
+
             if (profil is not null)
-                TerapkanProfil(proyek, profil);
+            {
+                TerapkanProfil(proyek, profil, pesisirManual);
+            }
+            else
+            {
+                _ = Task.Run(async () =>
+                {
+                    await PerbaruiIklimAsync(proyek);
+                });
+            }
         }
-        else if (!PostgreSql)
+        else if (pesisirManual.HasValue && proyek.ProfilIklim is not null)
         {
-            Iklim.JarakPesisirKm = pesisir;
+            proyek.ProfilIklim.JarakPesisirKm = pesisir;
+            proyek.ProfilIklim.CatatanOverridePesisir = "Manual override";
         }
+
+        Ubah();
         return pesan;
     }
 
-    public async Task<string?> PerbaruiIklimAsync(Bangunan proyek)
+    public async Task<string?> PerbaruiIklimAsync(Bangunan proyek, CancellationToken externalCt = default)
     {
+        _climateFetchCts?.Cancel();
+        _climateFetchCts?.Dispose();
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(externalCt);
+        _climateFetchCts = cts;
+        var token = cts.Token;
+
+        int proyekId = proyek.Id;
+        int expectedRevisi = proyek.RevisiLokasi;
         double lintang = proyek.Latitude;
         double bujur = proyek.Longitude;
+
+        if (proyek.ProfilIklim is not null)
+        {
+            proyek.ProfilIklim.StatusPengambilan = StatusPengambilanIklim.Mengambil;
+        }
+
         try
         {
-            var profil = _backend is null
-                ? await IklimHistoris.GetAnnualProfileAsync(lintang, bujur)
-                : await _backend.Iklim.RefreshProfileAsync(proyek.DatabaseId!.Value);
-            if (proyek.Latitude == lintang && proyek.Longitude == bujur)
-                TerapkanProfil(proyek, profil, _backend is null ? proyek.ProfilIklim?.JarakPesisirKm : null);
+            Domain.ProfilIklim profil;
+            if (_backend is null)
+            {
+                profil = await IklimHistoris.GetAnnualProfileAsync(lintang, bujur, token).ConfigureAwait(false);
+            }
+            else
+            {
+                profil = await _backend.Iklim.RefreshProfileAsync(proyek.DatabaseId!.Value, token).ConfigureAwait(false);
+            }
+
+            token.ThrowIfCancellationRequested();
+
+            var target = Proyek.Find(p => p.Id == proyekId);
+            if (target is null || target.RevisiLokasi != expectedRevisi ||
+                target.Latitude != lintang || target.Longitude != bujur)
+            {
+                return null;
+            }
+
+            TerapkanProfil(target, profil, _backend is null ? target.ProfilIklim?.JarakPesisirKm : null);
+            target.ProfilIklim!.StatusPengambilan = StatusPengambilanIklim.Tersedia;
+            target.ProfilIklim.KualitasCache = KualitasCacheIklim.CocokLokasi;
+            Ubah();
+            return null;
+        }
+        catch (OperationCanceledException)
+        {
             return null;
         }
         catch (GagalMemperbaruiProfilIklimException e)
         {
-            if (e.ProfilTersimpan is { } tersimpan)
-                TerapkanProfil(proyek, tersimpan, sumber: "Profil iklim tersimpan");
+            var target = Proyek.Find(p => p.Id == proyekId);
+            if (target is not null && target.RevisiLokasi == expectedRevisi)
+            {
+                if (target.ProfilIklim is not null)
+                {
+                    target.ProfilIklim.StatusPengambilan = StatusPengambilanIklim.GagalMemperbarui;
+                }
+                if (e.ProfilTersimpan is { } tersimpan)
+                {
+                    TerapkanProfil(target, tersimpan, sumber: "Profil iklim tersimpan");
+                    target.ProfilIklim!.StatusPengambilan = StatusPengambilanIklim.GagalMemperbarui;
+                    if (tersimpan.Metadata?.KualitasCache == KualitasCacheIklim.TidakCocokLokasi)
+                    {
+                        target.ProfilIklim.KualitasCache = KualitasCacheIklim.TidakCocokLokasi;
+                    }
+                }
+                Ubah();
+            }
             return e.Message;
         }
         catch (Exception e) when (e is HttpRequestException or TimeoutException or InvalidDataException or JsonException)
         {
+            var target = Proyek.Find(p => p.Id == proyekId);
+            if (target?.ProfilIklim is not null && target.RevisiLokasi == expectedRevisi)
+            {
+                target.ProfilIklim.StatusPengambilan = StatusPengambilanIklim.GagalMemperbarui;
+                Ubah();
+            }
             return "Iklim belum dapat diperbarui. Periksa koneksi atau coba lagi nanti.";
         }
         catch (Exception e) when (_backend is not null &&
             e is DbException or DbUpdateException or InvalidOperationException or KeyNotFoundException)
         {
             Debug.WriteLine(e);
+            var target = Proyek.Find(p => p.Id == proyekId);
+            if (target?.ProfilIklim is not null && target.RevisiLokasi == expectedRevisi)
+            {
+                target.ProfilIklim.StatusPengambilan = StatusPengambilanIklim.GagalMemperbarui;
+                Ubah();
+            }
             return "Profil iklim belum dapat diperbarui di database. Coba lagi nanti.";
         }
     }
@@ -331,16 +507,27 @@ public sealed class AppState
     private static void TerapkanProfil(Bangunan proyek, Domain.ProfilIklim profil,
         double? pesisirManual = null, string? sumber = null)
     {
+        double jarakPesisir = pesisirManual ?? profil.JarakPesisirKm;
         proyek.ProfilIklim = new ProfilIklim
         {
             CurahHujanTahunan = profil.CurahHujanTahunanMm,
             KelembapanRata = profil.KelembapanRataPct,
             SuhuRata = profil.SuhuRataC,
-            JarakPesisirKm = pesisirManual ?? profil.JarakPesisirKm,
+            JarakPesisirKm = jarakPesisir,
             Sumber = sumber ?? (pesisirManual is null
                 ? "Open-Meteo dan garis pantai Natural Earth"
                 : "Open-Meteo, jarak pesisir manual"),
-            DiperbaruiPada = Format.WaktuLokal((profil.DiambilPada ?? DateTimeOffset.UtcNow).LocalDateTime)
+            DiperbaruiPada = Format.WaktuLokal((profil.DiambilPada ?? DateTimeOffset.UtcNow).LocalDateTime),
+            Provenance = profil.Provenance,
+            StatusPengambilan = profil.Metadata?.StatusPengambilan ?? StatusPengambilanIklim.Tersedia,
+            KualitasCache = profil.Metadata?.KualitasCache ?? KualitasCacheIklim.CocokLokasi,
+            DiambilPadaUtc = profil.Metadata?.DiambilPadaUtc ?? profil.DiambilPada,
+            PeriodeMulai = profil.Metadata?.PeriodeAwal,
+            PeriodeSelesai = profil.Metadata?.PeriodeAkhir,
+            Provider = profil.Metadata?.Penyedia ?? (!string.IsNullOrWhiteSpace(profil.Metadata?.Provider) ? profil.Metadata.Provider : "Open-Meteo Historical Weather API"),
+            VersiAlgoritmePesisir = profil.Metadata?.VersiAlgoritmePesisir ?? JarakPesisirCalculator.VersiAlgoritme,
+            RevisiLokasi = profil.Metadata?.RevisiLokasi ?? profil.RevisiLokasi,
+            PesisirTersedia = jarakPesisir > 0 || JarakPesisir.CobaHitungKm(proyek.Latitude, proyek.Longitude).HasValue
         };
     }
 
@@ -460,6 +647,15 @@ public sealed class AppState
             var atap = komponen.FirstOrDefault(k => k.Jenis == Domain.JenisKomponen.Atap)?.LuasM2 ?? 0;
             var profil = await backend.Repository.GetProfilIklimAsync(data.Id, ct).ConfigureAwait(false);
 
+            var komponenList = komponen.Select(k => new KomponenDto
+            {
+                DatabaseId = k.Id,
+                Jenis = (JenisKomponen)k.Jenis,
+                Luas = k.LuasM2
+            }).ToList();
+
+            double jarakPesisir = profil?.JarakPesisirKm ?? JarakPesisir.CobaHitungKm(data.Latitude, data.Longitude) ?? 0;
+
             hasilProyek.Add(new ProyekDto
             {
                 Id = id,
@@ -470,7 +666,10 @@ public sealed class AppState
                 Bujur = data.Longitude,
                 Dinding = dinding,
                 Atap = atap,
-                JarakPesisir = profil?.JarakPesisirKm ?? JarakPesisir.HitungKm(data.Latitude, data.Longitude),
+                JarakPesisir = jarakPesisir,
+                RevisiLokasi = data.RevisiLokasi,
+                ZonaWaktu = data.ZonaWaktu ?? "Asia/Jakarta",
+                Komponen = komponenList,
                 Iklim = profil is not null
                     ? new IklimDto
                     {
@@ -478,7 +677,17 @@ public sealed class AppState
                         Kelembapan = profil.KelembapanRataPct,
                         Suhu = profil.SuhuRataC,
                         Sumber = "Profil iklim tersimpan",
-                        Diperbarui = Format.WaktuLokal((profil.DiambilPada ?? DateTimeOffset.UtcNow).LocalDateTime)
+                        Diperbarui = Format.WaktuLokal((profil.DiambilPada ?? DateTimeOffset.UtcNow).LocalDateTime),
+                        Provenance = profil.Provenance,
+                        StatusPengambilan = profil.Metadata?.StatusPengambilan ?? StatusPengambilanIklim.Tersedia,
+                        KualitasCache = profil.Metadata?.KualitasCache ?? KualitasCacheIklim.CocokLokasi,
+                        DiambilPadaUtc = profil.Metadata?.DiambilPadaUtc ?? profil.DiambilPada,
+                        PeriodeMulai = profil.Metadata?.PeriodeAwal,
+                        PeriodeSelesai = profil.Metadata?.PeriodeAkhir,
+                        Provider = profil.Metadata?.Penyedia ?? "Open-Meteo Historical Weather API",
+                        VersiAlgoritmePesisir = profil.Metadata?.VersiAlgoritmePesisir ?? JarakPesisirCalculator.VersiAlgoritme,
+                        RevisiLokasi = profil.Metadata?.RevisiLokasi ?? profil.RevisiLokasi,
+                        PesisirTersedia = jarakPesisir > 0 || JarakPesisir.CobaHitungKm(data.Latitude, data.Longitude).HasValue
                     }
                     : null,
                 Pekerjaan = lokal?.Pekerjaan ?? []
@@ -519,6 +728,8 @@ public sealed class AppState
                 Kota = p.Kota,
                 Latitude = p.Lintang,
                 Longitude = p.Bujur,
+                RevisiLokasi = p.RevisiLokasi > 0 ? p.RevisiLokasi : 1,
+                ZonaWaktu = !string.IsNullOrWhiteSpace(p.ZonaWaktu) ? p.ZonaWaktu : "Asia/Jakarta",
                 ProfilIklim = p.Iklim is { } i
                     ? new ProfilIklim
                     {
@@ -527,12 +738,39 @@ public sealed class AppState
                         SuhuRata = i.Suhu,
                         JarakPesisirKm = p.JarakPesisir,
                         Sumber = i.Sumber,
-                        DiperbaruiPada = i.Diperbarui
+                        DiperbaruiPada = i.Diperbarui,
+                        Provenance = i.Provenance,
+                        StatusPengambilan = i.StatusPengambilan,
+                        KualitasCache = i.KualitasCache,
+                        DiambilPadaUtc = i.DiambilPadaUtc,
+                        PeriodeMulai = i.PeriodeMulai,
+                        PeriodeSelesai = i.PeriodeSelesai,
+                        Provider = i.Provider,
+                        VersiAlgoritmePesisir = string.IsNullOrEmpty(i.VersiAlgoritmePesisir) ? JarakPesisirCalculator.VersiAlgoritme : i.VersiAlgoritmePesisir,
+                        RevisiLokasi = i.RevisiLokasi ?? p.RevisiLokasi,
+                        CatatanOverridePesisir = i.CatatanOverridePesisir,
+                        PesisirTersedia = i.PesisirTersedia
                     }
                     : Katalog.ProfilBawaan(p.Kota, p.JarakPesisir)
             };
-            proyek.TambahKomponen(new Komponen { Jenis = JenisKomponen.Dinding, Luas = p.Dinding });
-            proyek.TambahKomponen(new Komponen { Jenis = JenisKomponen.Atap, Luas = p.Atap });
+
+            if (p.Komponen.Count > 0)
+            {
+                foreach (var k in p.Komponen)
+                {
+                    proyek.TambahKomponen(new Komponen { DatabaseId = k.DatabaseId, Jenis = k.Jenis, Luas = k.Luas });
+                }
+            }
+            else
+            {
+                if (p.Dinding > 0)
+                    proyek.TambahKomponen(new Komponen { Jenis = JenisKomponen.Dinding, Luas = p.Dinding });
+                if (p.Atap > 0)
+                    proyek.TambahKomponen(new Komponen { Jenis = JenisKomponen.Atap, Luas = p.Atap });
+                if (proyek.Komponen.Count == 0)
+                    proyek.TambahKomponen(new Komponen { Jenis = JenisKomponen.Dinding, Luas = 100 });
+            }
+
             foreach (var j in p.Pekerjaan)
             {
                 var pekerjaan = new Pekerjaan
@@ -549,7 +787,9 @@ public sealed class AppState
         }
 
         state.ProyekAktifId = dto.ProyekAktif ?? state.Proyek.FirstOrDefault()?.Id ?? 0;
+        state.EnsureJenisValid();
         state.Jenis = dto.Jenis;
+        state.EnsureJenisValid();
         state.Dipilih = dto.Dipilih is { Length: > 0 } d ? d : ["m0", "m1"];
         state.Horizon = dto.Horizon is 20 or 30 or 50 ? dto.Horizon : 30;
         state.JenisKerja = dto.JenisKerja;
@@ -580,6 +820,14 @@ public sealed class AppState
             Dinding = p.LuasKomponen(JenisKomponen.Dinding),
             Atap = p.LuasKomponen(JenisKomponen.Atap),
             JarakPesisir = p.ProfilIklim?.JarakPesisirKm ?? 0,
+            RevisiLokasi = p.RevisiLokasi,
+            ZonaWaktu = p.ZonaWaktu,
+            Komponen = p.Komponen.Select(k => new KomponenDto
+            {
+                DatabaseId = k.DatabaseId,
+                Jenis = k.Jenis,
+                Luas = k.Luas
+            }).ToList(),
             Iklim = p.ProfilIklim is { SudahDiperbarui: true } i
                 ? new IklimDto
                 {
@@ -587,7 +835,18 @@ public sealed class AppState
                     Kelembapan = i.KelembapanRata,
                     Suhu = i.SuhuRata,
                     Sumber = i.Sumber,
-                    Diperbarui = i.DiperbaruiPada!
+                    Diperbarui = i.DiperbaruiPada!,
+                    Provenance = i.Provenance,
+                    StatusPengambilan = i.StatusPengambilan,
+                    KualitasCache = i.KualitasCache,
+                    DiambilPadaUtc = i.DiambilPadaUtc,
+                    PeriodeMulai = i.PeriodeMulai,
+                    PeriodeSelesai = i.PeriodeSelesai,
+                    Provider = i.Provider,
+                    VersiAlgoritmePesisir = i.VersiAlgoritmePesisir,
+                    RevisiLokasi = i.RevisiLokasi,
+                    CatatanOverridePesisir = i.CatatanOverridePesisir,
+                    PesisirTersedia = i.PesisirTersedia
                 }
                 : null,
             Pekerjaan = p.Pekerjaan.Select(j => new PekerjaanDto
@@ -662,17 +921,26 @@ public sealed class AppState
     {
         while (true)
         {
-            StateDto? dto;
+            StateDto? snapshot;
             lock (_gate)
             {
-                dto = _antrean;
+                snapshot = _antrean;
                 _antrean = null;
-                if (dto is null) { _menulis = false; return; }
+                if (snapshot is null)
+                {
+                    _menulis = false;
+                    return;
+                }
             }
-            if (_toko is null || TulisanDitolak) continue;
-            try { StateStore.Simpan(dto, _toko); }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { Debug.WriteLine(e); }
+            try
+            {
+                if (_toko is not null)
+                    StateStore.Simpan(snapshot, _toko);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                Debug.WriteLine(e);
+            }
         }
     }
-
 }

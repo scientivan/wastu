@@ -17,6 +17,9 @@ public class Bangunan
     public string Kota { get => _kota; set => _kota = value; }
     public double Latitude { get => _latitude; set => _latitude = value; }
     public double Longitude { get => _longitude; set => _longitude = value; }
+    public int RevisiLokasi { get; set; } = 1;
+    public string ZonaWaktu { get; set; } = "Asia/Jakarta";
+    public Domain.KriteriaBobot Bobot { get; set; } = Domain.KriteriaBobot.Default;
     public ProfilIklim? ProfilIklim { get; set; }
     public IReadOnlyList<Komponen> Komponen => _komponen.AsReadOnly();
     public IReadOnlyList<Laporan> Laporan => _laporan.AsReadOnly();
@@ -26,6 +29,48 @@ public class Bangunan
     {
         ArgumentNullException.ThrowIfNull(k);
         _komponen.Add(k);
+    }
+
+    public bool AdaKomponen(JenisKomponen jenis) => _komponen.Any(k => k.Jenis == jenis);
+
+    public IReadOnlyList<JenisKomponen> JenisKomponenAktif => _komponen.Select(k => k.Jenis).Distinct().ToList();
+
+    public void HapusKomponen(JenisKomponen jenis) => _komponen.RemoveAll(k => k.Jenis == jenis);
+
+    public void AturKomponen(IReadOnlyList<(JenisKomponen Jenis, double Luas)> daftar)
+    {
+        ArgumentNullException.ThrowIfNull(daftar);
+        if (daftar.Count == 0)
+        {
+            throw new ArgumentException("Daftar komponen tidak boleh kosong.", nameof(daftar));
+        }
+
+        if (daftar.Select(x => x.Jenis).Distinct().Count() != daftar.Count)
+        {
+            throw new ArgumentException("Jenis komponen tidak boleh duplikat.", nameof(daftar));
+        }
+
+        foreach (var item in daftar)
+        {
+            if (!double.IsFinite(item.Luas) || item.Luas <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(daftar), item.Luas, "Luas komponen harus bernilai finite dan lebih besar dari 0 m².");
+            }
+        }
+
+        _komponen.RemoveAll(k => !daftar.Any(d => d.Jenis == k.Jenis));
+        foreach (var item in daftar)
+        {
+            var existing = _komponen.Find(k => k.Jenis == item.Jenis);
+            if (existing is not null)
+            {
+                existing.Luas = item.Luas;
+            }
+            else
+            {
+                _komponen.Add(new Komponen { Jenis = item.Jenis, Luas = item.Luas });
+            }
+        }
     }
 
     public double LuasKomponen(JenisKomponen jenis) =>
