@@ -1,14 +1,18 @@
 # Diagram UML — Wastu
 
-Sumber diagram (Mermaid) untuk aplikasi **Wastu**: pemilihan bahan bangunan berbasis
-kesesuaian iklim lokasi dan jejak karbon tersemat. Cakupan versi pertama: komponen
-**dinding** dan **atap**.
+Sumber diagram (Mermaid) untuk aplikasi **Wastu**: pemilihan bahan bangunan berbasis kesesuaian iklim lokasi dan jejak karbon tersemat. Cakupan versi target (hingga V2): komponen **dinding** dan **atap** (fleksibel: dinding saja, atap saja, atau keduanya).
+
+Diagram ini merupakan spesifikasi UML normatif Wastu yang telah diselaraskan dengan PRD-R01 sampai PRD-R11 (§PRD-R10).
 
 ---
 
 ## 1. Use Case Diagram
 
-Aktor: pemilik rumah (pengguna utama) dan layanan cuaca pihak ketiga (aktor sistem).
+Aktor:
+- **Pemilik Rumah** (aktor manusia utama): calon pemilik rumah atau pemilik rumah yang merenovasi.
+- **Layanan Cuaca** (aktor sistem eksternal): penyedia API cuaca pihak ketiga (Open-Meteo) yang melayani data historis iklim 10 tahun dan data prakiraan harian 14 hari.
+
+Aplikasi bersifat desktop *single-user*, sehingga tidak memerlukan use case autentikasi/login pengguna.
 
 ```mermaid
 flowchart LR
@@ -17,19 +21,20 @@ flowchart LR
 
     subgraph WASTU[Aplikasi Wastu]
         direction TB
-        UC1([Kelola Profil Proyek])
+        UC1([Kelola Profil Proyek & Komponen])
         UC2([Telusuri Katalog Bahan])
         UC3([Bandingkan Bahan])
         UC4([Analisis Iklim Lokasi])
         UC5([Simulasi Emisi Jangka Panjang])
         UC6([Jadwalkan Pekerjaan])
         UC7([Ambil Prakiraan Cuaca])
-        UC8([Ekspor Laporan])
+        UC8([Ekspor Laporan Rekomendasi])
     end
 
     U --- UC1
     U --- UC2
     U --- UC3
+    U --- UC5
     U --- UC6
     U --- UC8
 
@@ -38,6 +43,8 @@ flowchart LR
     UC5 -.->|extend| UC3
     UC6 -.->|include| UC7
     UC8 -.->|extend| UC3
+
+    UC4 --- W
     UC7 --- W
 ```
 
@@ -45,26 +52,32 @@ flowchart LR
 
 ## 2. Activity Diagram
 
-Alur utama: dari pembuatan profil proyek sampai laporan rekomendasi siap dibawa ke kontraktor.
+Alur utama: mulai dari pembuatan profil proyek, analisis iklim, perbandingan berperingkat, kustomisasi bobot (V2), simulasi emisi multi-horizon, penjadwalan cuaca dengan penanganan risiko, hingga ekspor laporan rekomendasi PDF.
+
+Pengubahan kriteria/bobot mengarahkan alur kembali langsung ke penghitungan skor kesesuaian tanpa membuat proyek baru (§PRD-R01, §PRD-R10).
 
 ```mermaid
 flowchart TD
-    A([Mulai]) --> B[Buat profil proyek:<br/>lokasi + komponen dinding/atap]
-    B --> C[/Ambil data iklim historis lokasi/]
+    A([Mulai]) --> B[Buat / pilih profil proyek:<br/>lokasi + komponen dinding/atap]
+    B --> C[/Ambil data iklim historis lokasi Open-Meteo/]
     C --> D[Susun profil iklim:<br/>curah hujan, kelembapan, suhu, korosi]
     D --> E[Ambil kandidat bahan dari katalog]
-    E --> F[Hitung skor kesesuaian dan kgCO2e]
-    F --> G[Tampilkan peringkat + alasan penilaian]
-    G --> H{Ubah kriteria?}
-    H -->|Ya| B
-    H -->|Tidak| I[Pilih bahan]
-    I --> J[Simulasi emisi termasuk<br/>penggantian dini]
-    J --> K[/Ambil prakiraan cuaca harian/]
-    K --> L{Cuaca layak kerja?}
-    L -->|Tidak| M[Geser tanggal pekerjaan]
-    M --> K
-    L -->|Ya| N[Kunci jadwal pekerjaan]
-    N --> O[Ekspor laporan rekomendasi]
+    E --> F[Hitung skor kesesuaian dan kgCO2e awal]
+    F --> G[Tampilkan peringkat + alasan penilaian tiap baris]
+    G --> H{Ubah bobot / kriteria?}
+    H -->|Ya - Mode V2| F
+    H -->|Tidak| I[Pilih bahan dinding / atap]
+    I --> J[Simulasi emisi jangka panjang<br/>penggantian dini: 0 < t < H]
+    J --> K[/Ambil prakiraan cuaca harian 14 hari/]
+    K --> L{Status kelayakan cuaca?}
+    L -->|Data tidak tersedia| M1[Tampilkan keterangan data cuaca belum tersedia]
+    M1 --> K
+    L -->|Tidak layak| M2{Konfirmasi risiko?}
+    M2 -->|Batal / Geser| M3[Geser tanggal rencana pekerjaan]
+    M3 --> K
+    M2 -->|Setujui risiko| N[Kunci jadwal pekerjaan<br/>dengan persetujuan risiko]
+    L -->|Layak / Waspada| N
+    N --> O[Ekspor laporan rekomendasi PDF]
     O --> P([Selesai])
 ```
 
@@ -72,14 +85,17 @@ flowchart TD
 
 ## 3. Domain Model
 
-Entitas dan relasi inti, sebelum dilengkapi attribute dan method (lihat §4 untuk versi
-lengkapnya). Dua kategori tipe (jenis komponen, jenis pekerjaan) sengaja tidak dimunculkan
-di sini karena itu detail attribute, bukan entitas domain tersendiri.
+Entitas inti dan relasi domain Wastu. Diagram ini mencerminkan struktur domain logis setelah koreksi PRD-R10:
+- `Proyek` memiliki relasi `0..1` ke `ProfilIklim` (profil iklim bernilai null sebelum berhasil diambil dari API atau saat koordinat baru belum selesai dianalisis).
+- `Proyek` memiliki minimal satu `Komponen` (`1..*`), mendukung evaluasi dinding saja, atap saja, atau keduanya.
+- `Evaluasi` memiliki relasi `0..*` ke `SimulasiEmisi` (evaluasi awal/draft boleh belum memiliki hasil simulasi emisi, dan setelah dieksekusi dapat menyimpan hasil proyeksi untuk berbagai horizon waktu 20, 30, dan 50 tahun secara bersamaan).
+- `Pekerjaan` memiliki relasi opsional (`0..1`) ke `Komponen` dan `Bahan` yang sedang dikerjakan.
+- Entitas `Pengguna` dipertahankan semata-mata sebagai konteks representasi aktor lokal historis warisan Modul 3. Aplikasi Wastu beroperasi sebagai *desktop single-user* lokal tanpa mekanisme autentikasi/login dan tanpa tabel akun pengguna di database (§PRD-R10).
 
 ```mermaid
 classDiagram
     class Pengguna
-    class Bangunan
+    class Proyek
     class ProfilIklim
     class Komponen
     class Bahan
@@ -89,36 +105,42 @@ classDiagram
     class PrakiraanCuaca
     class Laporan
 
-    Pengguna "1" --> "*" Bangunan : memiliki
-    Bangunan "1" --> "1" ProfilIklim : dianalisis
-    Bangunan "1" --> "*" Komponen : terdiri atas
-    Bangunan "1" --> "*" Pekerjaan : menjadwalkan
-    Bangunan "1" --> "*" Laporan : menghasilkan
+    Pengguna "1" --> "*" Proyek : memiliki
+    Proyek "1" --> "0..1" ProfilIklim : dianalisis
+    Proyek "1" --> "1..*" Komponen : terdiri atas
+    Proyek "1" --> "*" Pekerjaan : menjadwalkan
+    Proyek "1" --> "*" Laporan : menghasilkan
     Komponen "1" --> "*" Evaluasi : dievaluasi
     Evaluasi "*" --> "1" Bahan : menilai
-    Evaluasi "1" --> "0..1" SimulasiEmisi : diproyeksikan
-    Pekerjaan "1" --> "*" PrakiraanCuaca : memakai
+    Evaluasi "1" --> "0..*" SimulasiEmisi : diproyeksikan
+    Pekerjaan "1" ..> "*" PrakiraanCuaca : memakai
+    Pekerjaan "0..1" --> "0..1" Komponen : mengaitkan
+    Pekerjaan "0..1" --> "0..1" Bahan : mengaitkan
 ```
 
 ---
 
 ## 4. Class Diagram
 
+Class diagram normatif lengkap dengan atribut dan operasi yang telah diselaraskan dengan kontrak C#/.NET 8 dan skema database relasional:
+
 ```mermaid
 classDiagram
     class Pengguna {
-        +int id
+        +Guid id
         +string nama
         +string email
-        +login() bool
     }
     class Proyek {
-        +int id
+        +Guid id
         +string nama
         +string kota
         +double latitude
         +double longitude
-        +tambahKomponen(Komponen) void
+        +DateTime dibuatPadaUtc
+        +DateTime diperbaruiPadaUtc
+        +tambahKomponen(Komponen k) void
+        +aturLuasKomponen(JenisKomponen jenis, double luas) void
     }
     class ProfilIklim {
         +double curahHujanTahunan
@@ -126,59 +148,101 @@ classDiagram
         +double suhuRata
         +double jarakPesisirKm
         +string tingkatKorosi
+        +string sumber
+        +string provenance
+        +DateTime diambilPadaUtc
     }
     class Komponen {
+        +Guid id
         +JenisKomponen jenis
         +double luas
         +bandingkanBahan() Evaluasi[]
     }
     class Bahan {
-        +int id
+        +Guid id
         +string nama
+        +JenisKomponen jenis
         +double konduktivitasTermal
         +int ketahananLembap
         +int ketahananKorosi
-        +int usiaPakaiTahun
-        +double faktorEmisi
+        +double usiaNominalTahun
+        +double faktorEmisiM2
+        +string susunanKetebalan
+        +string sumber
+        +string provenance
     }
     class Evaluasi {
+        +Guid id
         +double skorKesesuaian
         +double emisiAwal
         +string alasan
-        +hitungSkor(ProfilIklim) double
+        +double bobotTermal
+        +double bobotLembap
+        +double bobotKorosi
+        +double bobotUsia
+        +hitungSkor(ProfilIklim iklim, KriteriaBobot bobot) double
     }
     class SimulasiEmisi {
+        +Guid id
         +int horizonTahun
+        +double usiaEfektifTahun
         +int jumlahPenggantian
         +double emisiKumulatif
-        +proyeksikan() double
+        +string versiModel
+        +proyeksikan(double emisiAwal) double
     }
     class Pekerjaan {
+        +Guid id
         +string nama
-        +date tanggalRencana
+        +JenisPekerjaan jenis
+        +DateTime tanggalMulai
+        +DateTime tanggalSelesai
+        +DateTime? tanggalDikunci
+        +Guid? komponenId
+        +Guid? bahanId
         +string status
-        +jadwalkan(PrakiraanCuaca) bool
+        +bool penandaTinjau
+        +bool persetujuanRisiko
+        +jadwalkan(PrakiraanCuaca cuaca, bool konfirmasiRisiko) bool
+    }
+    class HasilEvaluasiCuaca {
+        +StatusKelayakan status
+        +IReadOnlyList~string~ alasan
     }
     class PrakiraanCuaca {
-        +date tanggal
+        +DateTime tanggal
         +double curahHujan
-        +double suhu
-        +double kelembapan
-        +layakKerja() bool
+        +double suhuMin
+        +double suhuMaks
+        +double kelembapanMaks
+        +double probabilitasHujan
+        +string zonaWaktu
+        +evaluasiKelayakan(JenisPekerjaan jenis, OverrideAmbang? overrideAmbang) HasilEvaluasiCuaca
     }
     class Laporan {
-        +date tanggalDibuat
+        +Guid id
+        +DateTime tanggalDibuat
         +string format
-        +ekspor() File
+        +string pathBerkas
+        +ekspor() FileInfo
     }
 
     Pengguna "1" --> "*" Proyek : memiliki
-    Proyek "1" --> "1" ProfilIklim : dianalisis
-    Proyek "1" --> "*" Komponen : terdiri atas
+    Proyek "1" --> "0..1" ProfilIklim : dianalisis
+    Proyek "1" --> "1..*" Komponen : terdiri atas
     Proyek "1" --> "*" Pekerjaan : menjadwalkan
     Proyek "1" --> "*" Laporan : menghasilkan
     Komponen "1" --> "*" Evaluasi : dievaluasi
     Evaluasi "*" --> "1" Bahan : menilai
-    Evaluasi "1" --> "0..1" SimulasiEmisi : diproyeksikan
+    Evaluasi "1" --> "0..*" SimulasiEmisi : diproyeksikan
     Pekerjaan "1" ..> "*" PrakiraanCuaca : memakai
+    Pekerjaan "0..1" --> "0..1" Komponen : mengaitkan
+    Pekerjaan "0..1" --> "0..1" Bahan : mengaitkan
+    PrakiraanCuaca ..> HasilEvaluasiCuaca : menghasilkan
 ```
+
+---
+
+## 5. Hubungan dengan Diagram Historis
+
+Berkas gambar diagram kelas historis [`docs/class-diagram.png`](class-diagram.png) berasal dari tugas awal Modul 3 dan dipertahankan semata-mata sebagai catatan arsip historis. Diagram normatif yang mengikat implementasi dan pengujian adalah diagram Mermaid di atas dan berkas sumber [`docs/uml-wastu.drawio`](uml-wastu.drawio).
