@@ -216,6 +216,13 @@ public sealed class AppState
 
     public void PilihProyek(int id)
     {
+        var old = Interlocked.Exchange(ref _climateFetchCts, null);
+        try
+        {
+            old?.Cancel();
+        }
+        catch (ObjectDisposedException) { }
+
         ProyekAktifId = id;
         EnsureJenisValid();
         ResetPrakiraan();
@@ -411,10 +418,14 @@ public sealed class AppState
 
     public async Task<string?> PerbaruiIklimAsync(Bangunan proyek, CancellationToken externalCt = default)
     {
-        _climateFetchCts?.Cancel();
-        _climateFetchCts?.Dispose();
         var cts = CancellationTokenSource.CreateLinkedTokenSource(externalCt);
-        _climateFetchCts = cts;
+        var old = Interlocked.Exchange(ref _climateFetchCts, cts);
+        try
+        {
+            old?.Cancel();
+        }
+        catch (ObjectDisposedException) { }
+
         var token = cts.Token;
 
         int proyekId = proyek.Id;
@@ -448,7 +459,17 @@ public sealed class AppState
                 return null;
             }
 
-            TerapkanProfil(target, profil, _backend is null ? target.ProfilIklim?.JarakPesisirKm : null);
+            bool adaOverrideManual = target.ProfilIklim?.Provenance == ProvenanceIklim.ManualOverride ||
+                !string.IsNullOrWhiteSpace(target.ProfilIklim?.CatatanOverridePesisir);
+            double? manualKm = adaOverrideManual ? target.ProfilIklim?.JarakPesisirKm : null;
+            string? catatanManual = adaOverrideManual ? target.ProfilIklim?.CatatanOverridePesisir : null;
+
+            TerapkanProfil(target, profil, manualKm);
+            if (adaOverrideManual && target.ProfilIklim is not null)
+            {
+                target.ProfilIklim.CatatanOverridePesisir = catatanManual;
+                target.ProfilIklim.Provenance = ProvenanceIklim.ManualOverride;
+            }
             target.ProfilIklim!.StatusPengambilan = StatusPengambilanIklim.Tersedia;
             target.ProfilIklim.KualitasCache = KualitasCacheIklim.CocokLokasi;
             Ubah();
@@ -501,6 +522,15 @@ public sealed class AppState
                 Ubah();
             }
             return "Profil iklim belum dapat diperbarui di database. Coba lagi nanti.";
+        }
+        finally
+        {
+            Interlocked.CompareExchange(ref _climateFetchCts, null, cts);
+            try
+            {
+                cts.Dispose();
+            }
+            catch (ObjectDisposedException) { }
         }
     }
 
