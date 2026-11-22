@@ -279,24 +279,7 @@ public partial class ReportPage : PageBase
             k.Jenis == Models.JenisKomponen.Dinding ? Wastu.Domain.JenisKomponen.Dinding : Wastu.Domain.JenisKomponen.Atap,
             k.Luas)).ToList();
 
-        var tingkatKorosi = !string.IsNullOrWhiteSpace(climate.TingkatKorosi)
-            ? climate.TingkatKorosi
-            : climate.KeDomain().TingkatKorosi.ToString();
-
-        // Map climate
-        var snapIklim = new SnapshotIklim
-        {
-            CurahHujanTahunanMm = climate.CurahHujanTahunan,
-            KelembapanRataPct = climate.KelembapanRata,
-            SuhuRataC = climate.SuhuRata,
-            JarakPesisirKm = climate.JarakPesisirKm,
-            TingkatKorosi = tingkatKorosi,
-            Provider = "Open-Meteo Historical Climate API",
-            Periode = "10 tahun historis (agregasi)",
-            Provenance = climate.SudahDiperbarui ? "ApiHistoris" : "EstimasiBawaan",
-            DiambilPada = DateTimeOffset.UtcNow,
-            IsOffline = !climate.SudahDiperbarui
-        };
+        var snapIklim = SnapshotIklimMapper.Buat(climate, S.ModeBacaSaja);
 
         // Selected materials (including any rank e.g. rank 10!)
         var selectedBahan = new List<SnapshotBahan>();
@@ -306,11 +289,11 @@ public partial class ReportPage : PageBase
             var item = S.Item(e.Bahan);
             if (_selectedMaterialCodes.Contains(item.Kode))
             {
-                var label = e.SkorKesesuaian >= 75 ? "Cocok" : e.SkorKesesuaian >= 55 ? "Perlu Pertimbangan" : "Tidak Disarankan";
+                var label = TagData.Kesesuaian(e.SkorKesesuaian).Text;
                 selectedBahan.Add(new SnapshotBahan
                 {
-                    BahanId = Guid.NewGuid(),
-                    KomponenId = Guid.NewGuid(),
+                    BahanId = item.DataDomain.Id,
+                    KomponenId = p.Komponen.Single(k => k.Jenis == _selectedJenis).Id,
                     Jenis = _selectedJenis == JenisKomponen.Dinding ? Wastu.Domain.JenisKomponen.Dinding : Wastu.Domain.JenisKomponen.Atap,
                     Peringkat = i + 1,
                     Nama = e.Bahan.Nama,
@@ -374,7 +357,7 @@ public partial class ReportPage : PageBase
 
         return new SnapshotLaporan
         {
-            ProyekId = p.DatabaseId ?? Guid.NewGuid(),
+            ProyekId = p.StableId,
             NamaProyek = p.Nama,
             Kota = p.Kota,
             Latitude = p.Latitude,
@@ -387,7 +370,8 @@ public partial class ReportPage : PageBase
             JadwalTerkunci = lockedJobs,
             DibuatPadaUtc = DateTimeOffset.UtcNow,
             DibuatPadaWib = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7)),
-            VersiModel = "v2.0"
+            VersiModel = Domain.KonfigurasiModel.Bawaan.VersiModel,
+            Bobot = S.BobotAktif
         };
     }
 }

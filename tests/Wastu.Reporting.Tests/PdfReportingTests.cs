@@ -22,6 +22,51 @@ public sealed class PdfReportingTests : IDisposable
         Directory.CreateDirectory(_pendingDir);
     }
 
+    [Fact]
+    public async Task BobotKustomTersimpanDalamSnapshotDanTampilTanpaMemperpanjangVersiModel()
+    {
+        var awal = BuatContohSnapshot();
+        var json = System.Text.Json.Nodes.JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(awal))!;
+        json["Bobot"] = System.Text.Json.JsonSerializer.SerializeToNode(new KriteriaBobot(0.1, 0.2, 0.3, 0.4));
+        var snapshot = System.Text.Json.JsonSerializer.Deserialize<SnapshotLaporan>(json.ToJsonString())!;
+        Assert.NotEqual(awal.HitungHash(), snapshot.HitungHash());
+
+        var service = new ReportExportService(new LaporanRepositoryInMemory(), pendingMetadataDirectory: _pendingDir);
+        var path = Path.Combine(_testDir, "bobot-kustom.pdf");
+        await service.ExportSnapshotAsync(snapshot, path);
+        using var pdf = PdfDocument.Open(path);
+        string teks = string.Join(" ", pdf.GetPages().Select(p => p.Text));
+        Assert.Contains("Termal 10%", teks);
+        Assert.Contains("Lembap 20%", teks);
+        Assert.Contains("Korosi 30%", teks);
+        Assert.Contains("Usia 40%", teks);
+        Assert.Equal("v2.0", snapshot.VersiModel);
+    }
+
+    [Fact]
+    public async Task MetadataIklimPanjangTerbungkusDanCatatanCacheTampil()
+    {
+        var awal = BuatContohSnapshot();
+        var snapshot = awal with { Iklim = awal.Iklim with
+        {
+            Provider = "Open-Meteo Historical Weather API dan garis pantai Natural Earth 1:10m",
+            Periode = "01/01/2016 hingga 31/12/2025",
+            Provenance = "CacheHistoris",
+            IsOffline = true,
+            CatatanOffline = "Peringatan cache: profil berasal dari revisi lokasi sebelumnya."
+        }};
+        var service = new ReportExportService(new LaporanRepositoryInMemory(), pendingMetadataDirectory: _pendingDir);
+        var path = Path.Combine(_testDir, "metadata-iklim.pdf");
+        await service.ExportSnapshotAsync(snapshot, path);
+        using var pdf = PdfDocument.Open(path);
+        var pages = pdf.GetPages().ToArray();
+        string teks = string.Join(" ", pages.Select(p => p.Text));
+        Assert.Contains(snapshot.Iklim.CatatanOffline, teks);
+        Assert.All(pages, page => Assert.All(page.Letters, letter =>
+            Assert.True(letter.BoundingBox.Right <= page.Width - 30,
+                $"Teks melewati margin kanan: {letter.Value} pada {letter.BoundingBox.Right}")));
+    }
+
     public void Dispose()
     {
         try
