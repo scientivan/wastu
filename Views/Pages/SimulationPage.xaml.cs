@@ -20,6 +20,21 @@ public partial class SimulationPage : PageBase
     protected override void Refresh()
     {
         _refreshing = true;
+        if (KindBox.Items.Count >= 2)
+        {
+            bool hasWall = S.AdaProyek && S.Aktif.AdaKomponen(JenisKomponen.Dinding);
+            bool hasRoof = S.AdaProyek && S.Aktif.AdaKomponen(JenisKomponen.Atap);
+            if (KindBox.Items[0] is ComboBoxItem itemWall)
+            {
+                itemWall.Visibility = hasWall ? Visibility.Visible : Visibility.Collapsed;
+                itemWall.IsEnabled = hasWall;
+            }
+            if (KindBox.Items[1] is ComboBoxItem itemRoof)
+            {
+                itemRoof.Visibility = hasRoof ? Visibility.Visible : Visibility.Collapsed;
+                itemRoof.IsEnabled = hasRoof;
+            }
+        }
         KindBox.SelectedIndex = S.Jenis == Models.JenisKomponen.Dinding ? 0 : 1;
         HorizonBox.SelectedIndex = S.Horizon switch { 20 => 0, 50 => 2, _ => 1 };
         FaktorABox.Text = _faktorPenuaanA.ToString("0.##", new CultureInfo("id-ID"));

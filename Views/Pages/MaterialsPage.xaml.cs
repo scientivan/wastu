@@ -16,6 +16,13 @@ public partial class MaterialsPage : PageBase
     protected override void Refresh()
     {
         _refreshing = true;
+        bool hasWall = S.AdaProyek && S.Aktif.AdaKomponen(JenisKomponen.Dinding);
+        bool hasRoof = S.AdaProyek && S.Aktif.AdaKomponen(JenisKomponen.Atap);
+        WallTab.IsEnabled = hasWall;
+        WallTab.Visibility = hasWall ? Visibility.Visible : Visibility.Collapsed;
+        RoofTab.IsEnabled = hasRoof;
+        RoofTab.Visibility = hasRoof ? Visibility.Visible : Visibility.Collapsed;
+
         WallTab.IsChecked = S.Jenis == JenisKomponen.Dinding;
         RoofTab.IsChecked = S.Jenis == JenisKomponen.Atap;
         SearchBox.Text = S.Cari;

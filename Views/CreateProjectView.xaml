@@ -135,21 +135,25 @@
                                 <c:CssText x:Name="MapHint" Style="{StaticResource Hint}" Text="Klik peta untuk menandai lokasi lahan. Seret untuk menggeser, gulir untuk memperbesar." />
                             </StackPanel>
                             <StackPanel x:Name="CoastalGroup" Style="{StaticResource FieldGroup}">
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                    <c:CssText Style="{StaticResource FieldLabel}" Text="Perkiraan jarak ke pesisir" />
-                                    <c:CssText Style="{StaticResource Unit}" Text="km" />
-                                </StackPanel>
+                                <Grid Margin="0,0,0,10">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <c:CssText Style="{StaticResource FieldLabel}" Text="Perkiraan jarak ke pesisir" />
+                                        <c:CssText Style="{StaticResource Unit}" Text="km" />
+                                    </StackPanel>
+                                    <CheckBox x:Name="CoastalOverrideCheck" Content="Sesuaikan manual" HorizontalAlignment="Right" VerticalAlignment="Center" Click="CoastalOverride_Click" />
+                                </Grid>
                                 <TextBox x:Name="CoastalBox" Style="{StaticResource EntryInput}" PreviewTextInput="Number_PreviewTextInput" />
-                                <c:CssText Style="{StaticResource Hint}" Text="Sesuaikan koordinat dan jarak dengan lokasi lahan Anda." />
+                                <c:CssText x:Name="CoastalHint" Style="{StaticResource Hint}" Text="Perkiraan jarak ke garis pantai; proksi paparan udara bergaram." />
                             </StackPanel>
                         </StackPanel>
 
                         <!-- Langkah 3: luas bidang -->
                         <StackPanel x:Name="Step2" Visibility="Collapsed">
                             <c:TrackedText Style="{StaticResource StepTitle}" x:Name="Title2" Text="Tentukan luas bidang" />
-                            <c:CssText Style="{StaticResource StepDesc}" Text="Luas dinding dan atap menjadi dasar perhitungan emisi material." />
+                            <c:CssText Style="{StaticResource StepDesc}" Text="Pilih komponen yang dievaluasi (minimal satu) dan tentukan luas bidangnya." />
                             <c:FlowGrid Columns="2" ColumnGap="22">
                                 <StackPanel Style="{StaticResource FieldGroup}">
+                                    <CheckBox x:Name="WallCheck" Content="Dinding" IsChecked="True" FontSize="14" FontWeight="550" Foreground="{StaticResource Ink}" Margin="0,0,0,10" Click="ComponentCheck_Click" />
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                         <c:CssText Style="{StaticResource FieldLabel}" Text="Luas dinding" />
                                         <c:CssText Style="{StaticResource Unit}" Text="m²" />
@@ -157,6 +161,7 @@
                                     <TextBox x:Name="WallBox" Style="{StaticResource EntryInput}" c:Ui.Placeholder="120" PreviewTextInput="Number_PreviewTextInput" />
                                 </StackPanel>
                                 <StackPanel Style="{StaticResource FieldGroup}">
+                                    <CheckBox x:Name="RoofCheck" Content="Atap" IsChecked="True" FontSize="14" FontWeight="550" Foreground="{StaticResource Ink}" Margin="0,0,0,10" Click="ComponentCheck_Click" />
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                         <c:CssText Style="{StaticResource FieldLabel}" Text="Luas atap" />
                                         <c:CssText Style="{StaticResource Unit}" Text="m²" />

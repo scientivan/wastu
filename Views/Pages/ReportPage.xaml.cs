@@ -39,11 +39,31 @@ public partial class ReportPage : PageBase
             _selectedHorizon = S.Horizon;
         }
 
+        if (S.AdaProyek)
+        {
+            if (!S.Aktif.AdaKomponen(_selectedJenis))
+            {
+                _selectedJenis = S.Jenis;
+            }
+        }
+
         _syncingControls = true;
         try
         {
-            if (CompWallRadio is not null) CompWallRadio.IsChecked = _selectedJenis == JenisKomponen.Dinding;
-            if (CompRoofRadio is not null) CompRoofRadio.IsChecked = _selectedJenis == JenisKomponen.Atap;
+            if (CompWallRadio is not null)
+            {
+                var ada = !S.AdaProyek || S.Aktif.AdaKomponen(JenisKomponen.Dinding);
+                CompWallRadio.Visibility = ada ? Visibility.Visible : Visibility.Collapsed;
+                CompWallRadio.IsEnabled = ada;
+                CompWallRadio.IsChecked = _selectedJenis == JenisKomponen.Dinding;
+            }
+            if (CompRoofRadio is not null)
+            {
+                var ada = !S.AdaProyek || S.Aktif.AdaKomponen(JenisKomponen.Atap);
+                CompRoofRadio.Visibility = ada ? Visibility.Visible : Visibility.Collapsed;
+                CompRoofRadio.IsEnabled = ada;
+                CompRoofRadio.IsChecked = _selectedJenis == JenisKomponen.Atap;
+            }
 
             if (Hor20Radio is not null) Hor20Radio.IsChecked = _selectedHorizon == 20;
             if (Hor30Radio is not null) Hor30Radio.IsChecked = _selectedHorizon == 30;

@@ -38,11 +38,31 @@ public sealed class HomeData : ViewData
         var forecast = s.PrakiraanAktif();
 
         Summary = "Ringkasan " + p.Nama;
-        Wall = Format.Angka(p.LuasKomponen(JenisKomponen.Dinding)) + " ";
-        Roof = Format.Angka(p.LuasKomponen(JenisKomponen.Atap)) + " ";
+        if (p.AdaKomponen(JenisKomponen.Dinding))
+        {
+            Wall = Format.Angka(p.LuasKomponen(JenisKomponen.Dinding)) + " ";
+            WallSuffix = "m²";
+        }
+        else
+        {
+            Wall = "Tidak dipilih";
+            WallSuffix = "";
+        }
+
+        if (p.AdaKomponen(JenisKomponen.Atap))
+        {
+            Roof = Format.Angka(p.LuasKomponen(JenisKomponen.Atap)) + " ";
+            RoofSuffix = "m²";
+        }
+        else
+        {
+            Roof = "Tidak dipilih";
+            RoofSuffix = "";
+        }
+
         Locked = jobs.Count(j => j.TanggalDikunci is not null).ToString();
         LockedSuffix = $" dari {jobs.Count} pekerjaan";
-        AreaLabel = (s.Jenis == JenisKomponen.Dinding ? "Dinding " : "Atap ") + Format.Angka(s.Luas) + " m²";
+        AreaLabel = (s.Jenis == JenisKomponen.Dinding ? "Dinding " : "Atap ") + (s.Luas > 0 ? Format.Angka(s.Luas) + " m²" : "-");
 
         var imageHeight = wide ? 215 : compact ? 130 : 155;
         Materials = s.Terpilih().ConvertAll(item =>
@@ -75,7 +95,9 @@ public sealed class HomeData : ViewData
 
     public string Summary { get; }
     public string Wall { get; }
+    public string WallSuffix { get; }
     public string Roof { get; }
+    public string RoofSuffix { get; }
     public string Locked { get; }
     public string LockedSuffix { get; }
     public string AreaLabel { get; }
