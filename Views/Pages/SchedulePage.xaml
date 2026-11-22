@@ -61,6 +61,16 @@
                             <c:CssText Text="Open-Meteo" Leading="1.4" />
                         </Border>
                     </Grid>
+
+                    <!-- Banner data kedaluwarsa (>= 6 jam, T21, X04) -->
+                    <Border Background="#FFF6DF" BorderBrush="#E8D6A5" BorderThickness="1" CornerRadius="6"
+                            Padding="12,9" Margin="0,0,0,16" Visibility="{Binding StaleBannerVisibility}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⚠ " Foreground="#8A6D3B" FontWeight="700" />
+                            <c:CssText Text="{Binding StaleBannerText}" FontSize="12" Foreground="#8A6D3B" Leading="1.4" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
                     <Border Style="{StaticResource Seg}" Margin="0,0,0,22">
                         <StackPanel Orientation="Horizontal">
                             <RadioButton x:Name="PaintTab" Style="{StaticResource SegItem}" Content="Pengecatan" Tag="Pengecatan" Click="Work_Click" Margin="0,0,4,0" />
@@ -84,7 +94,7 @@
                                             <c:CssText Style="{StaticResource CellSmall}" Text="{Binding Date}" />
                                             <TextBlock Text="{Binding Sky}" FontFamily="Segoe UI Symbol" FontSize="23" Height="31" HorizontalAlignment="Center" Margin="0,8,0,0" />
                                             <c:CssText Style="{StaticResource CellSmall}" Text="{Binding Rain}" />
-                                            <c:CssText Text="{Binding Status}" FontSize="10" FontWeight="600" HorizontalAlignment="Center" Margin="0,8,0,0" />
+                                            <c:CssText Text="{Binding Status}" FontSize="10" FontWeight="600" HorizontalAlignment="Center" Margin="0,8,0,0" TextWrapping="Wrap" TextAlignment="Center" />
                                         </StackPanel>
                                     </Button>
                                 </DataTemplate>
@@ -93,6 +103,10 @@
                         <!-- .day-detail -->
                         <Border BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="0,20,0,0" Margin="0,22,0,0">
                             <StackPanel>
+                                <Border Style="{StaticResource Tag}" Background="{StaticResource TagPaleBg}" Visibility="{Binding DayOutOfRangeVisibility}"
+                                        Margin="0,0,0,8" HorizontalAlignment="Left">
+                                    <c:CssText Text="Di luar jangkauan prakiraan 14 hari" />
+                                </Border>
                                 <c:TrackedText Text="{Binding DayTitle}" FontSize="14" FontWeight="650" Tracking="-0.49" LineHeight="19.6" Margin="0,0,0,9" />
                                 <c:CssText Text="{Binding DayText}" FontSize="12" Foreground="{StaticResource Muted}" Leading="1.6" TextWrapping="Wrap" />
                                 <StackPanel Visibility="{Binding HasDay}" Margin="0,17,0,0" TextElement.FontSize="12">
@@ -101,11 +115,11 @@
                                         <c:CssText Text="{Binding DayRain}" HorizontalAlignment="Right" />
                                     </Grid>
                                     <Grid Style="{StaticResource Fact}">
-                                        <c:CssText Text="Kelembapan" Foreground="{StaticResource Muted}" />
+                                        <c:CssText Text="Kelembapan (RH maks harian)" Foreground="{StaticResource Muted}" />
                                         <c:CssText Text="{Binding DayHumidity}" HorizontalAlignment="Right" />
                                     </Grid>
                                     <Grid>
-                                        <c:CssText Text="Suhu" Foreground="{StaticResource Muted}" />
+                                        <c:CssText Text="Suhu udara" Foreground="{StaticResource Muted}" />
                                         <c:CssText Text="{Binding DayTemperature}" HorizontalAlignment="Right" />
                                     </Grid>
                                 </StackPanel>
@@ -133,7 +147,7 @@
                     <c:CssText Style="{StaticResource FormLabel}" Text="Nama pekerjaan" />
                     <TextBox x:Name="JobName" Style="{StaticResource Input}" MaxLength="100" />
                     <c:CssText Style="{StaticResource FormLabel}" Text="Jenis pekerjaan" Margin="0,18,0,7" />
-                    <ComboBox x:Name="JobKind" Style="{StaticResource Select}">
+                    <ComboBox x:Name="JobKind" Style="{StaticResource Select}" SelectionChanged="JobKind_SelectionChanged">
                         <ComboBoxItem Content="Pengecatan" Tag="Pengecatan" />
                         <ComboBoxItem Content="Pengecoran" Tag="Pengecoran" />
                     </ComboBox>
@@ -147,6 +161,44 @@
                             <DatePicker x:Name="JobEnd" Style="{StaticResource DateInput}" />
                         </StackPanel>
                     </c:FlowGrid>
+
+                    <!-- Panel Konfigurasi Ambang Layak-Kerja (X11) -->
+                    <Border BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="0,16,0,0" Margin="0,18,0,0">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,10">
+                                <c:TrackedText Text="Ambang layak-kerja" FontSize="13" FontWeight="650" HorizontalAlignment="Left" />
+                                <c:CssText Text="Asumsi generik" Style="{StaticResource Small}" HorizontalAlignment="Right" />
+                            </Grid>
+                            <c:FlowGrid Columns="2" ColumnGap="14" RowGap="10">
+                                <StackPanel>
+                                    <c:CssText Style="{StaticResource FormLabel}" Text="Peluang hujan maks (%)" />
+                                    <TextBox x:Name="OverrideRainProb" Style="{StaticResource Input}" />
+                                </StackPanel>
+                                <StackPanel>
+                                    <c:CssText Style="{StaticResource FormLabel}" Text="Curah hujan maks (mm)" />
+                                    <TextBox x:Name="OverrideRainMm" Style="{StaticResource Input}" />
+                                </StackPanel>
+                                <StackPanel>
+                                    <c:CssText Style="{StaticResource FormLabel}" Text="Kelembapan maks (%)" />
+                                    <TextBox x:Name="OverrideRhMax" Style="{StaticResource Input}" />
+                                </StackPanel>
+                                <StackPanel>
+                                    <c:CssText Style="{StaticResource FormLabel}" Text="Rentang suhu (°C)" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="OverrideTempMin" Grid.Column="0" Style="{StaticResource Input}" />
+                                        <TextBox x:Name="OverrideTempMax" Grid.Column="2" Style="{StaticResource Input}" />
+                                    </Grid>
+                                </StackPanel>
+                            </c:FlowGrid>
+                            <Button Style="{StaticResource BtnLightSm}" Content="Reset ke Default" HorizontalAlignment="Left" Margin="0,10,0,0" Click="ResetOverride_Click" />
+                        </StackPanel>
+                    </Border>
+
                     <Button Style="{StaticResource Btn}" Content="Tambahkan pekerjaan" HorizontalAlignment="Stretch" Margin="0,18,0,0" Click="Add_Click" />
 
                     <Grid Margin="0,25,0,16">
@@ -162,6 +214,16 @@
                                         <c:CssText Text="{Binding Name}" FontSize="14" FontWeight="700" TextWrapping="Wrap" Leading="1.5" />
                                         <c:CssText Text="{Binding Range}" Style="{StaticResource Small}" Margin="0,7,0,0" Leading="1.5" />
                                         <c:CssText Text="{Binding Locked}" Style="{StaticResource Small}" Margin="0,7,0,0" Leading="1.5" />
+
+                                        <!-- Badge Perlu Ditinjau (T31) -->
+                                        <Border Background="#FFF6DF" BorderBrush="#E8D6A5" BorderThickness="1" CornerRadius="4"
+                                                Padding="8,5" Margin="0,8,0,0" Visibility="{Binding NeedsReviewVisibility}">
+                                            <StackPanel>
+                                                <c:CssText Text="⚠ Perlu ditinjau ulang" FontSize="11" FontWeight="700" Foreground="#8A6D3B" />
+                                                <c:CssText Text="{Binding ReviewWarning}" FontSize="11" Foreground="#8A6D3B" Leading="1.4" Margin="0,2,0,0" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </Border>
+
                                         <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
                                             <Button Style="{StaticResource BtnLightSm}" Content="Kunci tanggal" Tag="{Binding Index}" IsEnabled="{Binding CanLock}"
                                                     Click="Lock_Click" Margin="0,0,10,0" />

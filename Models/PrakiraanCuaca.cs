@@ -1,4 +1,6 @@
 using System.Globalization;
+using Wastu.Domain.Abstractions;
+using Wastu.Domain.Weather;
 
 namespace Wastu.Models;
 
@@ -10,6 +12,8 @@ public class PrakiraanCuaca
     private double _suhuMin;
     private double _suhuMaks;
     private double _kelembapan;
+    private bool _dataLengkap = true;
+    private string? _catatanKualitas;
 
     public DateTime Tanggal { get => _tanggal; set => _tanggal = value; }
     public double ProbabilitasHujan { get => _probabilitasHujan; set => _probabilitasHujan = value; }
@@ -17,39 +21,61 @@ public class PrakiraanCuaca
     public double SuhuMin { get => _suhuMin; set => _suhuMin = value; }
     public double SuhuMaks { get => _suhuMaks; set => _suhuMaks = value; }
     public double Kelembapan { get => _kelembapan; set => _kelembapan = value; }
+    public bool DataLengkap { get => _dataLengkap; set => _dataLengkap = value; }
+    public string? CatatanKualitas { get => _catatanKualitas; set => _catatanKualitas = value; }
 
     public bool LayakKerja() => LayakKerja(JenisPekerjaan.Pengecoran);
 
     public bool LayakKerja(JenisPekerjaan jenis) =>
         EvaluasiKelayakan(jenis).Status != StatusKelayakan.TidakLayak;
 
-    // Ambang layak kerja per jenis pekerjaan (PRD §12). Probabilitas hujan dalam persen.
-    public KelayakanCuaca EvaluasiKelayakan(JenisPekerjaan jenis)
-    {
-        var melanggar = new List<string>(3);
-        var peringatan = new List<string>(1);
-        if (jenis == JenisPekerjaan.Pengecoran)
-        {
-            if (ProbabilitasHujan > 60) melanggar.Add($"Peluang hujan {Angka(ProbabilitasHujan)}% > 60%");
-            if (CurahHujan > 5) melanggar.Add($"Curah hujan {Angka(CurahHujan)} mm > 5 mm");
-            if (SuhuMaks > 35) peringatan.Add($"Suhu maksimum {Angka(SuhuMaks)}°C; butuh mitigasi");
-        }
-        else
-        {
-            if (Kelembapan > 85) melanggar.Add($"Kelembapan {Angka(Kelembapan)}% > 85%");
-            if (ProbabilitasHujan > 40) melanggar.Add($"Peluang hujan {Angka(ProbabilitasHujan)}% > 40%");
-            if (SuhuMin < 10 || SuhuMaks > 35) melanggar.Add("Suhu di luar 10–35°C");
-        }
+    public bool LayakKerja(JenisPekerjaan jenis, AmbangPekerjaan? overrideAmbang) =>
+        EvaluasiKelayakan(jenis, overrideAmbang).Status != StatusKelayakan.TidakLayak;
 
-        var status = melanggar.Count > 0 ? StatusKelayakan.TidakLayak
-            : peringatan.Count > 0 ? StatusKelayakan.Waspada
-            : StatusKelayakan.Layak;
-        melanggar.AddRange(peringatan);
-        var alasan = melanggar.Count > 0 ? string.Join("; ", melanggar) : "Tidak melewati ambang jenis pekerjaan";
+    public KelayakanCuaca EvaluasiKelayakan(JenisPekerjaan jenis) => EvaluasiKelayakan(jenis, null);
+
+    /// <summary>
+    /// Mendelegasikan evaluasi kelayakan cuaca langsung ke domain <see cref="EvaluatorCuaca"/> (PRD §11.3, §12).
+    /// </summary>
+    public KelayakanCuaca EvaluasiKelayakan(JenisPekerjaan jenis, AmbangPekerjaan? overrideAmbang)
+    {
+        var domainHasil = EvaluasiDomain(jenis, overrideAmbang);
+
+        var status = domainHasil.Status switch
+        {
+            StatusKelayakanCuaca.Layak => StatusKelayakan.Layak,
+            StatusKelayakanCuaca.Waspada => StatusKelayakan.Waspada,
+            _ => StatusKelayakan.TidakLayak
+        };
+
+        var alasan = domainHasil.Alasan.Count > 0 ? string.Join("; ", domainHasil.Alasan) : "Memenuhi ambang kelayakan cuaca";
         return new KelayakanCuaca(status, alasan);
     }
 
-    private static string Angka(double nilai) => nilai.ToString(CultureInfo.InvariantCulture);
+    /// <summary>
+    /// Mendapatkan hasil evaluasi domain terstruktur lengkap.
+    /// </summary>
+    public HasilEvaluasiCuaca EvaluasiDomain(JenisPekerjaan jenis, AmbangPekerjaan? overrideAmbang = null)
+    {
+        var domainJenis = jenis == JenisPekerjaan.Pengecatan
+            ? Domain.Weather.JenisPekerjaan.Pengecatan
+            : Domain.Weather.JenisPekerjaan.Pengecoran;
+
+        var ambang = overrideAmbang ?? AmbangLayakKerja.Untuk(domainJenis);
+        var tgl = DateOnly.FromDateTime(Tanggal);
+
+        var daily = new DailyForecast(
+            Tanggal: tgl,
+            ProbabilitasHujanPct: ProbabilitasHujan,
+            CurahHujanMm: CurahHujan,
+            SuhuMinC: SuhuMin,
+            SuhuMaksC: SuhuMaks,
+            KelembapanPct: Kelembapan,
+            DataLengkap: DataLengkap,
+            CatatanKualitas: CatatanKualitas);
+
+        return EvaluatorCuaca.EvaluasiHari(tgl, daily, domainJenis, ambang);
+    }
 }
 
 public readonly record struct KelayakanCuaca(StatusKelayakan Status, string Alasan);
