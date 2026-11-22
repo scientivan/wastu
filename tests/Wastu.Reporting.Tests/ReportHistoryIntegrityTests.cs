@@ -21,7 +21,7 @@ public sealed class ReportHistoryIntegrityTests : IDisposable
             "Referensi asli", sumberProperti: [new(Guid.Empty, "usia_pakai_nominal", "Rujukan usia", "v1")]);
         var climate = new ProfilIklim(700, 80, 26, 50, TingkatKorosi.Rendah);
         var weights = new KriteriaBobot(.1, .2, .3, .4);
-        var input = new InputEvaluasi(c, b, climate, weights, KonfigurasiModel.Bawaan, 15, 50, p);
+        var input = new InputEvaluasi(c, b, climate, weights, KonfigurasiModel.Bawaan, 15, 50, p, [b.Id]);
         var latest = new Evaluasi(Guid.NewGuid(), b.Id, c.Id, 20, 1000, new(20, 20, 20, 20),
             "Alasan asli", Guid.NewGuid(), "v2.0", "latest", DateTimeOffset.UtcNow, input);
         var old = latest with { Id = Guid.NewGuid(), BatchId = Guid.NewGuid(), HashInput = "old",
@@ -62,6 +62,10 @@ public sealed class ReportHistoryIntegrityTests : IDisposable
         await Assert.ThrowsAsync<InvalidOperationException>(() => restarted.RegenerateAsync(
             restored with { SnapshotJson = restored.SnapshotJson!.Replace("Nama asli", "Nama berubah") }, Path.Combine(_root, "invalid.pdf")));
         Assert.False(File.Exists(Path.Combine(_root, "invalid.pdf")));
+        await evals.SimpanAsync([latest with { Input = input with { BahanKategori = [b.Id, Guid.NewGuid()] } }]);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ExportAsync(p.Id,
+            new(30, false, Path.Combine(_root, "incomplete.pdf"))));
+        Assert.False(File.Exists(Path.Combine(_root, "incomplete.pdf")));
     }
 
     [Fact]

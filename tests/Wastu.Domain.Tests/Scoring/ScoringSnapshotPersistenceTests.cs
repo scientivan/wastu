@@ -59,15 +59,20 @@ public sealed class ScoringSnapshotPersistenceTests
         var service = CreateService(repository);
         var first = service.RankAsync(DataContoh.KomponenDindingId);
         await repository.WriteStarted.Task;
-        var captured = DataContoh.PanelGipsum();
+        var sources = new List<SumberPropertiBahan> { new(Guid.NewGuid(), "faktor_emisi", "Referensi asli") };
+        var captured = DataContoh.PanelGipsum() with { SumberProperti = sources };
         var materials = new List<Bahan> { captured };
         var second = service.RankSnapshotAsync(DataContoh.Dinding(), DataContoh.IklimDinginInland(), materials);
         materials.Clear();
         materials.Add(DataContoh.BetonBertulang());
+        sources.Clear();
+        sources.Add(new(captured.Id, "faktor_emisi", "Referensi yang diubah saat antrean"));
         repository.ReleaseWrites.TrySetResult();
 
         await first;
-        Assert.Equal(captured.Id, Assert.Single(await second).BahanId);
+        var stored = Assert.Single(await second);
+        Assert.Equal(captured.Id, stored.BahanId);
+        Assert.Equal("Referensi asli", Assert.Single(stored.Input!.Bahan.SumberProperti!).Referensi);
     }
 
     [Fact]

@@ -97,7 +97,8 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
 
         // Salin koleksi sebelum await pertama; record domain menyimpan nilai
         // immutable, sedangkan daftar milik pemanggil masih dapat disunting.
-        Bahan[] kategori = katalog.Where(item => item is not null && item.Jenis == komponen.Jenis).ToArray();
+        Bahan[] kategori = katalog.Where(item => item is not null && item.Jenis == komponen.Jenis)
+            .Select(item => item with { SumberProperti = item.SumberProperti?.ToArray() }).ToArray();
 
         if (kategori.Length == 0)
         {
@@ -232,6 +233,7 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
         // lolos filter tampilan atau sedang dipilih pengguna (PRD §9.2).
         double usiaMin = bahan.Min(item => item.UsiaPakaiNominalTahun);
         double usiaMaks = bahan.Max(item => item.UsiaPakaiNominalTahun);
+        var kategoriIds = Array.AsReadOnly(bahan.Select(item => item.Id).Order().ToArray());
 
         var hasil = new List<Evaluasi>(bahan.Length);
 
@@ -252,7 +254,7 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
                 Alasan: PerhitunganSkor.SusunAlasan(item, iklim, subSkor, konfigurasiEfektif),
                 Input: new InputEvaluasi(komponen,
                     item with { SumberProperti = item.SumberProperti?.ToArray() },
-                    iklim, bobotEfektif, konfigurasiEfektif, usiaMin, usiaMaks, proyek)));
+                    iklim, bobotEfektif, konfigurasiEfektif, usiaMin, usiaMaks, proyek, kategoriIds)));
         }
 
         return Urutkan(hasil, bahan);

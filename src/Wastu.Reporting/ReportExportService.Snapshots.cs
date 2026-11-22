@@ -23,6 +23,9 @@ public sealed partial class ReportExportService
                 .OrderByDescending(g => g.Max(e => e.DihitungPadaUtc)).FirstOrDefault()?.ToArray() ?? [];
             if (latest.Length == 0 || latest.Any(e => e.Input is null))
                 throw new InvalidOperationException("Hasil belum memiliki snapshot masukan. Hitung evaluasi baru sebelum ekspor.");
+            if (latest.Any(e => e.Input!.BahanKategori is not { Count: > 0 } ids
+                || !ids.ToHashSet().SetEquals(latest.Select(x => x.BahanId))))
+                throw new InvalidOperationException("Batch evaluasi belum lengkap. Hitung kembali sebelum ekspor.");
             if (latest.Any(e => e.Input!.Komponen.LuasM2 != c.LuasM2
                 || e.Input.Iklim.RevisiLokasi != proyek.RevisiLokasi
                 || e.Input.Proyek is null || e.Input.Proyek.Latitude != proyek.Latitude

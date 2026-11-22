@@ -10,4 +10,5 @@ public sealed record InputEvaluasi(
     double UsiaKategoriMinimum,
     double UsiaKategoriMaksimum,
     Proyek? Proyek = null,
+    IReadOnlyList<Guid>? BahanKategori = null,
     int SchemaVersion = 1);
