@@ -20,19 +20,23 @@ public sealed class OpenMeteo : IHistoricalClimateClient, IDailyForecastClient
     private readonly HttpClient _http;
     private readonly TimeSpan _historicalTimeout;
     private readonly TimeSpan _forecastTimeout;
+    private readonly TimeProvider _clock;
 
-    public OpenMeteo(HttpClient? http = null, TimeSpan? historicalTimeout = null, TimeSpan? forecastTimeout = null)
+    public OpenMeteo(HttpClient? http = null, TimeSpan? historicalTimeout = null, TimeSpan? forecastTimeout = null,
+        TimeProvider? clock = null)
     {
         _http = http ?? Http;
         _historicalTimeout = historicalTimeout ?? TimeSpan.FromSeconds(60);
         _forecastTimeout = forecastTimeout ?? TimeSpan.FromSeconds(12);
+        _clock = clock ?? TimeProvider.System;
     }
 
     private static string Num(double v) => v.ToString(CultureInfo.InvariantCulture);
 
     public async Task<Domain.ProfilIklim> GetAnnualProfileAsync(double lat, double lon, CancellationToken ct = default)
     {
-        var akhir = new DateTime(DateTime.UtcNow.AddDays(-7).Year, 1, 1).AddDays(-1);
+        ValidasiKoordinat.Validasi(lat, lon);
+        var akhir = new DateTime(_clock.GetUtcNow().AddDays(-7).Year, 1, 1).AddDays(-1);
         var mulai = new DateTime(akhir.Year - 9, 1, 1);
         var url = $"https://archive-api.open-meteo.com/v1/archive?latitude={Num(lat)}&longitude={Num(lon)}" +
                   $"&start_date={Format.Iso(mulai)}&end_date={Format.Iso(akhir)}" +
@@ -51,7 +55,7 @@ public sealed class OpenMeteo : IHistoricalClimateClient, IDailyForecastClient
         }
 
         double pesisir = JarakPesisir.HitungKm(lat, lon);
-        return ParserOpenMeteo.ParseHistoris(bytes, pesisir, DateTimeOffset.UtcNow);
+        return ParserOpenMeteo.ParseHistoris(bytes, pesisir, _clock.GetUtcNow());
     }
 
     public async Task<IReadOnlyList<DailyForecast>> GetForecastAsync(
@@ -64,6 +68,7 @@ public sealed class OpenMeteo : IHistoricalClimateClient, IDailyForecastClient
     public async Task<HasilPrakiraan> GetForecastWithMetadataAsync(
         double lat, double lon, int days, CancellationToken ct = default)
     {
+        ValidasiKoordinat.Validasi(lat, lon);
         int hariAmbil = Math.Clamp(days, 1, 16);
         var url = $"https://api.open-meteo.com/v1/forecast?latitude={Num(lat)}&longitude={Num(lon)}" +
                   "&daily=precipitation_probability_max,precipitation_sum,temperature_2m_min,temperature_2m_max" +
@@ -81,7 +86,7 @@ public sealed class OpenMeteo : IHistoricalClimateClient, IDailyForecastClient
             throw new TimeoutException("Open-Meteo belum menjawab permintaan prakiraan cuaca.", ex);
         }
 
-        return ParserOpenMeteo.ParsePrakiraan(bytes, DateTimeOffset.UtcNow);
+        return ParserOpenMeteo.ParsePrakiraan(bytes, _clock.GetUtcNow());
     }
 
     public static async Task<List<PrakiraanCuaca>> AmbilPrakiraanAsync(double lintang, double bujur)

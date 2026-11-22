@@ -62,7 +62,7 @@ public sealed partial class ReportExportService
         return new SnapshotLaporan
         {
             ProyekId = proyek.Id, NamaProyek = proyek.Nama, Kota = proyek.Kota,
-            Latitude = proyek.Latitude, Longitude = proyek.Longitude, ZonaWaktu = proyek.ZonaWaktu ?? meta?.ZonaWaktu ?? "Asia/Jakarta",
+            Latitude = proyek.Latitude, Longitude = proyek.Longitude, ZonaWaktu = meta?.ZonaWaktu ?? proyek.ZonaWaktu ?? "Asia/Jakarta",
             Komponen = chosenComponents.Select(c => new SnapshotKomponen(c.Jenis, c.LuasM2)).ToArray(),
             Iklim = new SnapshotIklim { CurahHujanTahunanMm = climate.CurahHujanTahunanMm,
                 KelembapanRataPct = climate.KelembapanRataPct, SuhuRataC = climate.SuhuRataC,
@@ -86,6 +86,9 @@ public sealed partial class ReportExportService
     }
 
     public Task<Laporan> RegenerateAsync(Laporan report, string path, CancellationToken ct = default)
+        => ExportSnapshotAsync(ReadOriginalSnapshot(report), path, ct);
+
+    public static SnapshotLaporan ReadOriginalSnapshot(Laporan report)
     {
         if (string.IsNullOrWhiteSpace(report.SnapshotJson))
             throw new InvalidOperationException("Laporan legacy tidak mempunyai snapshot untuk dibuat ulang.");
@@ -95,6 +98,6 @@ public sealed partial class ReportExportService
             || snapshot.HitungHash() != report.SnapshotHash)
             throw new InvalidOperationException("Identitas atau checksum snapshot laporan berbeda.");
         // A copy of the same report: preserve ID, original time, values and assumptions.
-        return ExportSnapshotAsync(snapshot, path, ct);
+        return snapshot;
     }
 }

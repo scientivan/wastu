@@ -195,7 +195,7 @@ public sealed class DesktopWorkflowService
                     _backend.MaterialRepository, config).SimulateSnapshotAsync(domain, item.Bahan.UsiaPakaiTahun, horizon, ct);
             string hash = domain.HashInput ?? Domain.Scoring.SuitabilityScoringService.HitungHash(
                 new Domain.Komponen(domain.KomponenId, p.StableId, item.DataDomain.Jenis,
-                    p.LuasKomponen(item.Jenis)), p.ProfilIklim!.KeDomain(),
+                    p.LuasKomponen(item.Jenis)), p.ProfilIklim!.KeDomain(p.ZonaWaktu),
                 _state.KatalogAktif.Where(k => k.Jenis == item.Jenis).Select(k => k.DataDomain).ToArray(), _state.BobotAktif);
             var entry = new SimulationHistoryEntry(hash, item.DataDomain.Id, item.Bahan.UsiaPakaiTahun, simulation, domain.EmisiAwalKg);
             result.Add(entry);

@@ -77,6 +77,8 @@ public sealed class IklimDto
     public DateOnly? PeriodeMulai { get; set; }
     public DateOnly? PeriodeSelesai { get; set; }
     public string Provider { get; set; } = "";
+    public string? Model { get; set; }
+    public string? ZonaWaktu { get; set; }
     public string VersiAlgoritmePesisir { get; set; } = "";
     public int? RevisiLokasi { get; set; }
     public string? CatatanOverridePesisir { get; set; }

@@ -237,7 +237,7 @@ public sealed class ProjectData : ViewData
             ? $"Periode data: {climate.PeriodeMulai.Value:yyyy-MM-dd} s/d {climate.PeriodeSelesai.Value:yyyy-MM-dd}"
             : "Periode data: 10 tahun historis";
         TimestampText = climate.DiambilPadaUtc.HasValue
-            ? $"Diambil: {Format.WaktuLokal(climate.DiambilPadaUtc.Value.LocalDateTime)} WIB ({climate.DiambilPadaUtc.Value:yyyy-MM-dd HH:mm} UTC)"
+            ? $"Diambil: {Format.WaktuProyek(climate.DiambilPadaUtc.Value, p.ZonaWaktu)} ({climate.DiambilPadaUtc.Value.UtcDateTime:yyyy-MM-dd HH:mm} UTC)"
             : (climate.DiperbaruiPada is not null ? $"Diperbarui: {climate.DiperbaruiPada}" : "Belum diperbarui");
 
         if (climate.KualitasCache == KualitasCacheIklim.TidakCocokLokasi)

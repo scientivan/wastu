@@ -235,7 +235,7 @@ public sealed partial class AppState
         var bahanList = bahanDict.Values.Select(item => item.DataDomain).ToArray();
         if (bahanList.Length == 0) return [];
         var bobot = BobotAktif;
-        var iklim = Iklim.KeDomain();
+        var iklim = Iklim.KeDomain(Aktif.ZonaWaktu);
         string hash = SuitabilityScoringService.HitungHash(domainKomponen, iklim, bahanList, bobot);
 
         if (!_peringkat.TryGetValue(komp.Id, out var cache) || cache.Hash != hash)
@@ -663,6 +663,7 @@ public sealed partial class AppState
         double? pesisirManual = null, string? sumber = null)
     {
         double jarakPesisir = pesisirManual ?? profil.JarakPesisirKm;
+        if (!string.IsNullOrWhiteSpace(profil.Metadata?.ZonaWaktu)) proyek.ZonaWaktu = profil.Metadata.ZonaWaktu;
         proyek.ProfilIklim = new ProfilIklim
         {
             CurahHujanTahunan = profil.CurahHujanTahunanMm,
@@ -680,6 +681,8 @@ public sealed partial class AppState
             PeriodeMulai = profil.Metadata?.PeriodeAwal,
             PeriodeSelesai = profil.Metadata?.PeriodeAkhir,
             Provider = profil.Metadata?.Penyedia ?? (!string.IsNullOrWhiteSpace(profil.Metadata?.Provider) ? profil.Metadata.Provider : "Open-Meteo Historical Weather API"),
+            Model = profil.Metadata?.Model,
+            ZonaWaktu = profil.Metadata?.ZonaWaktu ?? proyek.ZonaWaktu,
             VersiAlgoritmePesisir = profil.Metadata?.VersiAlgoritmePesisir ?? JarakPesisirCalculator.VersiAlgoritme,
             RevisiLokasi = profil.Metadata?.RevisiLokasi ?? profil.RevisiLokasi,
             PesisirTersedia = jarakPesisir > 0 || JarakPesisir.CobaHitungKm(proyek.Latitude, proyek.Longitude).HasValue
@@ -845,7 +848,7 @@ public sealed partial class AppState
                 Atap = atap,
                 JarakPesisir = jarakPesisir,
                 RevisiLokasi = data.RevisiLokasi,
-                ZonaWaktu = data.ZonaWaktu ?? "Asia/Jakarta",
+                ZonaWaktu = profil?.Metadata?.ZonaWaktu ?? data.ZonaWaktu ?? "Asia/Jakarta",
                 GunakanBobotKustom = lokal?.GunakanBobotKustom ?? false,
                 BobotTermal = lokal?.BobotTermal ?? 0.25,
                 BobotLembap = lokal?.BobotLembap ?? 0.25,
@@ -867,6 +870,8 @@ public sealed partial class AppState
                         PeriodeMulai = profil.Metadata?.PeriodeAwal,
                         PeriodeSelesai = profil.Metadata?.PeriodeAkhir,
                         Provider = profil.Metadata?.Penyedia ?? "Open-Meteo Historical Weather API",
+                        Model = profil.Metadata?.Model,
+                        ZonaWaktu = profil.Metadata?.ZonaWaktu ?? data.ZonaWaktu,
                         VersiAlgoritmePesisir = profil.Metadata?.VersiAlgoritmePesisir ?? JarakPesisirCalculator.VersiAlgoritme,
                         RevisiLokasi = profil.Metadata?.RevisiLokasi ?? profil.RevisiLokasi,
                         PesisirTersedia = jarakPesisir > 0 || JarakPesisir.CobaHitungKm(data.Latitude, data.Longitude).HasValue
@@ -941,6 +946,8 @@ public sealed partial class AppState
                         PeriodeMulai = i.PeriodeMulai,
                         PeriodeSelesai = i.PeriodeSelesai,
                         Provider = i.Provider,
+                        Model = i.Model,
+                        ZonaWaktu = i.ZonaWaktu ?? p.ZonaWaktu,
                         VersiAlgoritmePesisir = string.IsNullOrEmpty(i.VersiAlgoritmePesisir) ? JarakPesisirCalculator.VersiAlgoritme : i.VersiAlgoritmePesisir,
                         RevisiLokasi = i.RevisiLokasi ?? p.RevisiLokasi,
                         CatatanOverridePesisir = i.CatatanOverridePesisir,
@@ -1064,6 +1071,8 @@ public sealed partial class AppState
                     PeriodeMulai = i.PeriodeMulai,
                     PeriodeSelesai = i.PeriodeSelesai,
                     Provider = i.Provider,
+                    Model = i.Model,
+                    ZonaWaktu = i.ZonaWaktu ?? p.ZonaWaktu,
                     VersiAlgoritmePesisir = i.VersiAlgoritmePesisir,
                     RevisiLokasi = i.RevisiLokasi,
                     CatatanOverridePesisir = i.CatatanOverridePesisir,

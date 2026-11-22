@@ -296,22 +296,25 @@ public sealed class SelectableMaterialItem : ViewData
 
 public sealed class ReportHistoryItem : ViewData
 {
-    public ReportHistoryItem(Models.Laporan l)
+    public ReportHistoryItem(Models.Laporan l, string projectZone)
     {
         Id = l.Id;
         PathBerkas = l.PathBerkas;
         NamaBerkas = l.NamaBerkas;
-        TanggalFormat = l.DibuatPada.ToOffset(TimeSpan.FromHours(7)).ToString("dd MMMM yyyy, HH:mm") + " WIB";
+        var description = ReportHistoryDescription.Create(l, projectZone);
+        TanggalFormat = description.Timestamp;
+        Selection = description.Selection;
         StatusBerkas = l.StatusBerkas;
         StatusTeks = l.StatusKeterangan;
         IsAvailable = StatusBerkas == StatusBerkasLaporan.Tersedia;
-        HasSnapshot = !string.IsNullOrWhiteSpace(l.SnapshotJson);
+        HasSnapshot = description.CanRegenerate;
     }
 
     public Guid Id { get; }
     public string PathBerkas { get; }
     public string NamaBerkas { get; }
     public string TanggalFormat { get; }
+    public string Selection { get; }
     public StatusBerkasLaporan StatusBerkas { get; }
     public string StatusTeks { get; }
     public bool IsAvailable { get; }
@@ -369,7 +372,7 @@ public sealed class ReportData : ViewData
         NoLocked = Locked.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
         // History
-        ReportHistory = p.Laporan.Select(l => new ReportHistoryItem(l)).ToList();
+        ReportHistory = p.Laporan.Select(l => new ReportHistoryItem(l, p.ZonaWaktu)).ToList();
         NoHistory = ReportHistory.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
