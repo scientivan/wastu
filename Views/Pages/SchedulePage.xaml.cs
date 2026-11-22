@@ -11,12 +11,15 @@ namespace Wastu.Views.Pages;
 public partial class SchedulePage : PageBase
 {
     private bool _inReset;
+    private Models.JenisPekerjaan? _lastSyncedKind;
 
     public SchedulePage() => InitializeComponent();
 
     protected override void Refresh()
     {
-        var stacked = Window.GetWindow(this)?.ActualWidth < 1024;
+        // ≤1200 px: .scheduler-grid menjadi satu kolom (Bug 1 layout stacked).
+        var stacked = Viewport.Width <= 1200;
+        Grid.SetColumn(PlanPanel, stacked ? 0 : 2);
         Grid.SetRow(PlanPanel, stacked ? 2 : 0);
         Grid.SetColumnSpan(PlanPanel, stacked ? 3 : 1);
         Grid.SetColumnSpan(WeatherPanel, stacked ? 3 : 1);
@@ -38,7 +41,13 @@ public partial class SchedulePage : PageBase
         JobStart.SelectedDate ??= forecast.Count > 0 ? forecast[0].Tanggal : DateTime.Today;
         JobEnd.SelectedDate ??= forecast.Count > 0 ? forecast[^1].Tanggal : DateTime.Today.AddDays(6);
 
-        SyncOverrideInputs(painting ? Models.JenisPekerjaan.Pengecatan : Models.JenisPekerjaan.Pengecoran);
+        // Hanya sinkronkan input override saat inisialisasi atau perubahan jenis pekerjaan (Bug 3)
+        var currentKind = painting ? Models.JenisPekerjaan.Pengecatan : Models.JenisPekerjaan.Pengecoran;
+        if (_lastSyncedKind != currentKind)
+        {
+            SyncOverrideInputs(currentKind);
+            _lastSyncedKind = currentKind;
+        }
 
         DataContext = new ScheduleData(S, forecast);
     }
@@ -74,6 +83,7 @@ public partial class SchedulePage : PageBase
             Enum.TryParse<Models.JenisPekerjaan>(tagStr, out var jenis))
         {
             SyncOverrideInputs(jenis);
+            _lastSyncedKind = jenis;
         }
     }
 
@@ -83,15 +93,8 @@ public partial class SchedulePage : PageBase
         try
         {
             var jenis = JobKind.SelectedIndex == 0 ? Models.JenisPekerjaan.Pengecatan : Models.JenisPekerjaan.Pengecoran;
-            var ambang = AmbangLayakKerja.Untuk(jenis == Models.JenisPekerjaan.Pengecatan
-                ? Domain.Weather.JenisPekerjaan.Pengecatan
-                : Domain.Weather.JenisPekerjaan.Pengecoran);
-
-            OverrideRainProb.Text = ambang.ProbabilitasHujanMaksPct?.ToString("0.##", CultureInfo.InvariantCulture) ?? "";
-            OverrideRainMm.Text = ambang.CurahHujanMaksMm?.ToString("0.##", CultureInfo.InvariantCulture) ?? "";
-            OverrideRhMax.Text = ambang.KelembapanMaksPct?.ToString("0.##", CultureInfo.InvariantCulture) ?? "";
-            OverrideTempMin.Text = ambang.SuhuMinC?.ToString("0.##", CultureInfo.InvariantCulture) ?? "";
-            OverrideTempMax.Text = ambang.SuhuMaksC?.ToString("0.##", CultureInfo.InvariantCulture) ?? "";
+            SyncOverrideInputs(jenis);
+            _lastSyncedKind = jenis;
             Shell.Toast("Ambang dikembalikan ke asumsi generik default.");
         }
         finally
@@ -126,15 +129,25 @@ public partial class SchedulePage : PageBase
 
         var jenis = Enum.Parse<Models.JenisPekerjaan>((string)((ComboBoxItem)JobKind.SelectedItem).Tag);
 
-        // Parsing override ambang jika diubah oleh pengguna (X11)
+        // Parsing override ambang jika diubah oleh pengguna (X11) dan validasi non-numerik (Bug 3)
         AmbangPekerjaan? overrideAmbang = null;
         try
         {
-            double? p = double.TryParse(OverrideRainProb.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var vP) ? vP : null;
-            double? c = double.TryParse(OverrideRainMm.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var vC) ? vC : null;
-            double? rh = double.TryParse(OverrideRhMax.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var vRh) ? vRh : null;
-            double? tMin = double.TryParse(OverrideTempMin.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var vTmin) ? vTmin : null;
-            double? tMaks = double.TryParse(OverrideTempMax.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var vTmaks) ? vTmaks : null;
+            static double? ParseField(string text, string namaField)
+            {
+                if (string.IsNullOrWhiteSpace(text)) return null;
+                if (!double.TryParse(text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var val) || !double.IsFinite(val))
+                {
+                    throw new FormatException($"Nilai {namaField} harus berupa angka valid.");
+                }
+                return val;
+            }
+
+            double? p = ParseField(OverrideRainProb.Text, "peluang hujan");
+            double? c = ParseField(OverrideRainMm.Text, "curah hujan");
+            double? rh = ParseField(OverrideRhMax.Text, "kelembapan");
+            double? tMin = ParseField(OverrideTempMin.Text, "suhu minimum");
+            double? tMaks = ParseField(OverrideTempMax.Text, "suhu maksimum");
 
             var defaultAmbang = AmbangLayakKerja.Untuk(jenis == Models.JenisPekerjaan.Pengecatan
                 ? Domain.Weather.JenisPekerjaan.Pengecatan
@@ -210,6 +223,10 @@ public partial class SchedulePage : PageBase
             return;
         }
 
+        // 4. Dialog konfirmasi: simpan di variabel lokal untuk menghindari mutasi parsial bila batal (Bug 2)
+        bool setujuRisiko = false;
+        bool setujuDataLama = false;
+
         // Kasus cuaca tidak layak: wajib konfirmasi persetujuan risiko (T30, X12)
         if (eval.Status == StatusKelayakanCuaca.TidakLayak)
         {
@@ -219,7 +236,7 @@ public partial class SchedulePage : PageBase
             {
                 return; // Batal tidak mengunci (T30)
             }
-            job.PersetujuanRisiko = true;
+            setujuRisiko = true;
         }
 
         // Kasus cache kedaluwarsa (>= 6 jam): wajib konfirmasi persetujuan data lama (T30, X04)
@@ -232,9 +249,12 @@ public partial class SchedulePage : PageBase
             {
                 return; // Batal tidak mengunci (T30)
             }
-            job.KonfirmasiDataLama = true;
+            setujuDataLama = true;
         }
 
+        // Terapkan ke job hanya setelah seluruh konfirmasi berhasil dilewati
+        job.PersetujuanRisiko = setujuRisiko;
+        job.KonfirmasiDataLama = setujuDataLama;
         job.Jadwalkan(day, tetapKunci: true);
         job.CatatanKeputusan = string.Join("; ", eval.Alasan);
         Shell.Render();
