@@ -1,3 +1,5 @@
+using Wastu.Domain.Weather;
+
 namespace Wastu.Domain.Services;
 
 /// <summary>Katalog bahan (PRD §F2, §10).</summary>
@@ -76,10 +78,6 @@ public interface IEmissionSimulationService
 /// <summary>
 /// Penjadwalan pekerjaan sensitif cuaca (PRD §F6, §10).
 /// </summary>
-/// <remarks>
-/// Kontrak saja yang dideklarasikan di sini. Logika ambang dan algoritme penjadwalan
-/// adalah milik frontend developer karena PRD §16.1 menugaskan §12 kepadanya.
-/// </remarks>
 public interface IWorkSchedulingService
 {
     /// <summary>Menilai kelayakan tiap hari dalam rentang rencana sebuah pekerjaan.</summary>
@@ -91,6 +89,18 @@ public interface IWorkSchedulingService
     /// keputusan (PRD §14 R7).
     /// </summary>
     Task LockDateAsync(Guid pekerjaanId, DateOnly tanggal, CancellationToken ct = default);
+
+    /// <summary>
+    /// Menilai kelayakan hari kerja secara detail dengan status bertingkat (Layak/Waspada/TidakLayak/DataTidakTersedia).
+    /// </summary>
+    Task<IReadOnlyList<HasilEvaluasiCuaca>> EvaluateDaysDetailedAsync(Guid pekerjaanId, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<HasilEvaluasiCuaca>>([]);
+
+    /// <summary>
+    /// Mengunci satu tanggal dengan membawa konfirmasi persetujuan risiko dan catatan pengguna (PRD §12.2).
+    /// </summary>
+    Task LockDateAsync(Guid pekerjaanId, DateOnly tanggal, KonfirmasiPenguncian konfirmasi, CancellationToken ct = default)
+        => LockDateAsync(pekerjaanId, tanggal, ct);
 }
 
 /// <summary>Ekspor laporan rekomendasi ke PDF (PRD §F7, §10).</summary>
@@ -98,6 +108,14 @@ public interface IReportExportService
 {
     /// <summary>Menghasilkan berkas PDF ringkasan rekomendasi dan mencatatnya.</summary>
     Task<Laporan> ExportAsync(Guid proyekId, OpsiEkspor opsi, CancellationToken ct = default);
+
+    /// <summary>Mendapatkan riwayat laporan PDF yang pernah diekspor untuk satu proyek.</summary>
+    Task<IReadOnlyList<Laporan>> ListReportsAsync(Guid proyekId, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<Laporan>>([]);
+
+    /// <summary>Mendapatkan data laporan berdasarkan identitas dokumen.</summary>
+    Task<Laporan?> GetReportByIdAsync(Guid id, CancellationToken ct = default)
+        => Task.FromResult<Laporan?>(null);
 }
 
 /// <summary>Hasil penilaian kelayakan satu hari kerja (PRD §F6).</summary>
@@ -109,7 +127,74 @@ public sealed record PenilaianKesiapanHari(DateOnly Tanggal, bool Layak, string?
 }
 
 /// <summary>Pilihan saat mengekspor laporan (PRD §F7).</summary>
-public sealed record OpsiEkspor(int HorizonTahun, bool SertakanJadwal, string? PathTujuan = null);
+public sealed record OpsiEkspor
+{
+    public OpsiEkspor(int horizonTahun, bool sertakanJadwal, string? pathTujuan = null)
+        : this(horizonTahun, sertakanJadwal, pathTujuan, null, null, null, null)
+    {
+    }
+
+    public OpsiEkspor(
+        int horizonTahun,
+        bool sertakanJadwal,
+        string? pathTujuan = null,
+        IReadOnlyList<Guid>? komponenDipilih = null,
+        IReadOnlyList<Guid>? bahanDipilih = null,
+        IReadOnlyList<int>? horizonDipilih = null,
+        string? snapshotHash = null)
+    {
+        HorizonTahun = horizonTahun;
+        SertakanJadwal = sertakanJadwal;
+        PathTujuan = pathTujuan;
+        KomponenDipilih = komponenDipilih;
+        BahanDipilih = bahanDipilih;
+        HorizonDipilih = horizonDipilih;
+        SnapshotHash = snapshotHash;
+    }
+
+    public int HorizonTahun { get; init; }
+    public bool SertakanJadwal { get; init; }
+    public string? PathTujuan { get; init; }
+    public IReadOnlyList<Guid>? KomponenDipilih { get; init; }
+    public IReadOnlyList<Guid>? BahanDipilih { get; init; }
+    public IReadOnlyList<int>? HorizonDipilih { get; init; }
+    public string? SnapshotHash { get; init; }
+}
 
 /// <summary>Laporan yang sudah diekspor sebagai berkas lokal (PRD §F7).</summary>
-public sealed record Laporan(Guid Id, Guid ProyekId, string PathBerkas, DateTimeOffset DibuatPada);
+public sealed record Laporan
+{
+    public Laporan(Guid id, Guid proyekId, string pathBerkas, DateTimeOffset dibuatPada)
+        : this(id, proyekId, pathBerkas, dibuatPada, null, null, null, "Tersimpan")
+    {
+    }
+
+    public Laporan(
+        Guid id,
+        Guid proyekId,
+        string pathBerkas,
+        DateTimeOffset dibuatPada,
+        string? checksumSha256 = null,
+        string? snapshotHash = null,
+        long? ukuranByte = null,
+        string status = "Tersimpan")
+    {
+        Id = id;
+        ProyekId = proyekId;
+        PathBerkas = pathBerkas;
+        DibuatPada = dibuatPada;
+        ChecksumSha256 = checksumSha256;
+        SnapshotHash = snapshotHash;
+        UkuranByte = ukuranByte;
+        Status = status;
+    }
+
+    public Guid Id { get; init; }
+    public Guid ProyekId { get; init; }
+    public string PathBerkas { get; init; }
+    public DateTimeOffset DibuatPada { get; init; }
+    public string? ChecksumSha256 { get; init; }
+    public string? SnapshotHash { get; init; }
+    public long? UkuranByte { get; init; }
+    public string Status { get; init; } = "Tersimpan";
+}

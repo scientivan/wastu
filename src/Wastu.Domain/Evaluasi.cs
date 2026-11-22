@@ -16,17 +16,6 @@ public sealed record SubSkorKesesuaian(
 }
 
 /// <summary>Hasil penilaian satu bahan pada satu komponen, siap disimpan ke tabel <c>evaluasi</c>.</summary>
-/// <param name="Id">
-/// Id penilaian ini. Dibuat domain saat peringkat dihitung, bukan oleh database,
-/// karena <see cref="Services.IEmissionSimulationService.SimulateAsync"/> menuntut
-/// id untuk saling-rujuk dengan hasil simulasi.
-/// </param>
-/// <param name="BahanId">Bahan yang dinilai.</param>
-/// <param name="KomponenId">Komponen yang dinilai.</param>
-/// <param name="SkorKesesuaian">Skor akhir 0-100, hasil penjumlahan berbobot (§11.1).</param>
-/// <param name="EmisiAwalKg">Emisi awal = faktor_emisi × luas_area, kgCO2e (§11.2).</param>
-/// <param name="SubSkor">Rincian keempat sub-skor sebelum pembobotan.</param>
-/// <param name="Alasan">Penjelasan tekstual untuk persona non-teknis (§11.1, §4.1).</param>
 public sealed record Evaluasi(
     Guid Id,
     Guid BahanId,
@@ -34,4 +23,8 @@ public sealed record Evaluasi(
     double SkorKesesuaian,
     double EmisiAwalKg,
     SubSkorKesesuaian SubSkor,
-    string Alasan);
+    string Alasan,
+    Guid? BatchId = null,
+    string? VersiModel = null,
+    string? HashInput = null,
+    DateTimeOffset? DihitungPadaUtc = null);
