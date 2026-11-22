@@ -20,7 +20,7 @@ public sealed record KonfirmasiPenguncian(
     string? Catatan = null);
 
 /// <summary>
-/// Catatan keputusan penetapan tanggal dan status kelayakan cuaca saat penguncian (PRD §12.2).
+/// Catatan keputusan penetapan tanggal dan status kelayakan cuaca saat penguncian (PRD §12.2, T30, T31).
 /// </summary>
 public sealed record KeputusanJadwal(
     DateOnly Tanggal,
@@ -28,7 +28,14 @@ public sealed record KeputusanJadwal(
     IReadOnlyList<string> Catatan,
     bool Terkunci = false,
     DateTimeOffset? DikunciPadaUtc = null,
-    KonfirmasiPenguncian? Konfirmasi = null);
+    KonfirmasiPenguncian? Konfirmasi = null,
+    bool PersetujuanRisiko = false,
+    bool KonfirmasiDataLama = false,
+    TimeSpan? UmurDataSaatKunci = null,
+    AmbangPekerjaan? AmbangEfektif = null,
+    DateTimeOffset? DiambilPadaUtc = null,
+    DateTimeOffset? DiputuskanPadaUtc = null,
+    int? RevisiLokasiSaatKunci = null);
 
 /// <summary>
 /// Pekerjaan lapangan sensitif cuaca yang direncanakan pada suatu proyek (PRD §F6, §12).
@@ -48,7 +55,9 @@ public sealed record Pekerjaan
         Guid? bahanId = null,
         AmbangPekerjaan? overrideAmbang = null,
         KonfirmasiPenguncian? konfirmasi = null,
-        DateTimeOffset? terakhirDiperbaruiUtc = null)
+        DateTimeOffset? terakhirDiperbaruiUtc = null,
+        int? revisiLokasiSaatKunci = null,
+        KeputusanJadwal? keputusanTerakhir = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(nama);
 
@@ -91,6 +100,8 @@ public sealed record Pekerjaan
         OverrideAmbang = overrideAmbang;
         Konfirmasi = konfirmasi;
         TerakhirDiperbaruiUtc = terakhirDiperbaruiUtc ?? DateTimeOffset.UtcNow;
+        RevisiLokasiSaatKunci = revisiLokasiSaatKunci;
+        KeputusanTerakhir = keputusanTerakhir;
     }
 
     public Guid Id { get; init; }
@@ -106,4 +117,6 @@ public sealed record Pekerjaan
     public AmbangPekerjaan? OverrideAmbang { get; init; }
     public KonfirmasiPenguncian? Konfirmasi { get; init; }
     public DateTimeOffset TerakhirDiperbaruiUtc { get; init; }
+    public int? RevisiLokasiSaatKunci { get; init; }
+    public KeputusanJadwal? KeputusanTerakhir { get; init; }
 }
