@@ -83,13 +83,14 @@ public sealed class ReportExportService : IReportExportService
     public async Task<Laporan> ExportSnapshotAsync(SnapshotLaporan snapshot, string pathTujuan, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
+        ct.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(pathTujuan))
         {
             throw new ArgumentException("Path tujuan berkas PDF wajib diisi.", nameof(pathTujuan));
         }
 
         // Validate selection: must not be empty
-        if (snapshot.BahanTerpilih.Count == 0 && snapshot.Komponen.Count == 0)
+        if (snapshot.BahanTerpilih.Count == 0 || snapshot.Komponen.Count == 0)
         {
             throw new InvalidOperationException("Laporan tidak dapat diekspor dengan pilihan komponen dan material kosong.");
         }
@@ -106,7 +107,7 @@ public sealed class ReportExportService : IReportExportService
         var snapshotFinal = snapshot with { SnapshotHash = hash };
 
         // Generate PDF document
-        var document = _pdfBuilder.Build(snapshotFinal);
+        using var document = await Task.Run(() => _pdfBuilder.Build(snapshotFinal), ct).ConfigureAwait(false);
 
         // Atomic write via temp file
         var tempFile = Path.Combine(
@@ -126,6 +127,7 @@ public sealed class ReportExportService : IReportExportService
             fileSize = new FileInfo(tempFile).Length;
             sha256 = HitungChecksumSha256(tempFile);
 
+            ct.ThrowIfCancellationRequested();
             if (File.Exists(fullPath))
             {
                 File.Replace(tempFile, fullPath, null);
@@ -165,7 +167,7 @@ public sealed class ReportExportService : IReportExportService
             // Offline / DB-failure resilience (T35):
             // The PDF file is preserved on disk.
             // Record local pending metadata file for idempotent reconciliation.
-            await RecordPendingMetadataAsync(laporan, ex.Message).ConfigureAwait(false);
+            await RecordPendingMetadataAsync(laporan, ex.GetType().Name).ConfigureAwait(false);
 
             return laporan with { Status = "MenungguPencatatan" };
         }
@@ -207,6 +209,24 @@ public sealed class ReportExportService : IReportExportService
         }
 
         return StatusBerkasLaporan.Tersedia;
+    }
+
+    public async Task<IReadOnlyList<Laporan>> ReadPendingReportsAsync(CancellationToken ct = default)
+    {
+        var reports = new List<Laporan>();
+        if (!Directory.Exists(_pendingMetadataDir)) return reports;
+        foreach (var file in Directory.GetFiles(_pendingMetadataDir, "*.pending.json"))
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                var meta = JsonSerializer.Deserialize<PendingReportMetadata>(await File.ReadAllTextAsync(file, ct));
+                if (meta is not null) reports.Add(new Laporan(meta.Id, meta.ProyekId, meta.PathBerkas,
+                    meta.DibuatPada, meta.ChecksumSha256, meta.SnapshotHash, meta.UkuranByte, "MenungguPencatatan"));
+            }
+            catch (Exception ex) when (ex is JsonException or IOException) { }
+        }
+        return reports;
     }
 
     public async Task<int> RekonsiliasiPendingAsync(CancellationToken ct = default)
@@ -445,7 +465,10 @@ public sealed class ReportExportService : IReportExportService
                     TanggalMulai = j.TanggalMulai,
                     TanggalSelesai = j.TanggalSelesai,
                     TanggalDikunci = j.TanggalDikunci,
-                    StatusCuaca = j.Status == StatusPekerjaan.Terkunci ? "Terkunci" : j.Status.ToString(),
+                    StatusCuaca = j.KeputusanTerakhir?.Status.ToString() ?? "Belum terverifikasi",
+                    AlasanCuaca = j.KeputusanTerakhir?.Catatan ?? ["Keputusan legacy tanpa snapshot cuaca."],
+                    Keputusan = j.KeputusanTerakhir,
+                    SumberAmbang = j.OverrideAmbang is null ? "Asumsi generik jenis pekerjaan" : "Override pekerjaan",
                     KonfirmasiRisiko = j.Konfirmasi?.SetujuiRisiko ?? false,
                     KonfirmasiDataLama = j.Konfirmasi?.SetujuiDataLama ?? false,
                     Catatan = j.Konfirmasi?.Catatan

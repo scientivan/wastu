@@ -7,6 +7,25 @@ namespace Wastu.Domain.Tests.Weather;
 
 public class WorkSchedulingServiceTests
 {
+    [Fact]
+    public async Task LockDateUsesForecastTimezoneWhenProjectTimezoneIsOutdated()
+    {
+        var now = new DateTimeOffset(2026, 11, 20, 16, 30, 0, TimeSpan.Zero);
+        var projects = new ProyekRepositoryInMemory();
+        var jobs = new PekerjaanRepositoryInMemory();
+        var cache = new PrakiraanCacheRepositoryInMemory();
+        var project = new Proyek(Guid.NewGuid(), "WIT", "Jayapura", -2.5, 140.7, zonaWaktu: "Asia/Jakarta");
+        await projects.AddAsync(project);
+        var date = new DateOnly(2026, 11, 20);
+        var job = new Pekerjaan(Guid.NewGuid(), project.Id, "Cat", JenisPekerjaan.Pengecatan, date, date);
+        await jobs.AddAsync(job);
+        await cache.SimpanCacheAsync(project.Latitude, project.Longitude,
+            new([new(date, 20, 0, 20, 30, 70)], "Asia/Jayapura", now, "Fixture"));
+        var service = new WorkSchedulingService(jobs, projects, cache, new StubForecastClient(),
+            new AmbangPekerjaanRepositoryInMemory(jobs), new TestTimeProvider(now));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.LockDateAsync(job.Id, date));
+        Assert.Null((await jobs.GetByIdAsync(job.Id))!.TanggalDikunci);
+    }
     private sealed class TestTimeProvider : TimeProvider
     {
         private DateTimeOffset _utcNow;
@@ -31,6 +50,54 @@ public class WorkSchedulingServiceTests
             }
             return new HasilPrakiraan([], "Asia/Jakarta", DateTimeOffset.UtcNow, "Open-Meteo", 1);
         }
+    }
+
+    [Fact]
+    public async Task CancellationStopsOneWaiterWithoutCancellingSharedForecast()
+    {
+        var projects = new ProyekRepositoryInMemory();
+        var jobs = new PekerjaanRepositoryInMemory();
+        var cache = new PrakiraanCacheRepositoryInMemory();
+        var project = new Proyek(Guid.NewGuid(), "Uji", "Jakarta", -6.2, 106.8);
+        await projects.AddAsync(project);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var response = new TaskCompletionSource<HasilPrakiraan>(TaskCreationOptions.RunContinuationsAsynchronously);
+        int calls = 0;
+        var client = new StubForecastClient { Handler = (_, _, _, _) =>
+        { Interlocked.Increment(ref calls); started.TrySetResult(); return response.Task; } };
+        var service = new WorkSchedulingService(jobs, projects, cache, client,
+            new AmbangPekerjaanRepositoryInMemory(jobs));
+        using var cancellation = new CancellationTokenSource();
+        var first = service.GetForecastAsync(project.Id, ct: cancellation.Token);
+        await started.Task;
+        var second = service.GetForecastAsync(project.Id);
+        cancellation.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
+        var expected = new HasilPrakiraan([], "Asia/Jakarta", DateTimeOffset.UtcNow, "Fixture");
+        response.SetResult(expected);
+        Assert.Equal(expected, await second);
+        Assert.Equal(1, calls);
+    }
+
+    [Fact]
+    public async Task CancelledEvaluationDoesNotReturnCachedSuccess()
+    {
+        var jobs = new PekerjaanRepositoryInMemory();
+        var projects = new ProyekRepositoryInMemory();
+        var project = new Proyek(Guid.NewGuid(), "Uji", "Jakarta", -6.2, 106.8);
+        await projects.AddAsync(project);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var job = new Pekerjaan(Guid.NewGuid(), project.Id, "Cat", JenisPekerjaan.Pengecatan, today, today);
+        await jobs.AddAsync(job);
+        var cache = new PrakiraanCacheRepositoryInMemory();
+        await cache.SimpanCacheAsync(project.Latitude, project.Longitude,
+            new HasilPrakiraan([], "Asia/Jakarta", DateTimeOffset.UtcNow.AddDays(-1), "Fixture"));
+        var service = new WorkSchedulingService(jobs, projects, cache,
+            new StubForecastClient(), new AmbangPekerjaanRepositoryInMemory(jobs));
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            service.EvaluateDaysDetailedAsync(job.Id, cancellation.Token));
     }
 
     [Fact]

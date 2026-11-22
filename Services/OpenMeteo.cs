@@ -15,7 +15,18 @@ public sealed class OpenMeteo : IHistoricalClimateClient, IDailyForecastClient
         AutomaticDecompression = System.Net.DecompressionMethods.All,
         PooledConnectionLifetime = TimeSpan.FromMinutes(5)
     })
-    { Timeout = TimeSpan.FromSeconds(12) };
+    { Timeout = Timeout.InfiniteTimeSpan };
+
+    private readonly HttpClient _http;
+    private readonly TimeSpan _historicalTimeout;
+    private readonly TimeSpan _forecastTimeout;
+
+    public OpenMeteo(HttpClient? http = null, TimeSpan? historicalTimeout = null, TimeSpan? forecastTimeout = null)
+    {
+        _http = http ?? Http;
+        _historicalTimeout = historicalTimeout ?? TimeSpan.FromSeconds(60);
+        _forecastTimeout = forecastTimeout ?? TimeSpan.FromSeconds(12);
+    }
 
     private static string Num(double v) => v.ToString(CultureInfo.InvariantCulture);
 
@@ -28,9 +39,11 @@ public sealed class OpenMeteo : IHistoricalClimateClient, IDailyForecastClient
                   "&daily=precipitation_sum,temperature_2m_mean&hourly=relative_humidity_2m&timezone=auto";
 
         byte[] bytes;
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(_historicalTimeout);
         try
         {
-            bytes = await Http.GetByteArrayAsync(url, ct).ConfigureAwait(false);
+            bytes = await _http.GetByteArrayAsync(url, timeout.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException ex) when (!ct.IsCancellationRequested)
         {
@@ -57,9 +70,11 @@ public sealed class OpenMeteo : IHistoricalClimateClient, IDailyForecastClient
                   $"&hourly=relative_humidity_2m&forecast_days={hariAmbil}&timezone=auto";
 
         byte[] bytes;
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(_forecastTimeout);
         try
         {
-            bytes = await Http.GetByteArrayAsync(url, ct).ConfigureAwait(false);
+            bytes = await _http.GetByteArrayAsync(url, timeout.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException ex) when (!ct.IsCancellationRequested)
         {

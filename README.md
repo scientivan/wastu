@@ -52,7 +52,7 @@ Implementasi saat ini mencakup perubahan V2 berikut. Ketersediaan kode dan kelul
 | Laporan | PDF langsung tanpa printer, pilihan bahan/horizon/jadwal, bobot serta metadata iklim aktual, riwayat lokal, dan pemulihan pencatatan yang tertunda. |
 | Luring | Snapshot per profil koneksi untuk peninjauan baca-saja saat database tidak tersedia; mode JSON lokal tetap tersedia. |
 
-Verifikasi otomatis tersedia untuk domain, repository PostgreSQL terisolasi, snapshot/pemulihan, alur state aplikasi tanpa WPF, dan isi serta tata letak PDF. Uji interaktif WPF pada Windows, pengukuran performa Windows, reliabilitas API nyata, uji pemahaman pengguna, dan penyelesaian pemisahan ViewModel masih menjadi bagian penerimaan yang belum selesai.
+Verifikasi mencakup domain, repository PostgreSQL terisolasi, snapshot/pemulihan, state/ViewModel tanpa WPF, serta PDF. Pada Windows telah dijalankan alur kontrol WPF untuk ketiga kombinasi komponen, restart, dialog PDF dan risiko melalui UI Automation/keyboard, serta startup online/luring/pemulihan. Pengukuran dan smoke API merupakan sampel satu perangkat/sesi; belum menggantikan uji pengguna, pemeriksaan aksesibilitas menyeluruh, atau pengujian mesin Windows bersih.
 
 ## Fitur Aplikasi
 
@@ -87,7 +87,9 @@ Aplikasi desktop Windows berbasis WPF (.NET 8, C#) dengan data cuaca dan iklim d
 
 File `.env` dicari dari direktori kerja, lalu direktori executable, termasuk folder induknya. Environment variable yang terisi lebih diutamakan daripada nilai dalam file. `.env` tidak disertakan dalam build atau publish dan tidak boleh di-commit. Untuk menjalankan hasil publish, sediakan `.env` sendiri di direktori executable atau atur environment variable. Konfigurasi database yang hanya terisi sebagian akan menghasilkan kesalahan agar aplikasi tidak diam-diam beralih ke mode lokal.
 
-Dengan koneksi PostgreSQL, proyek, luas bidang, profil iklim, dan katalog dibaca dari database. Katalog dimuat saat aplikasi dibuka. Snapshot lokal dipisahkan menurut profil koneksi; state tampilan, bobot per proyek, dan jadwal UI ikut disimpan dalam snapshot tersebut. Integrasi seluruh jalur simulasi/jadwal/laporan UI dengan repository PostgreSQL masih perlu dituntaskan dalam WP08.
+Dengan koneksi PostgreSQL, proyek, luas, profil iklim, katalog, jadwal/keputusan cuaca, simulasi, dan riwayat laporan dibaca/ditulis melalui repository. UI memakai service simulasi, penjadwalan, dan ekspor yang sama dengan pengujian. Snapshot lokal dipisahkan menurut profil koneksi dan mencakup katalog, cache prakiraan, riwayat, bobot serta faktor penuaan per proyek. Jadwal snapshot lama diimpor sekali dengan identitas stabil; penghapusan setelah impor tidak membuat jadwal muncul kembali. Perubahan area/komponen memakai ID komponen database yang tersimpan.
+
+Pengambilan historis mempunyai batas waktu 60 detik, sedangkan prakiraan 12 detik. Pembaruan manual iklim/prakiraan dapat dibatalkan dengan menekan tombol pembaruan lagi. Cache memakai timestamp UTC terstruktur dan tanggal pada zona provider. Laporan menyimpan snapshot cuaca/ambang dan persetujuan yang sebenarnya; keputusan tanpa bukti legacy tidak dianggap otomatis layak. Saat ekspor luring, PDF tetap tersedia dan metadata menunggu rekonsiliasi per profil koneksi.
 
 Saat seluruh konfigurasi koneksi kosong, aplikasi membuka mode JSON lokal. Berkas legacy `state.json` dan `state-postgres.json` dapat diimpor ke snapshot berversi yang sesuai. Jika database tidak tersedia, snapshot profil koneksi yang valid dapat dibuka dalam mode baca-saja; bila snapshot tidak tersedia atau rusak, aplikasi menampilkan alur pemulihan.
 
@@ -115,3 +117,10 @@ dotnet publish Wastu.csproj -c Release -r win-x64 --self-contained true -o artif
 ```
 
 Salin seluruh folder hasil publish ke Windows dan jalankan `Wastu.exe`. Build/publish lintas platform memverifikasi kompilasi dan paket; jalankan pengujian interaktif, luring, resize, dialog ekspor, serta buka ulang PDF pada Windows sebelum menyatakan rilis siap digunakan. Aset garis pantai dan font PDF disertakan sebagai embedded resource. Berkas `.env` harus disediakan secara lokal dan tidak disertakan dalam paket.
+
+
+Untuk mengulang pemeriksaan WPF, bangun dengan `dotnet build Wastu.csproj -c Release -p:Snapshot=true`. Jalankan salinan output dari folder uji di luar pohon `.env`, atur `WASTU_DATA_DIR` ke direktori uji kosong, dan set `WASTU_SNAPSHOT=acceptance;<folder-hasil>;1440;900`. Mode `acceptance-restart` memakai data hasil proses pertama. Harness merender kontrol WPF dan menulis hasil/binding trace; ini otomasi Windows, bukan studi pemahaman manusia. Mode diagnostik tidak disertakan dalam build Release biasa.
+
+`tests/Wastu.WindowsVerification` menyediakan mode `benchmark` (komputasi kategori tanpa HTTP/cache/UI), `api` (satu historis dan 20 prakiraan nyata), serta `database` (alur service dan restart). Jalankan memakai `dotnet run --project tests/Wastu.WindowsVerification -c Release -- <mode> <folder-hasil>`. Mode database hanya menerima `WASTU_TEST_CONNECTION_STRING` untuk database khusus `wastu_windows_ui` pada `127.0.0.1`; tidak memakai database aplikasi pengguna. Jalankan tes Data dengan database uji terpisah sebagaimana dijelaskan di atas.
+
+Penerimaan keseluruhan WP08 tetap terbuka: studi minimal lima pengguna belum tersedia, pemisahan ViewModel halaman lainnya belum lengkap, dan alur edit/buka kunci pekerjaan, spesifikasi produk opsional, serta regenerasi PDF dari snapshot historis masih perlu dituntaskan. Folder hasil pengujian dan dokumen verifikasi lokal bukan bagian distribusi atau repository.

@@ -10,7 +10,8 @@ namespace Wastu.Views.Pages;
 
 public partial class SchedulePage : PageBase
 {
-    private Models.JenisPekerjaan? _lastSyncedKind;
+    private int? _lastProjectId;
+    private readonly OperationViewModel _commands = new();
 
     public SchedulePage() => InitializeComponent();
 
@@ -31,21 +32,17 @@ public partial class SchedulePage : PageBase
         PaintTab.IsChecked = painting;
         CastTab.IsChecked = !painting;
 
-        var forecast = S.PrakiraanAktif();
-        if (string.IsNullOrWhiteSpace(JobName.Text))
+        var forecast = S.Workflows.CalendarDays();
+        if (_lastProjectId != S.Aktif.Id)
         {
+            _lastProjectId = S.Aktif.Id;
             JobName.Text = painting ? "Pengecatan eksterior" : "Pengecoran dinding";
-        }
-        JobKind.SelectedIndex = painting ? 0 : 1;
-        JobStart.SelectedDate ??= forecast.Count > 0 ? forecast[0].Tanggal : DateTime.Today;
-        JobEnd.SelectedDate ??= forecast.Count > 0 ? forecast[^1].Tanggal : DateTime.Today.AddDays(6);
-
-        // Hanya sinkronkan input override saat inisialisasi atau perubahan jenis pekerjaan (Bug 3)
-        var currentKind = painting ? Models.JenisPekerjaan.Pengecatan : Models.JenisPekerjaan.Pengecoran;
-        if (_lastSyncedKind != currentKind)
-        {
-            SyncOverrideInputs(currentKind);
-            _lastSyncedKind = currentKind;
+            JobKind.SelectedIndex = painting ? 0 : 1;
+            var today = KebijakanCachePrakiraan.HariIniPadaZona(DateTimeOffset.UtcNow, S.Aktif.ZonaWaktu)
+                .ToDateTime(TimeOnly.MinValue);
+            JobStart.SelectedDate = today;
+            JobEnd.SelectedDate = today.AddDays(6);
+            SyncOverrideInputs(painting ? Models.JenisPekerjaan.Pengecatan : Models.JenisPekerjaan.Pengecoran);
         }
 
         DataContext = new ScheduleData(S, forecast);
@@ -65,7 +62,7 @@ public partial class SchedulePage : PageBase
     }
 
     private Models.PrakiraanCuaca? SelectedDay() =>
-        S.HariDipilih is { } day ? S.PrakiraanAktif().Find(d => d.Tanggal == day) : null;
+        S.HariDipilih is { } day ? S.Workflows.CalendarDays().Find(d => d.Tanggal == day) : null;
 
     private async void Refresh_Click(object sender, RoutedEventArgs e) => await Shell.RefreshForecastAsync();
 
@@ -81,7 +78,7 @@ public partial class SchedulePage : PageBase
             Enum.TryParse<Models.JenisPekerjaan>(tagStr, out var jenis))
         {
             SyncOverrideInputs(jenis);
-            _lastSyncedKind = jenis;
+
         }
     }
 
@@ -89,7 +86,7 @@ public partial class SchedulePage : PageBase
     {
         var jenis = JobKind.SelectedIndex == 0 ? Models.JenisPekerjaan.Pengecatan : Models.JenisPekerjaan.Pengecoran;
         SyncOverrideInputs(jenis);
-        _lastSyncedKind = jenis;
+
         Shell.Toast("Ambang dikembalikan ke asumsi generik default.");
     }
 
@@ -99,14 +96,14 @@ public partial class SchedulePage : PageBase
         Shell.Render();
     }
 
-    private void Add_Click(object sender, RoutedEventArgs e)
+    private async void Add_Click(object sender, RoutedEventArgs e)
     {
         if (S.ModeBacaSaja)
         {
             Shell.Toast("Mode luring baca-saja: jadwal pekerjaan tidak dapat ditambah.");
             return;
         }
-        if (JobName.Text.Length == 0 || JobStart.SelectedDate is not { } start || JobEnd.SelectedDate is not { } end)
+        if (string.IsNullOrWhiteSpace(JobName.Text) || JobStart.SelectedDate is not { } start || JobEnd.SelectedDate is not { } end)
         {
             Shell.Toast("Harap isi bidang ini.");
             return;
@@ -123,34 +120,8 @@ public partial class SchedulePage : PageBase
         AmbangPekerjaan? overrideAmbang = null;
         try
         {
-            static double? ParseField(string text, string namaField)
-            {
-                if (string.IsNullOrWhiteSpace(text)) return null;
-                if (!double.TryParse(text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var val) || !double.IsFinite(val))
-                {
-                    throw new FormatException($"Nilai {namaField} harus berupa angka valid.");
-                }
-                return val;
-            }
-
-            double? p = ParseField(OverrideRainProb.Text, "peluang hujan");
-            double? c = ParseField(OverrideRainMm.Text, "curah hujan");
-            double? rh = ParseField(OverrideRhMax.Text, "kelembapan");
-            double? tMin = ParseField(OverrideTempMin.Text, "suhu minimum");
-            double? tMaks = ParseField(OverrideTempMax.Text, "suhu maksimum");
-
-            var defaultAmbang = AmbangLayakKerja.Untuk(jenis == Models.JenisPekerjaan.Pengecatan
-                ? Domain.Weather.JenisPekerjaan.Pengecatan
-                : Domain.Weather.JenisPekerjaan.Pengecoran);
-
-            if (p != defaultAmbang.ProbabilitasHujanMaksPct ||
-                c != defaultAmbang.CurahHujanMaksMm ||
-                rh != defaultAmbang.KelembapanMaksPct ||
-                tMin != defaultAmbang.SuhuMinC ||
-                tMaks != defaultAmbang.SuhuMaksC)
-            {
-                overrideAmbang = new AmbangPekerjaan(p, c, rh, tMin, tMaks, defaultAmbang.TingkatSuhu);
-            }
+            overrideAmbang = ScheduleViewModel.ParseOverride(jenis, OverrideRainProb.Text,
+                OverrideRainMm.Text, OverrideRhMax.Text, OverrideTempMin.Text, OverrideTempMax.Text);
         }
         catch (Exception ex)
         {
@@ -166,92 +137,48 @@ public partial class SchedulePage : PageBase
             TanggalSelesaiRencana = end.Date,
             OverrideAmbang = overrideAmbang
         };
-        job.PulihkanJadwal(null);
-        S.Aktif.JadwalkanPekerjaan(job);
-        Shell.Render();
-        Shell.Toast("Pekerjaan ditambahkan. Pilih tanggal untuk mengunci.");
+        if (await _commands.RunAsync(ct => S.Workflows.AddJobAsync(job, ct)))
+        {
+            Shell.Render();
+            Shell.Toast("Pekerjaan ditambahkan. Pilih tanggal untuk mengunci.");
+        }
+        else Shell.Toast(_commands.Error ?? "Pekerjaan belum tersimpan.");
     }
 
-    private void Lock_Click(object sender, RoutedEventArgs e)
+    private async void Lock_Click(object sender, RoutedEventArgs e)
     {
-        if (S.ModeBacaSaja)
-        {
-            Shell.Toast("Mode luring baca-saja: penguncian jadwal tidak dapat diubah.");
-            return;
-        }
-        var job = S.Aktif.Pekerjaan[(int)((FrameworkElement)sender).Tag];
+        if (_commands.IsBusy || S.ModeBacaSaja) return;
+        var project = S.Aktif;
+        var job = project.Pekerjaan[(int)((FrameworkElement)sender).Tag];
         if (SelectedDay() is not { } day)
         {
             Shell.Toast("Pilih tanggal terlebih dahulu pada kalender.");
             return;
         }
-
-        // 1. Validasi rentang tanggal pekerjaan
-        if (day.Tanggal < job.TanggalMulaiRencana || day.Tanggal > job.TanggalSelesaiRencana)
+        var date = DateOnly.FromDateTime(day.Tanggal);
+        if (await _commands.RunAsync(async ct =>
         {
-            Shell.Toast("Tanggal terpilih harus masuk rentang pekerjaan.");
-            return;
-        }
-
-        // 2. Validasi tanggal lampau pada zona proyek (T23)
-        var nowUtc = DateTimeOffset.UtcNow;
-        var projectZone = S.Aktif.Longitude >= 135 ? "Asia/Jayapura" : S.Aktif.Longitude >= 115 ? "Asia/Makassar" : "Asia/Jakarta";
-        var todayInZone = KebijakanCachePrakiraan.HariIniPadaZona(nowUtc, projectZone);
-        if (DateOnly.FromDateTime(day.Tanggal) < todayInZone)
-        {
-            Shell.Toast($"Tanggal {Format.Iso(day.Tanggal)} adalah tanggal lampau pada zona proyek.");
-            return;
-        }
-
-        // 3. Evaluasi hari menggunakan EvaluatorCuaca domain
-        var eval = day.EvaluasiDomain(job.Jenis, job.OverrideAmbang);
-
-        // Kasus data tidak tersedia (F6-05, T29)
-        if (eval.Status == StatusKelayakanCuaca.DataTidakTersedia)
-        {
-            Shell.Toast("Tanggal tidak dapat dikunci: prakiraan cuaca belum tersedia (hanya tersimpan sebagai draf).");
-            return;
-        }
-
-        // 4. Dialog konfirmasi: simpan di variabel lokal untuk menghindari mutasi parsial bila batal (Bug 2)
-        bool setujuRisiko = false;
-        bool setujuDataLama = false;
-
-        // Kasus cuaca tidak layak: wajib konfirmasi persetujuan risiko (T30, X12)
-        if (eval.Status == StatusKelayakanCuaca.TidakLayak)
-        {
-            var msg = "PERINGATAN RISIKO CUACA:\n\n• " + string.Join("\n• ", eval.Alasan) +
-                      "\n\nApakah Anda memahami risiko ini dan tetap ingin mengunci tanggal?";
-            if (!Confirm(msg))
+            var days = await S.Workflows.EvaluateJobAsync(job.Id, ct);
+            var evaluation = days.FirstOrDefault(d => d.Tanggal == date);
+            if (evaluation is null || evaluation.Status == StatusKelayakanCuaca.DataTidakTersedia)
             {
-                return; // Batal tidak mengunci (T30)
+                Shell.Toast("Tanggal ini belum memiliki prakiraan lengkap dalam rentang pekerjaan; hanya dapat disimpan sebagai draf.");
+                return;
             }
-            setujuRisiko = true;
-        }
-
-        // Kasus cache kedaluwarsa (>= 6 jam): wajib konfirmasi persetujuan data lama (T30, X04)
-        bool isStale = DateTime.TryParse(S.PrakiraanDiperbarui, out var dt) && (DateTime.Now - dt >= TimeSpan.FromHours(6));
-        if (isStale)
-        {
-            var msgStale = $"Peringatan: Data prakiraan cuaca telah berusia ≥ 6 jam (data lama).\n" +
-                           $"Diperbarui: {S.PrakiraanDiperbarui}.\n\nApakah Anda menyetujui penguncian berdasarkan data lama?";
-            if (!Confirm(msgStale))
-            {
-                return; // Batal tidak mengunci (T30)
-            }
-            setujuDataLama = true;
-        }
-
-        // Terapkan ke job hanya setelah seluruh konfirmasi berhasil dilewati
-        job.PersetujuanRisiko = setujuRisiko;
-        job.KonfirmasiDataLama = setujuDataLama;
-        job.Jadwalkan(day, tetapKunci: true);
-        job.CatatanKeputusan = string.Join("; ", eval.Alasan);
-        Shell.Render();
-        Shell.Toast("Jadwal " + job.Nama + " terkunci untuk " + Format.Iso(day.Tanggal));
+            bool risk = evaluation.Status == StatusKelayakanCuaca.TidakLayak;
+            if (risk && !Confirm("Risiko cuaca:\n" + string.Join("\n", evaluation.Alasan)
+                + "\n\nTetap kunci tanggal dengan memahami risiko ini?")) return;
+            if (evaluation.DataLama && !Confirm("Prakiraan sudah kedaluwarsa atau waktu pengambilannya tidak valid. Tetap kunci berdasarkan data lama?")) return;
+            if (!ReferenceEquals(S.Aktif, project)) return;
+            await S.Workflows.LockJobAsync(job.Id, date,
+                new KonfirmasiPenguncian(risk, evaluation.DataLama), ct);
+            Shell.Render();
+            Shell.Toast("Jadwal terkunci untuk " + Format.Iso(day.Tanggal));
+        })) return;
+        Shell.Toast(_commands.Error ?? "Jadwal belum tersimpan.");
     }
 
-    private void Remove_Click(object sender, RoutedEventArgs e)
+    private async void Remove_Click(object sender, RoutedEventArgs e)
     {
         if (S.ModeBacaSaja)
         {
@@ -259,8 +186,9 @@ public partial class SchedulePage : PageBase
             return;
         }
         if (!Confirm("Hapus pekerjaan ini?")) return;
-        S.Aktif.HapusPekerjaan(S.Aktif.Pekerjaan[(int)((FrameworkElement)sender).Tag]);
-        Shell.Render();
+        var id = S.Aktif.Pekerjaan[(int)((FrameworkElement)sender).Tag].Id;
+        if (await _commands.RunAsync(ct => S.Workflows.DeleteJobAsync(id, ct))) Shell.Render();
+        else Shell.Toast(_commands.Error ?? "Pekerjaan belum dihapus.");
     }
 
     private bool Confirm(string message) =>
@@ -278,7 +206,7 @@ public sealed class ScheduleData : ViewData
         NoForecast = has ? Visibility.Collapsed : Visibility.Visible;
 
         // Banner cache lama (>= 6 jam)
-        bool isStale = DateTime.TryParse(s.PrakiraanDiperbarui, out var dt) && (DateTime.Now - dt >= TimeSpan.FromHours(6));
+        bool isStale = s.PrakiraanDataLama && s.PrakiraanAktif().Count > 0;
         StaleBannerVisibility = isStale ? Visibility.Visible : Visibility.Collapsed;
         StaleBannerText = isStale
             ? $"Data prakiraan cuaca berusia ≥ 6 jam (terakhir dimuat {s.PrakiraanDiperbarui}). Perbarui prakiraan untuk akurasi terkini."
@@ -297,9 +225,9 @@ public sealed class ScheduleData : ViewData
         {
             var eval = day.EvaluasiDomain(s.JenisKerja);
             DayText = string.Join("; ", eval.Alasan);
-            DayRain = Format.Angka(day.CurahHujan) + " mm";
-            DayHumidity = Format.Angka(day.Kelembapan) + "%";
-            DayTemperature = $"{Format.Angka(day.SuhuMin)} hingga {Format.Angka(day.SuhuMaks)}°C";
+            DayRain = day.DataLengkap ? Format.Angka(day.CurahHujan) + " mm" : "—";
+            DayHumidity = day.DataLengkap ? Format.Angka(day.Kelembapan) + "%" : "—";
+            DayTemperature = day.DataLengkap ? $"{Format.Angka(day.SuhuMin)} hingga {Format.Angka(day.SuhuMaks)}°C" : "—";
             DayOutOfRangeVisibility = Visibility.Collapsed;
         }
         else
@@ -344,8 +272,8 @@ public sealed class DayCell : ViewData
         Key = Format.Iso(day.Tanggal);
         Weekday = Format.HariSingkat(day.Tanggal);
         Date = Format.TanggalSingkat(day.Tanggal);
-        Sky = day.ProbabilitasHujan > 40 ? "☁" : "☀";
-        Rain = "Hujan " + Format.Angka(day.ProbabilitasHujan) + "%";
+        Sky = !day.DataLengkap ? "—" : day.ProbabilitasHujan > 40 ? "☁" : "☀";
+        Rain = day.DataLengkap ? "Hujan " + Format.Angka(day.ProbabilitasHujan) + "%" : "Belum tersedia";
 
         Status = status switch
         {
@@ -393,7 +321,7 @@ public sealed class JobRow : ViewData
         Name = job.Nama;
         Range = $"{Format.Tanggal(job.TanggalMulaiRencana)} hingga {Format.Tanggal(job.TanggalSelesaiRencana)}";
         Locked = job.TanggalDikunci is { } t ? "Tanggal terkunci: " + Format.Tanggal(t) : "Tanggal belum dikunci";
-        CanLock = canLock;
+        CanLock = canLock && !App.State.ModeBacaSaja && !App.State.ButuhPemulihan;
 
         // Deteksi kondisi Perlu Ditinjau (T31)
         bool memburuk = false;
@@ -413,10 +341,7 @@ public sealed class JobRow : ViewData
         }
 
         bool perluTinjau = job.Status == "Perlu ditinjau" || memburuk;
-        if (perluTinjau && job.Status != "Perlu ditinjau")
-        {
-            job.Status = "Perlu ditinjau";
-        }
+
 
         NeedsReviewVisibility = perluTinjau ? Visibility.Visible : Visibility.Collapsed;
         ReviewWarning = string.IsNullOrWhiteSpace(alasanTinjau)

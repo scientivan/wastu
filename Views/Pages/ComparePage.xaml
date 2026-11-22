@@ -85,8 +85,8 @@
                 </StackPanel>
 
                 <!-- Pesan Read-only luring jika ModeBacaSaja -->
-                <Border x:Name="WeightReadOnlyBanner" Visibility="Collapsed" Background="{StaticResource TagRedBg}" CornerRadius="6" Padding="10,8" Margin="0,10,0,0">
-                    <c:CssText Text="Mode luring baca-saja: pengaturan bobot dinonaktifkan." FontSize="12" Foreground="{StaticResource TagRedFg}" FontWeight="600" />
+                <Border x:Name="WeightReadOnlyBanner" Visibility="Collapsed" Background="{StaticResource WarnBg}" CornerRadius="6" Padding="10,8" Margin="0,10,0,0">
+                    <c:CssText Text="Mode luring baca-saja: pengaturan bobot dinonaktifkan." FontSize="12" Foreground="{StaticResource Red}" FontWeight="600" />
                 </Border>
             </StackPanel>
         </Border>

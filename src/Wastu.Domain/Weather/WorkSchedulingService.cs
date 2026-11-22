@@ -15,7 +15,7 @@ public sealed class WorkSchedulingService : IWorkSchedulingService
     private readonly IDailyForecastClient _forecastClient;
     private readonly IAmbangPekerjaanRepository _ambangRepo;
     private readonly TimeProvider _timeProvider;
-    private readonly ConcurrentDictionary<string, Task<HasilPrakiraan>> _pendingRequests = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, Lazy<Task<HasilPrakiraan>>> _pendingRequests = new(StringComparer.Ordinal);
 
     public WorkSchedulingService(
         IPekerjaanRepository pekerjaanRepo,
@@ -71,54 +71,17 @@ public sealed class WorkSchedulingService : IWorkSchedulingService
         var ambangEfektif = EvaluatorCuaca.TentukanAmbangEfektif(pekerjaan, ambangRepo);
         var nowUtc = _timeProvider.GetUtcNow();
 
-        // 1. Periksa cache yang sesuai revisi lokasi proyek (T22, X04)
-        var cache = await _cacheRepo.GetCacheAsync(
-            proyek.Latitude, proyek.Longitude, proyek.RevisiLokasi, ct).ConfigureAwait(false);
-
         HasilPrakiraan? hasil = null;
-        bool isStale = false;
-        TimeSpan? umurCache = null;
-
-        if (cache is not null && KebijakanCachePrakiraan.ApakahSegar(cache.DiambilPadaUtc, nowUtc))
+        try
         {
-            // Cache segar (< 6 jam)
-            hasil = cache;
-            isStale = false;
-            umurCache = KebijakanCachePrakiraan.HitungUmur(cache.DiambilPadaUtc, nowUtc);
+            hasil = await GetForecastAsync(proyek.Id, ct: ct).ConfigureAwait(false);
         }
-        else
-        {
-            // Cache tidak ada atau sudah kedaluwarsa (>= 6 jam).
-            // Lakukan pengambilan async dengan coalescing request serentak per (ProyekId, RevisiLokasi) (PRD §11.1)
-            string coalesceKey = $"{proyek.Id}:{proyek.RevisiLokasi}";
-            try
-            {
-                hasil = await _pendingRequests.GetOrAdd(
-                    coalesceKey,
-                    _ => AmbilDanSimpanAsync(proyek, ct)).ConfigureAwait(false);
-
-                isStale = false;
-                umurCache = KebijakanCachePrakiraan.HitungUmur(hasil.DiambilPadaUtc, nowUtc);
-            }
-            catch
-            {
-                // Bila pengambilan gagal: fallback ke cache lama milik (Proyek, RevisiLokasi) yang sama jika ada (T22)
-                if (cache is not null)
-                {
-                    hasil = cache;
-                    isStale = true;
-                    umurCache = KebijakanCachePrakiraan.HitungUmur(cache.DiambilPadaUtc, nowUtc);
-                }
-                else
-                {
-                    hasil = null;
-                }
-            }
-            finally
-            {
-                _pendingRequests.TryRemove(coalesceKey, out _);
-            }
-        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+        catch (Exception) { /* No matching cache: each date remains explicitly unavailable. */ }
+        var umurCache = hasil is null ? (TimeSpan?)null
+            : KebijakanCachePrakiraan.HitungUmur(hasil.DiambilPadaUtc, nowUtc);
+        bool isStale = hasil is not null
+            && !KebijakanCachePrakiraan.ApakahSegar(hasil.DiambilPadaUtc, nowUtc);
 
         // 2. Evaluasi seluruh rentang tanggal pekerjaan (bahkan jika >14 hari, T29)
         var daftarHasil = new List<HasilEvaluasiCuaca>();
@@ -133,7 +96,7 @@ public sealed class WorkSchedulingService : IWorkSchedulingService
                 dataLama: isStale,
                 umurCache: umurCache);
 
-            daftarHasil.Add(evaluasi);
+            daftarHasil.Add(evaluasi with { Cuaca = daily, DiambilPadaUtc = hasil?.DiambilPadaUtc, ZonaWaktu = hasil?.ZonaWaktu });
         }
 
         return daftarHasil;
@@ -162,19 +125,19 @@ public sealed class WorkSchedulingService : IWorkSchedulingService
                 $"Tanggal yang dikunci ({tanggal}) berada di luar rentang rencana pekerjaan ({pekerjaan.TanggalMulai}..{pekerjaan.TanggalSelesai}).");
         }
 
-        // 2. Validasi tanggal lampau pada zona waktu proyek (T23)
-        var nowUtc = _timeProvider.GetUtcNow();
-        var hariIniZonaProyek = KebijakanCachePrakiraan.HariIniPadaZona(nowUtc, proyek.ZonaWaktu);
-        if (tanggal < hariIniZonaProyek)
-        {
-            throw new InvalidOperationException(
-                $"Tanggal yang dikunci ({tanggal}) tidak boleh merupakan tanggal lampau pada zona waktu proyek ({proyek.ZonaWaktu ?? "Asia/Jakarta"}). Hari ini adalah {hariIniZonaProyek}.");
-        }
-
         // 3. Evaluasi hari terkait
         var evaluasiList = await EvaluateDaysDetailedAsync(pekerjaanId, ct).ConfigureAwait(false);
         var evaluasi = evaluasiList.FirstOrDefault(e => e.Tanggal == tanggal)
             ?? throw new InvalidOperationException($"Evaluasi cuaca untuk tanggal {tanggal} tidak ditemukan.");
+
+        // 2. Validasi tanggal lampau pada zona waktu proyek (T23)
+        var nowUtc = _timeProvider.GetUtcNow();
+        var hariIniZonaProyek = KebijakanCachePrakiraan.HariIniPadaZona(nowUtc, evaluasi.ZonaWaktu ?? proyek.ZonaWaktu);
+        if (tanggal < hariIniZonaProyek)
+        {
+            throw new InvalidOperationException(
+                $"Tanggal yang dikunci ({tanggal}) tidak boleh merupakan tanggal lampau pada zona waktu proyek ({evaluasi.ZonaWaktu ?? proyek.ZonaWaktu ?? "Asia/Jakarta"}). Hari ini adalah {hariIniZonaProyek}.");
+        }
 
         // 4. Tolak penguncian cuaca bila data tidak tersedia (F6-05, T29)
         if (evaluasi.Status == StatusKelayakanCuaca.DataTidakTersedia)
@@ -209,9 +172,10 @@ public sealed class WorkSchedulingService : IWorkSchedulingService
             KonfirmasiDataLama: konfirmasi.SetujuiDataLama,
             UmurDataSaatKunci: evaluasi.UmurCache,
             AmbangEfektif: evaluasi.AmbangEfektif,
-            DiambilPadaUtc: evaluasi.UmurCache.HasValue ? nowUtc - evaluasi.UmurCache.Value : null,
+            DiambilPadaUtc: evaluasi.DiambilPadaUtc,
             DiputuskanPadaUtc: nowUtc,
-            RevisiLokasiSaatKunci: proyek.RevisiLokasi);
+            RevisiLokasiSaatKunci: proyek.RevisiLokasi,
+            Cuaca: evaluasi.Cuaca);
 
         var pekerjaanDiperbarui = pekerjaan with
         {
@@ -292,6 +256,35 @@ public sealed class WorkSchedulingService : IWorkSchedulingService
         return pekerjaan;
     }
 
+    /// <summary>Shared UI/service forecast path; cancellation stops a waiter, not other consumers.</summary>
+    public async Task<HasilPrakiraan> GetForecastAsync(Guid proyekId, bool forceRefresh = false,
+        CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        var proyek = await _proyekRepo.GetByIdAsync(proyekId, ct).ConfigureAwait(false)
+            ?? throw new KeyNotFoundException("Proyek tidak ditemukan.");
+        var cache = await _cacheRepo.GetCacheAsync(proyek.Latitude, proyek.Longitude,
+            proyek.RevisiLokasi, ct).ConfigureAwait(false);
+        if (!forceRefresh && cache is not null
+            && KebijakanCachePrakiraan.ApakahSegar(cache.DiambilPadaUtc, _timeProvider.GetUtcNow()))
+            return cache;
+
+        string key = $"{proyek.Id}:{proyek.RevisiLokasi}:{proyek.Latitude:R}:{proyek.Longitude:R}";
+        var pending = _pendingRequests.GetOrAdd(key, _ => new Lazy<Task<HasilPrakiraan>>(
+            () => AmbilDanSimpanAsync(proyek, CancellationToken.None)));
+        var task = pending.Value;
+        _ = task.ContinueWith(_ =>
+            ((ICollection<KeyValuePair<string, Lazy<Task<HasilPrakiraan>>>>)_pendingRequests)
+                .Remove(new(key, pending)), CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        try
+        {
+            return await task.WaitAsync(ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+        catch (Exception) when (cache is not null) { return cache; }
+    }
+
     private async Task<HasilPrakiraan> AmbilDanSimpanAsync(Proyek proyek, CancellationToken ct)
     {
         var raw = await _forecastClient.GetForecastWithMetadataAsync(
@@ -305,6 +298,10 @@ public sealed class WorkSchedulingService : IWorkSchedulingService
             RevisiLokasi: proyek.RevisiLokasi,
             DataParsial: raw.DataParsial);
 
+        var terbaru = await _proyekRepo.GetByIdAsync(proyek.Id, ct).ConfigureAwait(false);
+        if (terbaru is null || terbaru.RevisiLokasi != proyek.RevisiLokasi
+            || terbaru.Latitude != proyek.Latitude || terbaru.Longitude != proyek.Longitude)
+            throw new InvalidOperationException("Lokasi proyek berubah saat mengambil prakiraan.");
         await _cacheRepo.SimpanCacheAsync(proyek.Latitude, proyek.Longitude, hasil, ct).ConfigureAwait(false);
         return hasil;
     }

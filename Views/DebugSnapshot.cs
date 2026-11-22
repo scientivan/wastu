@@ -11,18 +11,44 @@ namespace Wastu.Views;
 
 // Alat verifikasi visual (hanya build Debug): WASTU_SNAPSHOT="halaman1,halaman2;folder;lebar;tinggi"
 // merender tiap halaman ke PNG lalu menutup aplikasi.
-internal static class DebugSnapshot
+internal static partial class DebugSnapshot
 {
     private static readonly string? Spec = Environment.GetEnvironmentVariable("WASTU_SNAPSHOT");
     private static FrameworkElement? _root;
     private static DateTime _firstFrame;
+    private static DateTime _workspaceReady;
 
     public static bool Requested => !string.IsNullOrEmpty(Spec);
+
+    public static void ValidateEnvironment()
+    {
+        if (!Requested) return;
+        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("WASTU_DATA_DIR")))
+            throw new InvalidOperationException("Pengujian WPF memerlukan WASTU_DATA_DIR untuk data uji terpisah.");
+        bool isolated;
+        try
+        {
+            var connection = Data.KoneksiSupabase.Cari();
+            if (string.IsNullOrWhiteSpace(connection)) return;
+            var config = new Npgsql.NpgsqlConnectionStringBuilder(connection);
+            isolated = config.Host == "127.0.0.1"
+                && config.Database is "wastu_windows_ui" or "wastu_windows_test";
+        }
+        catch (Exception) { isolated = false; }
+        if (!isolated)
+            throw new InvalidOperationException("Pengujian WPF hanya menerima mode JSON atau database uji loopback khusus.");
+    }
 
     public static void Prepare(Window window)
     {
         if (!Requested) return;
         var parts = Spec!.Split(';');
+        Directory.CreateDirectory(parts[1]);
+        File.WriteAllText(Path.Combine(parts[1], "bindings.log"), "");
+        System.Diagnostics.PresentationTraceSources.DataBindingSource.Listeners.Add(
+            new System.Diagnostics.TextWriterTraceListener(Path.Combine(parts[1], "bindings.log")));
+        System.Diagnostics.PresentationTraceSources.DataBindingSource.Switch.Level = System.Diagnostics.SourceLevels.Warning;
+        System.Diagnostics.Trace.AutoFlush = true;
         window.WindowStyle = WindowStyle.None;
         window.ResizeMode = ResizeMode.NoResize;
         window.WindowStartupLocation = WindowStartupLocation.Manual;
@@ -162,7 +188,7 @@ internal static class DebugSnapshot
         var started = System.Diagnostics.Process.GetCurrentProcess().StartTime;
         sb.AppendLine($"frame pertama (splash tampil): {(_firstFrame - started).TotalMilliseconds:0} ms");
         await Task.Delay(1500); // beri waktu prewarm halaman di latar
-        sb.AppendLine($"startup (proses -> ruang kerja siap, termasuk splash minimum 600 ms): {(DateTime.Now - started).TotalMilliseconds:0} ms");
+        sb.AppendLine($"startup (proses -> ruang kerja siap, termasuk splash minimum 600 ms): {(_workspaceReady - started).TotalMilliseconds:0} ms");
         string[] pages = ["home", "project", "material", "compare", "sim", "weather", "report"];
         foreach (var round in new[] { "pertama", "berikutnya" })
             foreach (var page in pages)
@@ -253,8 +279,15 @@ internal static class DebugSnapshot
 
     public static async Task RunAsync(MainWindow window)
     {
+        _workspaceReady = DateTime.Now;
         var parts = Spec!.Split(';');
         Directory.CreateDirectory(parts[1]);
+        if (parts[0].StartsWith("acceptance", StringComparison.Ordinal))
+        {
+            await AcceptanceAsync(window, parts[1], parts[0]);
+            Application.Current.Shutdown();
+            return;
+        }
         if (parts[0] == "perf")
         {
             await File.WriteAllTextAsync(Path.Combine(parts[1], "perf.txt"), await PerfAsync(window));

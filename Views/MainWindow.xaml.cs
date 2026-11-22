@@ -51,6 +51,13 @@ public partial class MainWindow : Window
             ShowRecovery();
             await minimum;
             Splash.Dismiss(fade: false);
+#if DEBUG || SNAPSHOT
+            if (DebugSnapshot.Requested)
+            {
+                Splash.Visibility = Visibility.Collapsed;
+                await DebugSnapshot.RunAsync(this);
+            }
+#endif
             return;
         }
 

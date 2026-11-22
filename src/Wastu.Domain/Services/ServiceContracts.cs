@@ -179,6 +179,7 @@ public sealed record Laporan
     {
     }
 
+    [System.Text.Json.Serialization.JsonConstructor]
     public Laporan(
         Guid id,
         Guid proyekId,

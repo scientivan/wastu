@@ -18,14 +18,14 @@ public partial class ReportPage : PageBase
     private int _selectedHorizon = 30;
     private bool _includeSchedule = true;
     private readonly HashSet<string> _selectedMaterialCodes = [];
-    private readonly ReportExportService _exportService;
+    private readonly ReportViewModel _viewModel = new();
     private bool _syncingControls;
     private int? _lastProjectId;
+    private bool _selectionInitialized;
 
     public ReportPage()
     {
         InitializeComponent();
-        _exportService = new ReportExportService();
     }
 
     protected override void Refresh()
@@ -35,6 +35,7 @@ public partial class ReportPage : PageBase
         {
             _lastProjectId = currentProjectId;
             _selectedMaterialCodes.Clear();
+            _selectionInitialized = false;
             _selectedJenis = S.Jenis;
             _selectedHorizon = S.Horizon;
         }
@@ -76,14 +77,12 @@ public partial class ReportPage : PageBase
             _syncingControls = false;
         }
 
-        S.AturJenis(_selectedJenis);
-        S.Horizon = _selectedHorizon;
-
         // Default to all selected materials in state if empty
-        if (_selectedMaterialCodes.Count == 0)
+        if (!_selectionInitialized)
         {
-            var rank = S.Peringkat();
-            foreach (var item in S.Terpilih())
+            _selectionInitialized = true;
+            var rank = S.Peringkat(_selectedJenis);
+            foreach (var item in S.Terpilih().Where(item => item.Jenis == _selectedJenis))
             {
                 _selectedMaterialCodes.Add(item.Kode);
             }
@@ -105,8 +104,8 @@ public partial class ReportPage : PageBase
         if (sender is RadioButton rb && rb.Tag is string tag && Enum.TryParse<JenisKomponen>(tag, out var jenis))
         {
             _selectedJenis = jenis;
-            S.AturJenis(_selectedJenis);
             _selectedMaterialCodes.Clear();
+            _selectionInitialized = false;
             Refresh();
         }
     }
@@ -117,7 +116,6 @@ public partial class ReportPage : PageBase
         if (sender is RadioButton rb && rb.Tag is string tag && int.TryParse(tag, out var h))
         {
             _selectedHorizon = h;
-            S.Horizon = _selectedHorizon;
             Refresh();
         }
     }
@@ -145,6 +143,7 @@ public partial class ReportPage : PageBase
 
     private async void ExportPdf_Click(object sender, RoutedEventArgs e)
     {
+        if (_viewModel.IsBusy) return;
         var p = S.Aktif;
         if (p is null)
         {
@@ -174,7 +173,19 @@ public partial class ReportPage : PageBase
             Title = "Simpan Laporan Rekomendasi PDF"
         };
 
-        // If user cancels SaveFileDialog, do nothing and show NO success toast (T35)
+        SnapshotLaporan snapshot;
+        try
+        {
+            snapshot = ReportSnapshotFactory.Build(S, _selectedJenis, _selectedHorizon,
+                _includeSchedule, _selectedMaterialCodes);
+        }
+        catch (Exception)
+        {
+            Shell.Toast("Data laporan belum siap. Tinjau kembali pilihan material.");
+            return;
+        }
+
+        // Preserve the displayed inputs even if climate refresh completes while the dialog is open.
         if (dialog.ShowDialog() != true)
         {
             return;
@@ -182,49 +193,22 @@ public partial class ReportPage : PageBase
 
         try
         {
-            var snapshot = BuildSnapshot(p);
-            var laporanExport = await _exportService.ExportSnapshotAsync(snapshot, dialog.FileName);
-
-            var modelLaporan = new Models.Laporan
+            var report = await _viewModel.ExportAsync(S.Workflows, snapshot, dialog.FileName);
+            Refresh();
+            if (report is null)
             {
-                Id = laporanExport.Id,
-                ProyekId = laporanExport.ProyekId,
-                PathBerkas = laporanExport.PathBerkas,
-                TanggalDibuat = laporanExport.DibuatPada.LocalDateTime,
-                DibuatPada = laporanExport.DibuatPada,
-                ChecksumSha256 = laporanExport.ChecksumSha256,
-                SnapshotHash = laporanExport.SnapshotHash,
-                UkuranByte = laporanExport.UkuranByte,
-                Status = laporanExport.Status
-            };
-
-            if (!S.ModeBacaSaja)
-            {
-                p.TambahLaporan(modelLaporan);
-                S.Ubah();
-                Refresh();
-
-                MessageBox.Show(
-                    $"Laporan PDF berhasil disimpan ke:\n{laporanExport.PathBerkas}",
-                    "Ekspor PDF Berhasil",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                Shell.Toast(_viewModel.Error ?? "Ekspor dibatalkan.");
+                return;
             }
-            else
-            {
-                Refresh();
-
-                MessageBox.Show(
-                    $"Laporan PDF berhasil disimpan ke:\n{laporanExport.PathBerkas}\n\nCatatan: Riwayat laporan pada proyek tidak diubah karena aplikasi sedang berada dalam mode luring baca-saja.",
-                    "Ekspor PDF Berhasil (Mode Baca-Saja)",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-            }
+            MessageBox.Show(report.Status == "MenungguPencatatan"
+                ? "PDF tersedia. Riwayat menunggu pencatatan setelah database terhubung kembali."
+                : "Laporan PDF berhasil disimpan.", "Wastu", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine(ex.GetType().Name);
             MessageBox.Show(
-                $"Gagal mengekspor laporan PDF: {ex.Message}",
+                "Laporan PDF belum berhasil dibuat. Periksa lokasi penyimpanan lalu coba lagi.",
                 "Ekspor Gagal",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
@@ -258,109 +242,14 @@ public partial class ReportPage : PageBase
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine(ex.GetType().Name);
                 MessageBox.Show(
-                    $"Gagal membuka aplikasi pembaca PDF: {ex.Message}",
+                    "Aplikasi pembaca PDF belum dapat dibuka. Periksa asosiasi berkas PDF di Windows.",
                     "Kesalahan Membuka Berkas",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
             }
         }
-    }
-
-    private SnapshotLaporan BuildSnapshot(Bangunan p)
-    {
-        var climate = S.Iklim;
-        S.AturJenis(_selectedJenis);
-        S.Horizon = _selectedHorizon;
-        var rank = S.Peringkat();
-
-        // Map components
-        var compList = p.Komponen.Select(k => new SnapshotKomponen(
-            k.Jenis == Models.JenisKomponen.Dinding ? Wastu.Domain.JenisKomponen.Dinding : Wastu.Domain.JenisKomponen.Atap,
-            k.Luas)).ToList();
-
-        var snapIklim = SnapshotIklimMapper.Buat(climate, S.ModeBacaSaja);
-
-        // Selected materials (including any rank e.g. rank 10!)
-        var selectedBahan = new List<SnapshotBahan>();
-        for (int i = 0; i < rank.Length; i++)
-        {
-            var e = rank[i];
-            var item = S.Item(e.Bahan);
-            if (_selectedMaterialCodes.Contains(item.Kode))
-            {
-                selectedBahan.Add(SnapshotBahanMapper.Buat(item, e,
-                    p.Komponen.Single(k => k.Jenis == _selectedJenis).Id, i + 1));
-            }
-        }
-
-        // Selected simulations
-        var simList = new List<SnapshotSimulasi>();
-        foreach (var mat in selectedBahan)
-        {
-            var evaluasi = rank.FirstOrDefault(r => r.Bahan.Nama == mat.Nama);
-            if (evaluasi is not null)
-            {
-                var item = S.Item(evaluasi.Bahan);
-                var sim = S.Simulasikan(item).SimulasiEmisi;
-                if (sim is not null)
-                {
-                    simList.Add(new SnapshotSimulasi
-                    {
-                        EvaluasiId = Guid.NewGuid(),
-                        BahanNama = mat.Nama,
-                        Jenis = mat.Jenis,
-                        HorizonTahun = _selectedHorizon,
-                        UsiaPakaiNominal = evaluasi.Bahan.UsiaPakaiTahun,
-                        UsiaPakaiEfektif = sim.UsiaPakaiEfektif,
-                        JumlahPenggantian = sim.JumlahPenggantian,
-                        EmisiAwalKg = evaluasi.EmisiAwal,
-                        EmisiKumulatifKg = sim.EmisiKumulatif,
-                        FaktorPenuaanA = sim.FaktorPenuaanA,
-                        VersiModel = "v2.0"
-                    });
-                }
-            }
-        }
-
-        // Locked jobs
-        var lockedJobs = new List<SnapshotPekerjaan>();
-        if (_includeSchedule)
-        {
-            foreach (var j in p.Pekerjaan.Where(w => w.TanggalDikunci.HasValue))
-            {
-                lockedJobs.Add(new SnapshotPekerjaan
-                {
-                    PekerjaanId = Guid.NewGuid(),
-                    Nama = j.Nama,
-                    Jenis = j.Jenis == Models.JenisPekerjaan.Pengecoran ? Wastu.Domain.Weather.JenisPekerjaan.Pengecoran : Wastu.Domain.Weather.JenisPekerjaan.Pengecatan,
-                    TanggalMulai = DateOnly.FromDateTime(j.TanggalMulaiRencana),
-                    TanggalSelesai = DateOnly.FromDateTime(j.TanggalSelesaiRencana),
-                    TanggalDikunci = DateOnly.FromDateTime(j.TanggalDikunci!.Value),
-                    StatusCuaca = "Layak",
-                    AlasanCuaca = ["Kondisi cuaca dalam rentang ambang aman."]
-                });
-            }
-        }
-
-        return new SnapshotLaporan
-        {
-            ProyekId = p.StableId,
-            NamaProyek = p.Nama,
-            Kota = p.Kota,
-            Latitude = p.Latitude,
-            Longitude = p.Longitude,
-            Komponen = compList,
-            Iklim = snapIklim,
-            BahanTerpilih = selectedBahan,
-            SimulasiHorizon = simList,
-            SertakanJadwal = _includeSchedule,
-            JadwalTerkunci = lockedJobs,
-            DibuatPadaUtc = DateTimeOffset.UtcNow,
-            DibuatPadaWib = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7)),
-            VersiModel = Domain.KonfigurasiModel.Bawaan.VersiModel,
-            Bobot = S.BobotAktif
-        };
     }
 }
 
@@ -432,9 +321,7 @@ public sealed class ReportData : ViewData
 
         RankingTitle = "Peringkat material " + (jenis == JenisKomponen.Dinding ? "dinding" : "atap");
 
-        s.AturJenis(jenis);
-        s.Horizon = horizon;
-        var rank = s.Peringkat();
+        var rank = s.Peringkat(jenis);
         SelectableMaterials = rank.Select((e, i) =>
         {
             var code = s.Item(e.Bahan).Kode;
@@ -443,17 +330,14 @@ public sealed class ReportData : ViewData
 
         // Selected rows (no 5-item cutoff!)
         var chosenEvaluasi = rank.Where(e => selectedCodes.Contains(s.Item(e.Bahan).Kode)).ToArray();
-        if (chosenEvaluasi.Length == 0 && rank.Length > 0)
-        {
-            chosenEvaluasi = rank.Take(3).ToArray();
-        }
         Rows = chosenEvaluasi.Select((e, i) => new ReportRow(e, i == chosenEvaluasi.Length - 1)).ToList();
 
         SimulationTitle = $"Simulasi {horizon} tahun";
         Simulations = chosenEvaluasi.Select(e =>
         {
             var item = s.Item(e.Bahan);
-            return new ReportSimulation(item.Bahan.Nama, s.Simulasikan(item).SimulasiEmisi!);
+            e.ProyeksikanEmisi(horizon, p.FaktorPenuaanA);
+            return new ReportSimulation(item.Bahan.Nama, e.SimulasiEmisi!);
         }).ToList();
 
         if (includeSchedule)

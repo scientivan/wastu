@@ -30,7 +30,7 @@
 
     <StackPanel>
         <c:PageHeading Title="Profil proyek" Description="Atur lokasi dan luas komponen rumah.">
-            <Button Style="{StaticResource BtnLight}" Content="Proyek baru" Click="New_Click" />
+            <Button Style="{StaticResource BtnLight}" Content="Proyek baru" IsEnabled="{Binding CanWrite}" Click="New_Click" />
         </c:PageHeading>
 
         <ItemsControl ItemsSource="{Binding Projects}" Focusable="False" Margin="0,0,-10,-10">
@@ -110,9 +110,9 @@
                         <c:CssText Text="Perkiraan jarak ke garis pantai; proksi paparan udara bergaram." FontSize="11" Foreground="{StaticResource Muted}" Margin="0,6,0,0" />
                     </StackPanel>
                     <WrapPanel Margin="0,18,0,0">
-                        <Button Style="{StaticResource Btn}" Content="Simpan proyek" Click="Save_Click" IsDefault="True" Margin="0,0,10,0" />
-                        <Button Style="{StaticResource BtnLight}" Content="Perbarui iklim" Click="Climate_Click" Margin="0,0,10,0" />
-                        <Button Style="{StaticResource BtnWarn}" Content="Hapus" Click="Delete_Click" />
+                        <Button Style="{StaticResource Btn}" Content="Simpan proyek" IsEnabled="{Binding CanWrite}" Click="Save_Click" IsDefault="True" Margin="0,0,10,0" />
+                        <Button Style="{StaticResource BtnLight}" Content="Perbarui iklim" IsEnabled="{Binding CanWrite}" Click="Climate_Click" Margin="0,0,10,0" />
+                        <Button Style="{StaticResource BtnWarn}" Content="Hapus" IsEnabled="{Binding CanWrite}" Click="Delete_Click" />
                     </WrapPanel>
                 </StackPanel>
             </Border>
@@ -123,7 +123,7 @@
                     <StackPanel Visibility="{Binding EmptyClimate}">
                         <c:TrackedText Style="{StaticResource PanelTitle}" Text="Iklim lokasi" Margin="0,0,0,16" />
                         <c:CssText Text="{Binding EmptyText}" FontSize="13" Foreground="{StaticResource Muted}" Leading="1.6" TextWrapping="Wrap" Margin="0,0,0,18" />
-                        <Button Style="{StaticResource BtnLight}" Content="Perbarui iklim" Click="Climate_Click" Margin="0,5,0,0" />
+                        <Button Style="{StaticResource BtnLight}" Content="Perbarui iklim" IsEnabled="{Binding CanWrite}" Click="Climate_Click" Margin="0,5,0,0" />
                     </StackPanel>
                     <StackPanel Visibility="{Binding HasClimate}">
                         <Grid Margin="0,0,0,14">
@@ -162,7 +162,7 @@
                         <c:CssText Text="{Binding ProviderText}" FontSize="12" Foreground="{StaticResource Ink}" Margin="0,4,0,2" />
                         <c:CssText Text="{Binding PeriodText}" FontSize="11" Foreground="{StaticResource Muted}" Margin="0,0,0,2" />
                         <c:CssText Text="{Binding TimestampText}" FontSize="11" Foreground="{StaticResource Muted}" Margin="0,0,0,14" />
-                        <Button Style="{StaticResource BtnLightSm}" Content="Perbarui iklim" Click="Climate_Click" Margin="0,5,0,0" />
+                        <Button Style="{StaticResource BtnLightSm}" Content="Perbarui iklim" IsEnabled="{Binding CanWrite}" Click="Climate_Click" Margin="0,5,0,0" />
                     </StackPanel>
                 </Grid>
             </Border>

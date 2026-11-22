@@ -35,7 +35,8 @@ public sealed record KeputusanJadwal(
     AmbangPekerjaan? AmbangEfektif = null,
     DateTimeOffset? DiambilPadaUtc = null,
     DateTimeOffset? DiputuskanPadaUtc = null,
-    int? RevisiLokasiSaatKunci = null);
+    int? RevisiLokasiSaatKunci = null,
+    Abstractions.DailyForecast? Cuaca = null);
 
 /// <summary>
 /// Pekerjaan lapangan sensitif cuaca yang direncanakan pada suatu proyek (PRD §F6, §12).

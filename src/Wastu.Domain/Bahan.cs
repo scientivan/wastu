@@ -21,6 +21,7 @@ public sealed record Bahan
     {
     }
 
+    [System.Text.Json.Serialization.JsonConstructor]
     public Bahan(
         Guid id,
         string nama,

@@ -21,7 +21,7 @@ using Evaluasi = Wastu.Models.Evaluasi;
 namespace Wastu.Services;
 
 // State tunggal aplikasi. Model domain menjadi sumber data; DTO hanya dipakai saat menyimpan.
-public sealed class AppState
+public sealed partial class AppState
 {
     private readonly object _gate = new();
     private StateDto? _antrean;
@@ -32,7 +32,8 @@ public sealed class AppState
     // Hanya di memori; tidak pernah masuk StateDto, nama berkas, pesan UI, atau log.
     private string? _koneksi;
     private IReadOnlyList<ItemKatalog> _katalog = Katalog.Semua;
-    private static readonly OpenMeteo IklimHistoris = new();
+    internal Domain.Abstractions.IHistoricalClimateClient HistoricalClient { get; set; } = new OpenMeteo();
+    public event Action? Changed;
     private CancellationTokenSource? _climateFetchCts;
 
     public List<Bangunan> Proyek { get; } = [];
@@ -121,8 +122,8 @@ public sealed class AppState
     {
         try
         {
-            var koneksi = _koneksi ?? KoneksiSupabase.Cari();
-            var be = _backend ?? (!string.IsNullOrWhiteSpace(koneksi) ? new PostgreSqlBackend(koneksi) : null);
+            if (ModeBacaSaja) return false;
+            var be = _backend;
             if (be is not null)
             {
                 var dinding = await be.Material.ListByKindAsync(Domain.JenisKomponen.Dinding, ct).ConfigureAwait(false);
@@ -131,8 +132,6 @@ public sealed class AppState
                 if (gabung.Length > 0)
                 {
                     _katalog = gabung;
-                    _backend ??= be;
-                    _koneksi ??= koneksi;
                     Ubah();
                     return true;
                 }
@@ -159,7 +158,7 @@ public sealed class AppState
     public Evaluasi Simulasikan(ItemKatalog item)
     {
         var evaluasi = Nilai(item);
-        evaluasi.ProyeksikanEmisi(Horizon);
+        evaluasi.ProyeksikanEmisi(Horizon, Aktif.FaktorPenuaanA);
         return evaluasi;
     }
 
@@ -210,7 +209,7 @@ public sealed class AppState
     {
         public string Hash { get; } = hash;
         public Evaluasi[] Hasil { get; } = hasil;
-        public Task? Penyimpanan { get; set; }
+        public Task<IReadOnlyList<Domain.Evaluasi>>? Penyimpanan { get; set; }
     }
 
     private readonly Dictionary<Guid, PeringkatTersimpan> _peringkat = [];
@@ -222,7 +221,7 @@ public sealed class AppState
 
     public Evaluasi[] Peringkat() => Peringkat(Jenis);
 
-    private Evaluasi[] Peringkat(JenisKomponen jenis)
+    public Evaluasi[] Peringkat(JenisKomponen jenis)
     {
         if (!AdaProyek || Aktif is null) return [];
         var komp = Aktif.Komponen.FirstOrDefault(k => k.Jenis == jenis);
@@ -284,6 +283,7 @@ public sealed class AppState
 
     public void AturJenis(JenisKomponen jenis)
     {
+        if (Jenis == jenis) return;
         if (AdaProyek && Aktif is not null && !Aktif.AdaKomponen(jenis)) return;
         Jenis = jenis;
         Dipilih = Peringkat().Take(2).Select(e => Item(e.Bahan).Kode).ToArray();
@@ -298,7 +298,7 @@ public sealed class AppState
     public List<PrakiraanCuaca> PrakiraanAktif()
     {
         if (!AdaProyek || Aktif is null || PrakiraanProyekId != Aktif.Id) return [];
-        var hariIni = DateTime.Today;
+        var hariIni = Domain.Weather.KebijakanCachePrakiraan.HariIniPadaZona(DateTimeOffset.UtcNow, Aktif.ZonaWaktu).ToDateTime(TimeOnly.MinValue);
         return Prakiraan.FindAll(d => d.Tanggal >= hariIni);
     }
 
@@ -321,6 +321,7 @@ public sealed class AppState
         ProyekAktifId = id;
         EnsureJenisValid();
         ResetPrakiraan();
+        PulihkanPrakiraanAktif();
     }
 
     public Task<string?> TambahProyekAsync(string nama, string kota, double lintang, double bujur,
@@ -345,6 +346,10 @@ public sealed class AppState
             var domainKomponen = komponen.Select(k => new Domain.InputKomponen((Domain.JenisKomponen)k.Jenis, k.Luas)).ToArray();
             var data = await _backend.Proyek.CreateProjectAsync(nama, kota, lintang, bujur, domainKomponen);
             lokal = TambahProyek(nama, kota, lintang, bujur, komponen, pesisir, data.Id);
+            var savedComponents = await _backend.Repository.ListKomponenAsync(data.Id);
+            foreach (var k in lokal.Komponen.ToArray()) lokal.HapusKomponen(k.Jenis);
+            foreach (var k in savedComponents) lokal.TambahKomponen(new Komponen
+            { Id = k.Id, DatabaseId = k.Id, Jenis = (JenisKomponen)k.Jenis, Luas = k.LuasM2 });
         }
 
         Ubah();
@@ -461,7 +466,14 @@ public sealed class AppState
 
         proyek.Nama = nama;
         proyek.Kota = kota;
-        proyek.AturKomponen(komponen);
+        if (_backend is null) proyek.AturKomponen(komponen);
+        else
+        {
+            var savedComponents = await _backend.Repository.ListKomponenAsync(proyek.StableId);
+            foreach (var k in proyek.Komponen.ToArray()) proyek.HapusKomponen(k.Jenis);
+            foreach (var k in savedComponents) proyek.TambahKomponen(new Komponen
+            { Id = k.Id, DatabaseId = k.Id, Jenis = (JenisKomponen)k.Jenis, Luas = k.LuasM2 });
+        }
         EnsureJenisValid();
 
         if (pindah)
@@ -541,7 +553,7 @@ public sealed class AppState
             Domain.ProfilIklim profil;
             if (_backend is null)
             {
-                profil = await IklimHistoris.GetAnnualProfileAsync(lintang, bujur, token).ConfigureAwait(false);
+                profil = await HistoricalClient.GetAnnualProfileAsync(lintang, bujur, token).ConfigureAwait(false);
             }
             else
             {
@@ -575,7 +587,14 @@ public sealed class AppState
         }
         catch (OperationCanceledException)
         {
-            return null;
+            if ((ReferenceEquals(_climateFetchCts, cts) || !ReferenceEquals(Aktif, proyek)) && proyek.RevisiLokasi == expectedRevisi
+                && proyek.ProfilIklim is { } current)
+            {
+                current.StatusPengambilan = current.DiambilPadaUtc.HasValue
+                    ? StatusPengambilanIklim.Tersedia : StatusPengambilanIklim.BelumTersedia;
+                Ubah();
+            }
+            return "Pengambilan iklim dibatalkan.";
         }
         catch (GagalMemperbaruiProfilIklimException e)
         {
@@ -666,7 +685,13 @@ public sealed class AppState
         if (paksaJsonLokal)
             return await MuatModeJsonLokalAsync(cancellationToken).ConfigureAwait(false);
 
-        var koneksi = KoneksiSupabase.Cari();
+        string? koneksi;
+        try { koneksi = KoneksiSupabase.Cari(); }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+        {
+            return new AppState { ButuhPemulihan = true,
+                PesanStatusKoneksi = "Konfigurasi database tidak lengkap atau tidak valid. Periksa .env atau variabel lingkungan." };
+        }
         if (string.IsNullOrWhiteSpace(koneksi))
             return await MuatModeJsonLokalAsync(cancellationToken).ConfigureAwait(false);
 
@@ -723,6 +748,9 @@ public sealed class AppState
             TerapkanDto(state, hasil.Data);
         }
 
+        try { await state.Workflows.LoadReportsAsync(cancellationToken); }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex) { Debug.WriteLine("Riwayat laporan belum diperbarui: " + ex.GetType().Name); }
         return state;
     }
 
@@ -769,6 +797,17 @@ public sealed class AppState
         {
             var lokal = draf?.Proyek.Find(p => p.DatabaseId == data.Id);
             int id = lokal?.Id ?? ++idLokal;
+            if (lokal is { JadwalTersimpanDiDatabase: false })
+            {
+                for (int index = 0; index < lokal.Pekerjaan.Count; index++)
+                {
+                    var legacy = lokal.Pekerjaan[index];
+                    legacy.Id = WorkflowMapper.LegacyJobId(data.Id, index, legacy);
+                    if (await backend.PekerjaanRepository.GetByIdAsync(legacy.Id.Value, ct) is null)
+                        await backend.PekerjaanRepository.AddAsync(
+                            WorkflowMapper.KeDomain(WorkflowMapper.DariDto(legacy), data.Id), ct);
+                }
+            }
 
             var komponen = await backend.Repository.ListKomponenAsync(data.Id, ct).ConfigureAwait(false);
             var dinding = komponen.FirstOrDefault(k => k.Jenis == Domain.JenisKomponen.Dinding)?.LuasM2 ?? 0;
@@ -825,7 +864,12 @@ public sealed class AppState
                         PesisirTersedia = jarakPesisir > 0 || JarakPesisir.CobaHitungKm(data.Latitude, data.Longitude).HasValue
                     }
                     : null,
-                Pekerjaan = lokal?.Pekerjaan ?? []
+                JadwalTersimpanDiDatabase = true,
+                FaktorPenuaanA = lokal?.FaktorPenuaanA ?? 0.5,
+                RiwayatSimulasi = lokal?.RiwayatSimulasi ?? [],
+                PrakiraanCache = await backend.PrakiraanCacheRepository.GetCacheAsync(data.Latitude, data.Longitude, data.RevisiLokasi, ct),
+                Pekerjaan = (await backend.PekerjaanRepository.ListByProyekAsync(data.Id, ct)).Select(WorkflowMapper.KeDto).ToList(),
+                Laporan = (await backend.LaporanRepository.ListByProyekAsync(data.Id, ct)).ToList()
             });
         }
 
@@ -838,6 +882,8 @@ public sealed class AppState
         return new StateDto
         {
             Proyek = hasilProyek,
+            Katalog = (await backend.Material.ListByKindAsync(Domain.JenisKomponen.Dinding, ct))
+                .Concat(await backend.Material.ListByKindAsync(Domain.JenisKomponen.Atap, ct)).ToList(),
             ProyekAktif = aktifId,
             Jenis = draf?.Jenis ?? JenisKomponen.Dinding,
             Dipilih = draf?.Dipilih is { Length: > 0 } d ? d : ["m0", "m1"],
@@ -853,6 +899,7 @@ public sealed class AppState
     private static void TerapkanDto(AppState state, StateDto dto)
     {
         state.Proyek.Clear();
+        if (dto.Katalog.Count > 0) state._katalog = dto.Katalog.Select(ItemKatalog.DariDomain).ToArray();
         foreach (var p in dto.Proyek)
         {
             var proyek = new Bangunan
@@ -867,6 +914,9 @@ public sealed class AppState
                 RevisiLokasi = p.RevisiLokasi > 0 ? p.RevisiLokasi : 1,
                 ZonaWaktu = !string.IsNullOrWhiteSpace(p.ZonaWaktu) ? p.ZonaWaktu : "Asia/Jakarta",
                 GunakanBobotKustom = p.GunakanBobotKustom,
+                JadwalTersimpanDiDatabase = p.JadwalTersimpanDiDatabase,
+                FaktorPenuaanA = double.IsFinite(p.FaktorPenuaanA) && p.FaktorPenuaanA > 0 && p.FaktorPenuaanA <= 1 ? p.FaktorPenuaanA : 0.5,
+                PrakiraanCache = p.PrakiraanCache,
                 ProfilIklim = p.Iklim is { } i
                     ? new ProfilIklim
                     {
@@ -931,18 +981,9 @@ public sealed class AppState
                     proyek.TambahKomponen(new Komponen { Jenis = JenisKomponen.Dinding, Luas = 100 });
             }
 
-            foreach (var j in p.Pekerjaan)
-            {
-                var pekerjaan = new Pekerjaan
-                {
-                    Nama = j.Nama,
-                    Jenis = j.Jenis,
-                    TanggalMulaiRencana = j.Mulai.ToDateTime(TimeOnly.MinValue),
-                    TanggalSelesaiRencana = j.Selesai.ToDateTime(TimeOnly.MinValue)
-                };
-                pekerjaan.PulihkanJadwal(j.Dikunci?.ToDateTime(TimeOnly.MinValue));
-                proyek.JadwalkanPekerjaan(pekerjaan);
-            }
+            foreach (var j in p.Pekerjaan) proyek.JadwalkanPekerjaan(WorkflowMapper.DariDto(j));
+            foreach (var l in p.Laporan) proyek.TambahLaporan(WorkflowMapper.DariDomain(l));
+            proyek.RiwayatSimulasi.AddRange(p.RiwayatSimulasi);
             state.Proyek.Add(proyek);
         }
 
@@ -965,10 +1006,12 @@ public sealed class AppState
         state.PrakiraanDiperbarui = dto.PrakiraanDiperbarui;
         state.PrakiraanProyekId = dto.PrakiraanProyek;
         state.HariDipilih = dto.HariDipilih?.ToDateTime(TimeOnly.MinValue);
+        state.PulihkanPrakiraanAktif();
     }
 
     private StateDto KeDto() => new()
     {
+        Katalog = _katalog.Select(k => k.DataDomain).ToList(),
         Proyek = Proyek.ConvertAll(p => new ProyekDto
         {
             Id = p.Id,
@@ -984,6 +1027,11 @@ public sealed class AppState
             RevisiLokasi = p.RevisiLokasi,
             ZonaWaktu = p.ZonaWaktu,
             GunakanBobotKustom = p.GunakanBobotKustom,
+            JadwalTersimpanDiDatabase = p.JadwalTersimpanDiDatabase,
+            FaktorPenuaanA = p.FaktorPenuaanA,
+            PrakiraanCache = p.PrakiraanCache,
+            RiwayatSimulasi = p.RiwayatSimulasi.ToList(),
+            Laporan = p.Laporan.Select(WorkflowMapper.KeDomain).ToList(),
             BobotTermal = p.Bobot.Termal,
             BobotLembap = p.Bobot.Lembap,
             BobotKorosi = p.Bobot.Korosi,
@@ -995,14 +1043,14 @@ public sealed class AppState
                 Jenis = k.Jenis,
                 Luas = k.Luas
             }).ToList(),
-            Iklim = p.ProfilIklim is { SudahDiperbarui: true } i
+            Iklim = p.ProfilIklim is { } i
                 ? new IklimDto
                 {
                     CurahHujan = i.CurahHujanTahunan,
                     Kelembapan = i.KelembapanRata,
                     Suhu = i.SuhuRata,
                     Sumber = i.Sumber,
-                    Diperbarui = i.DiperbaruiPada!,
+                    Diperbarui = i.DiperbaruiPada ?? "",
                     Provenance = i.Provenance,
                     StatusPengambilan = i.StatusPengambilan,
                     KualitasCache = i.KualitasCache,
@@ -1016,14 +1064,7 @@ public sealed class AppState
                     PesisirTersedia = i.PesisirTersedia
                 }
                 : null,
-            Pekerjaan = p.Pekerjaan.Select(j => new PekerjaanDto
-            {
-                Nama = j.Nama,
-                Jenis = j.Jenis,
-                Mulai = DateOnly.FromDateTime(j.TanggalMulaiRencana),
-                Selesai = DateOnly.FromDateTime(j.TanggalSelesaiRencana),
-                Dikunci = j.TanggalDikunci is { } t ? DateOnly.FromDateTime(t) : null
-            }).ToList()
+            Pekerjaan = p.Pekerjaan.Select(WorkflowMapper.KeDto).ToList()
         }),
         ProyekAktif = AdaProyek ? ProyekAktifId : null,
         Jenis = Jenis,
@@ -1048,6 +1089,7 @@ public sealed class AppState
     {
         Revisi++;
         Simpan();
+        Changed?.Invoke();
     }
 
     // Penulisan berkas berjalan di thread pool; perubahan beruntun digabung menjadi satu tulisan.

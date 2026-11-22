@@ -52,16 +52,18 @@ public sealed class EmissionSimulationService : IEmissionSimulationService
         Bahan bahan = await _material.GetByIdAsync(evaluasi.BahanId, ct).ConfigureAwait(false)
             ?? throw new KeyNotFoundException($"Bahan {evaluasi.BahanId} tidak ditemukan.");
 
-        SimulasiEmisi hasil = PerhitunganSimulasi.Simulasikan(
-            evaluasiId,
-            evaluasi,
-            bahan.UsiaPakaiNominalTahun,
-            horizonTahun,
-            _konfigurasi,
-            _timeProvider.GetUtcNow());
-
+        return await SimulateSnapshotAsync(evaluasi, bahan.UsiaPakaiNominalTahun,
+            horizonTahun, ct).ConfigureAwait(false);
+    }
+    /// <summary>Persists the same captured evaluation and nominal age displayed by the desktop.</summary>
+    public async Task<SimulasiEmisi> SimulateSnapshotAsync(Evaluasi evaluasi, double usiaNominal,
+        int horizonTahun, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        var hasil = PerhitunganSimulasi.Simulasikan(evaluasi.Id, evaluasi, usiaNominal,
+            horizonTahun, _konfigurasi, _timeProvider.GetUtcNow());
         await _evaluasi.SimpanAsync(hasil, ct).ConfigureAwait(false);
-
         return hasil;
     }
+
 }

@@ -132,7 +132,9 @@ public sealed record SnapshotPekerjaan
     public DateOnly TanggalMulai { get; init; }
     public DateOnly TanggalSelesai { get; init; }
     public DateOnly? TanggalDikunci { get; init; }
-    public string StatusCuaca { get; init; } = "Layak";
+    public string StatusCuaca { get; init; } = "Belum terverifikasi";
+    public KeputusanJadwal? Keputusan { get; init; }
+    public string SumberAmbang { get; init; } = "Asal ambang belum terverifikasi";
     public IReadOnlyList<string> AlasanCuaca { get; init; } = [];
     public bool KonfirmasiRisiko { get; init; }
     public bool KonfirmasiDataLama { get; init; }

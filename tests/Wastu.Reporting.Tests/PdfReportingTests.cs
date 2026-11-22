@@ -11,6 +11,17 @@ namespace Wastu.Reporting.Tests;
 
 public sealed class PdfReportingTests : IDisposable
 {
+    [Fact]
+    public async Task ComponentWithoutSelectedMaterialsDoesNotCreatePdfOrHistory()
+    {
+        var repository = new LaporanRepositoryInMemory();
+        var service = new ReportExportService(repository, pendingMetadataDirectory: _pendingDir);
+        var snapshot = BuatContohSnapshot(b => b with { BahanTerpilih = [] });
+        var path = Path.Combine(_testDir, "empty-materials.pdf");
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ExportSnapshotAsync(snapshot, path));
+        Assert.False(File.Exists(path));
+        Assert.Empty(await repository.ListByProyekAsync(snapshot.ProyekId));
+    }
     private readonly string _testDir;
     private readonly string _pendingDir;
 
@@ -20,6 +31,33 @@ public sealed class PdfReportingTests : IDisposable
         _pendingDir = Path.Combine(_testDir, "pending");
         Directory.CreateDirectory(_testDir);
         Directory.CreateDirectory(_pendingDir);
+    }
+
+    [Fact]
+    public async Task LockedRiskDecisionExportsActualWeatherAndThresholdSnapshot()
+    {
+        var date = new DateOnly(2026, 11, 22);
+        var decision = new KeputusanJadwal(date, StatusKelayakanCuaca.TidakLayak,
+            ["Peluang hujan melampaui ambang"], Terkunci: true, PersetujuanRisiko: true,
+            AmbangEfektif: new AmbangPekerjaan(30, null, 85, 10, 35),
+            Cuaca: new Wastu.Domain.Abstractions.DailyForecast(date, 35, 0, 20, 30, 70));
+        var snapshot = BuatContohSnapshot(b => b with { SertakanJadwal = true,
+            JadwalTerkunci = [new SnapshotPekerjaan
+            {
+                Nama = "Cat risiko", Jenis = JenisPekerjaan.Pengecatan, TanggalDikunci = date,
+                StatusCuaca = "TidakLayak", AlasanCuaca = decision.Catatan, Keputusan = decision,
+                KonfirmasiRisiko = true, SumberAmbang = "Override pekerjaan"
+            }] });
+        var service = new ReportExportService(pendingMetadataDirectory: _pendingDir);
+        var path = Path.Combine(_testDir, "risk.pdf");
+        await service.ExportSnapshotAsync(snapshot, path);
+        using var pdf = PdfDocument.Open(path);
+        var text = string.Join(" ", pdf.GetPages().SelectMany(p => p.GetWords()).Select(w => w.Text));
+        Assert.Contains("TidakLayak", text);
+        Assert.Contains("Persetujuan Risiko Pengguna", text);
+        Assert.Contains("hujan 30%", text);
+        Assert.Contains("hujan 35%", text);
+        Assert.Contains("Override pekerjaan", text);
     }
 
     [Fact]
@@ -178,8 +216,8 @@ public sealed class PdfReportingTests : IDisposable
         // Verifikasi bahan peringkat 10 hadir dalam teks PDF
         Assert.Contains("Bata Ringan AAC", fullText);
         Assert.Contains("Peringkat 10", fullText);
-        Assert.Contains("58.4/100", fullText);
-        Assert.Contains("34.2", fullText);
+        Assert.Contains(rank10Skor.ToString("F1") + "/100", fullText);
+        Assert.Contains(rank10Emisi.ToString("F1"), fullText);
         Assert.Contains("#10", fullText);
         Assert.Contains("Alasan evaluasi teknis lengkap", fullText);
     }
@@ -279,8 +317,8 @@ public sealed class PdfReportingTests : IDisposable
         Assert.Contains("CO₂", fullText);
 
         // Verifikasi kedua komponen tercantum
-        Assert.Contains("Dinding: 120.0 m²", fullText);
-        Assert.Contains("Atap: 85.0 m²", fullText);
+        Assert.Contains($"Dinding: {120.0:F1} m²", fullText);
+        Assert.Contains($"Atap: {85.0:F1} m²", fullText);
 
         // Verifikasi disclaimer estimasi dan sumber transparansi
         Assert.Contains("Hasil simulasi emisi adalah proyeksi estimasi model matematis", fullText);
@@ -336,7 +374,10 @@ public sealed class PdfReportingTests : IDisposable
         var service = new ReportExportService(laporanRepo, pendingMetadataDirectory: _pendingDir);
         var snapshot = BuatContohSnapshot();
 
-        var invalidPath = "/root/unwritable_wastu_path_test/sub/report.pdf";
+        // A file cannot be used as a directory on either Windows or Unix, even as administrator.
+        var blockedDirectory = Path.Combine(_testDir, "blocked-directory");
+        await File.WriteAllTextAsync(blockedDirectory, "not a directory");
+        var invalidPath = Path.Combine(blockedDirectory, "sub", "report.pdf");
         await Assert.ThrowsAnyAsync<Exception>(() => service.ExportSnapshotAsync(snapshot, invalidPath));
 
         var riwayatKosong = await laporanRepo.ListByProyekAsync(snapshot.ProyekId);

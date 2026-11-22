@@ -29,6 +29,10 @@ public class Bangunan
     public string ZonaWaktu { get; set; } = "Asia/Jakarta";
     public bool GunakanBobotKustom { get; set; } = false;
     public Domain.KriteriaBobot Bobot { get; set; } = Domain.KriteriaBobot.Default;
+    public bool JadwalTersimpanDiDatabase { get; set; }
+    public double FaktorPenuaanA { get; set; } = 0.5;
+    public Domain.Weather.HasilPrakiraan? PrakiraanCache { get; set; }
+    public List<Services.SimulationHistoryEntry> RiwayatSimulasi { get; } = [];
     public ProfilIklim? ProfilIklim { get; set; }
     public IReadOnlyList<Komponen> Komponen => _komponen.AsReadOnly();
     public IReadOnlyList<Laporan> Laporan => _laporan.AsReadOnly();
@@ -97,12 +101,14 @@ public class Bangunan
     public void TambahLaporan(Laporan laporan)
     {
         ArgumentNullException.ThrowIfNull(laporan);
+        _laporan.RemoveAll(l => l.Id == laporan.Id);
         _laporan.Add(laporan);
     }
 
     public void JadwalkanPekerjaan(Pekerjaan pekerjaan)
     {
         ArgumentNullException.ThrowIfNull(pekerjaan);
+        _pekerjaan.RemoveAll(j => j.Id == pekerjaan.Id);
         _pekerjaan.Add(pekerjaan);
     }
 

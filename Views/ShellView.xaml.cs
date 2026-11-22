@@ -23,6 +23,13 @@ public partial class ShellView : UserControl
     private readonly MainWindow _window;
     private readonly Dictionary<string, PageBase> _pages = [];
     private PageBase? _page;
+    private readonly ScheduleViewModel _forecast = new();
+    private readonly OperationViewModel _climate = new();
+    private AppState? _observedState;
+    private void StateChanged() => Dispatcher.InvokeAsync(() =>
+    {
+        if (CurrentPage is "home" or "material" or "compare" or "sim" or "report") Show(force: false);
+    });
     private (bool Compact, bool Wide) _tier;
 
     public ShellView(MainWindow window)
@@ -37,6 +44,7 @@ public partial class ShellView : UserControl
 
     public void Go(string page)
     {
+        if (CurrentPage != page) { _forecast.Cancel(); _climate.Cancel(); }
         CurrentPage = Titles.ContainsKey(page) ? page : "home";
         App.State.Cari = "";
         var view = Page(CurrentPage);
@@ -47,6 +55,7 @@ public partial class ShellView : UserControl
         _page = view;
         Show(force: false);
         Scroller.ScrollToTop();
+        if (CurrentPage == "weather") _ = RefreshForecastAsync(forceRefresh: false);
     }
 
     private PageBase Page(string key)
@@ -95,6 +104,12 @@ public partial class ShellView : UserControl
     private void Show(bool force)
     {
         var state = App.State;
+        if (!ReferenceEquals(_observedState, state))
+        {
+            if (_observedState is not null) _observedState.Changed -= StateChanged;
+            _observedState = state;
+            state.Changed += StateChanged;
+        }
         if (!state.AdaProyek) return;
         var project = state.Aktif;
         foreach (RadioButton item in Nav.Children)
@@ -174,39 +189,34 @@ public partial class ShellView : UserControl
     public void Toast(string message) => _window.Toast(message);
 
     // getForecast() pada app.js
-    public async Task RefreshForecastAsync()
+    public async Task RefreshForecastAsync(bool forceRefresh = true)
     {
+        if (_forecast.IsBusy) { if (forceRefresh) _forecast.Cancel(); return; }
         var state = App.State;
         var project = state.Aktif;
-        double lintang = project.Latitude;
-        double bujur = project.Longitude;
-        Toast("Mengambil prakiraan Open-Meteo…");
-        try
-        {
-            var incoming = await OpenMeteo.AmbilPrakiraanAsync(lintang, bujur);
-            if (!state.AdaProyek || state.Aktif != project || project.Latitude != lintang || project.Longitude != bujur) return;
-            state.Prakiraan = incoming;
-            state.PrakiraanProyekId = project.Id;
-            state.PrakiraanDiperbarui = Format.WaktuLokal(DateTime.Now);
-            state.HariDipilih = null;
-            Render();
-            Toast("Prakiraan harian berhasil dimuat.");
-        }
-        catch (Exception e) when (e is HttpRequestException or TaskCanceledException or InvalidDataException or JsonException or KeyNotFoundException or InvalidOperationException)
-        {
-            Toast(state.PrakiraanAktif().Count > 0
-                ? "Prakiraan belum dapat diperbarui. Data terakhir tetap tersedia."
-                : "Prakiraan belum dapat diperbarui. Periksa koneksi lalu coba kembali.");
-        }
+        Toast("Mengambil prakiraan Open-Meteo… Tekan Perbarui lagi untuk membatalkan.");
+        bool success = await _forecast.RefreshAsync(state.Workflows, forceRefresh);
+        if (!ReferenceEquals(App.State, state) || !ReferenceEquals(state.Aktif, project)) return;
+        Show(force: true);
+        Toast(success ? state.PrakiraanDataLama
+            ? "Data lama ditampilkan. Prakiraan belum berhasil diperbarui."
+            : "Prakiraan harian tersedia."
+            : _forecast.Error ?? "Prakiraan belum tersedia.");
     }
 
-    public Task RefreshClimateAsync() => RunProjectChangeAsync(async () =>
+    public async Task RefreshClimateAsync()
     {
-        Toast("Mengambil data iklim historis…");
-        var pesan = await App.State.PerbaruiIklimAsync(App.State.Aktif);
+        if (App.State.ModeBacaSaja) return;
+        if (_climate.IsBusy) { _climate.Cancel(); return; }
+        var state = App.State;
+        var project = state.Aktif;
+        string? message = null;
+        Toast("Mengambil iklim historis… Tekan Perbarui iklim lagi untuk membatalkan.");
+        bool success = await _climate.RunAsync(async ct => message = await state.PerbaruiIklimAsync(project, ct));
+        if (!ReferenceEquals(state, App.State) || !ReferenceEquals(project, state.Aktif)) return;
         Render();
-        Toast(pesan ?? "Profil iklim diperbarui dari Open-Meteo.");
-    });
+        Toast(success ? message ?? "Profil iklim diperbarui dari Open-Meteo." : _climate.Error ?? "Iklim belum tersedia.");
+    }
 
     public async Task RunProjectChangeAsync(Func<Task> action)
     {
