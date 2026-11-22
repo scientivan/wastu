@@ -13,7 +13,10 @@ namespace Wastu.Views.Pages;
 public partial class SimulationPage : PageBase
 {
     private bool _refreshing;
-    private double _faktorPenuaanA = 0.5;
+    private readonly SimulationViewModel _viewModel = new();
+    private Task<bool>? _pending;
+    private int _request;
+    private double _faktorPenuaanA => S.Aktif.FaktorPenuaanA;
 
     public SimulationPage() => InitializeComponent();
 
@@ -37,14 +40,21 @@ public partial class SimulationPage : PageBase
         }
         KindBox.SelectedIndex = S.Jenis == Models.JenisKomponen.Dinding ? 0 : 1;
         HorizonBox.SelectedIndex = S.Horizon switch { 20 => 0, 50 => 2, _ => 1 };
+        FaktorABox.IsEnabled = !S.ModeBacaSaja;
+        BtnResetA.IsEnabled = !S.ModeBacaSaja;
         FaktorABox.Text = _faktorPenuaanA.ToString("0.##", new CultureInfo("id-ID"));
         _refreshing = false;
 
         RenderSimulation();
     }
 
-    private void RenderSimulation()
+    private async void RenderSimulation()
     {
+        int request = ++_request;
+        var project = S.Aktif;
+        _viewModel.Cancel();
+        if (_pending is { IsCompleted: false }) await _pending;
+        if (request != _request) return;
         var terpilih = S.Terpilih();
         bool isEmpty = S.Luas <= 0 || terpilih.Count == 0;
 
@@ -65,13 +75,17 @@ public partial class SimulationPage : PageBase
         EmptyPanel.Visibility = Visibility.Collapsed;
         if (ContentGrid != null) ContentGrid.Visibility = Visibility.Visible;
 
-        var simulated = new List<(ItemKatalog Item, Models.Evaluasi Eval)>();
-        foreach (var item in terpilih)
+        _pending = _viewModel.LoadAsync(S.Workflows);
+        bool success = await _pending;
+        if (request != _request || !ReferenceEquals(project, S.Aktif)) return;
+        if (!success)
         {
-            var eval = S.Nilai(item);
-            eval.ProyeksikanEmisi(S.Horizon, _faktorPenuaanA);
-            simulated.Add((Item: item, Eval: eval));
+            EmptyPanel.Visibility = Visibility.Visible;
+            if (ContentGrid is not null) ContentGrid.Visibility = Visibility.Collapsed;
+            EmptyMessageText.Text = _viewModel.Error ?? "Simulasi belum tersedia.";
+            return;
         }
+        var simulated = _viewModel.Results;
 
         // Susun titik-titik kurva step dan titik kejadian penggantian dari Domain PerhitunganSimulasi
         var seriesList = new List<IReadOnlyList<(double Year, double Value)>>();
@@ -79,20 +93,20 @@ public partial class SimulationPage : PageBase
 
         foreach (var x in simulated)
         {
-            var sim = x.Eval.SimulasiEmisi!;
-            var stepPoints = PerhitunganSimulasi.TitikKurvaStep(x.Eval.EmisiAwal, S.Horizon, sim.UsiaPakaiEfektif);
+            var sim = x.Hasil;
+            var stepPoints = PerhitunganSimulasi.TitikKurvaStep(x.EmisiAwal, S.Horizon, sim.UsiaPakaiEfektifTahun);
             seriesList.Add(stepPoints.Select(p => (Year: p.WaktuTahun, Value: p.EmisiKumulatifKg)).ToList());
 
-            var replacementEvents = PerhitunganSimulasi.KejadianPenggantian(S.Horizon, sim.UsiaPakaiEfektif);
+            var replacementEvents = PerhitunganSimulasi.KejadianPenggantian(S.Horizon, sim.UsiaPakaiEfektifTahun);
             var keyPoints = new List<(double Year, double Value)>
             {
-                (0.0, x.Eval.EmisiAwal)
+                (0.0, x.EmisiAwal)
             };
             foreach (var t in replacementEvents)
             {
-                keyPoints.Add((t, PerhitunganSimulasi.EmisiKumulatifPadaTitik(x.Eval.EmisiAwal, t, S.Horizon, sim.UsiaPakaiEfektif)));
+                keyPoints.Add((t, PerhitunganSimulasi.EmisiKumulatifPadaTitik(x.EmisiAwal, t, S.Horizon, sim.UsiaPakaiEfektifTahun)));
             }
-            keyPoints.Add((S.Horizon, PerhitunganSimulasi.EmisiKumulatifPadaTitik(x.Eval.EmisiAwal, S.Horizon, S.Horizon, sim.UsiaPakaiEfektif)));
+            keyPoints.Add((S.Horizon, PerhitunganSimulasi.EmisiKumulatifPadaTitik(x.EmisiAwal, S.Horizon, S.Horizon, sim.UsiaPakaiEfektifTahun)));
             eventsList.Add(keyPoints);
         }
 
@@ -116,28 +130,18 @@ public partial class SimulationPage : PageBase
 
     private void ApplyFaktorA()
     {
-        string input = (FaktorABox.Text ?? string.Empty).Trim().Replace(',', '.');
-
-        if (!double.TryParse(input, NumberStyles.Float, CultureInfo.InvariantCulture, out double parsed)
-            || !double.IsFinite(parsed)
-            || parsed <= 0
-            || parsed > 1)
-        {
-            TxtFaktorAError.Text = "Faktor penuaan (a) harus berupa angka finite dalam rentang 0 < a ≤ 1 (misal 0,5). Nilai sebelumnya tetap dipertahankan.";
-            TxtFaktorAError.Visibility = Visibility.Visible;
-            return;
-        }
-
-        TxtFaktorAError.Text = string.Empty;
-        TxtFaktorAError.Visibility = Visibility.Collapsed;
-        _faktorPenuaanA = parsed;
-        FaktorABox.Text = parsed.ToString("0.##", new CultureInfo("id-ID"));
+        var error = S.AturFaktorPenuaan(FaktorABox.Text ?? "");
+        TxtFaktorAError.Text = error ?? "";
+        TxtFaktorAError.Visibility = error is null ? Visibility.Collapsed : Visibility.Visible;
+        if (error is not null) return;
+        FaktorABox.Text = _faktorPenuaanA.ToString("0.##", new CultureInfo("id-ID"));
         RenderSimulation();
     }
 
     private void ResetA_Click(object sender, RoutedEventArgs e)
     {
-        _faktorPenuaanA = 0.5;
+        if (S.ModeBacaSaja) return;
+        S.AturFaktorPenuaan("0,5");
         FaktorABox.Text = "0,5";
         TxtFaktorAError.Text = string.Empty;
         TxtFaktorAError.Visibility = Visibility.Collapsed;
@@ -146,7 +150,7 @@ public partial class SimulationPage : PageBase
 
     private void FaktorA_LostFocus(object sender, RoutedEventArgs e)
     {
-        if (_refreshing) return;
+        if (_refreshing || S.ModeBacaSaja) return;
         ApplyFaktorA();
     }
 
@@ -162,25 +166,25 @@ public partial class SimulationPage : PageBase
 
 public sealed class SimulationData(
     AppState s,
-    List<(ItemKatalog Item, Models.Evaluasi Eval)> simulated,
+    IReadOnlyList<SimulationHistoryEntry> simulated,
     double faktorPenuaanA,
     bool isEmpty,
     string emptyReason) : ViewData
 {
     public List<LegendItem> Legend { get; } = simulated.Select((x, i) =>
-        new LegendItem(x.Item.Bahan.Nama, EmissionChart.SeriesBrushes[Math.Min(i, EmissionChart.SeriesBrushes.Length - 1)])).ToList();
+        new LegendItem(s.KatalogAktif.Single(k => k.DataDomain.Id == x.BahanId).Bahan.Nama, EmissionChart.SeriesBrushes[Math.Min(i, EmissionChart.SeriesBrushes.Length - 1)])).ToList();
 
-    public List<SimStat> Stats { get; } = simulated.ConvertAll(x =>
+    public List<SimStat> Stats { get; } = simulated.Select(x =>
     {
-        var sim = x.Eval.SimulasiEmisi!;
+        var sim = x.Hasil;
         return new SimStat(
-            x.Item.Bahan.Nama,
-            x.Item.Bahan.UsiaPakaiTahun,
-            sim.UsiaPakaiEfektif,
+            s.KatalogAktif.Single(k => k.DataDomain.Id == x.BahanId).Bahan.Nama,
+            x.UsiaNominal,
+            sim.UsiaPakaiEfektifTahun,
             sim.JumlahPenggantian,
-            x.Eval.EmisiAwal,
-            sim.EmisiKumulatif);
-    });
+            x.EmisiAwal,
+            sim.EmisiKumulatifKg);
+    }).ToList();
 
     public string AreaChip { get; } = Format.Angka(s.Luas) + " m² (dari profil proyek)";
     public double FaktorPenuaanA { get; } = faktorPenuaanA;

@@ -58,7 +58,7 @@ public class Laporan
 
     public string StatusKeterangan => StatusBerkas switch
     {
-        StatusBerkasLaporan.Tersedia => "Tersedia",
+        StatusBerkasLaporan.Tersedia => Status == "MenungguPencatatan" ? "Berkas tersedia; pencatatan tertunda" : "Tersedia",
         StatusBerkasLaporan.Hilang => "Berkas Tidak Ditemukan",
         StatusBerkasLaporan.BerubahChecksum => "Checksum Berubah",
         _ => Status

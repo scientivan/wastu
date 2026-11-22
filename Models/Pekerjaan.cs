@@ -16,6 +16,9 @@ public class Pekerjaan
     private bool _konfirmasiDataLama;
     private string? _catatanKeputusan;
 
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public int? RevisiLokasiSaatKunci { get; set; }
+    public KeputusanJadwal? Keputusan { get; set; }
     public string Nama { get => _nama; set => _nama = value; }
     public JenisPekerjaan Jenis { get => _jenis; set => _jenis = value; }
     public DateTime TanggalMulaiRencana { get => _tanggalMulaiRencana; set => _tanggalMulaiRencana = value; }

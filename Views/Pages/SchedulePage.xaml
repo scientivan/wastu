@@ -199,7 +199,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Button Style="{StaticResource Btn}" Content="Tambahkan pekerjaan" HorizontalAlignment="Stretch" Margin="0,18,0,0" Click="Add_Click" />
+                    <Button Style="{StaticResource Btn}" Content="Tambahkan pekerjaan" IsEnabled="{Binding CanWrite}" HorizontalAlignment="Stretch" Margin="0,18,0,0" Click="Add_Click" />
 
                     <Grid Margin="0,25,0,16">
                         <c:TrackedText Style="{StaticResource PanelTitle}" Text="Pekerjaan tersimpan" HorizontalAlignment="Left" />
@@ -227,7 +227,7 @@
                                         <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
                                             <Button Style="{StaticResource BtnLightSm}" Content="Kunci tanggal" Tag="{Binding Index}" IsEnabled="{Binding CanLock}"
                                                     Click="Lock_Click" Margin="0,0,10,0" />
-                                            <Button Style="{StaticResource BtnWarnSm}" Content="Hapus" Tag="{Binding Index}" Click="Remove_Click" />
+                                            <Button Style="{StaticResource BtnWarnSm}" Content="Hapus" IsEnabled="{Binding CanWrite}" Tag="{Binding Index}" Click="Remove_Click" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Border>

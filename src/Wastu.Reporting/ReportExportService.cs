@@ -107,7 +107,7 @@ public sealed class ReportExportService : IReportExportService
         var snapshotFinal = snapshot with { SnapshotHash = hash };
 
         // Generate PDF document
-        var document = _pdfBuilder.Build(snapshotFinal);
+        using var document = await Task.Run(() => _pdfBuilder.Build(snapshotFinal), ct).ConfigureAwait(false);
 
         // Atomic write via temp file
         var tempFile = Path.Combine(

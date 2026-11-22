@@ -9,6 +9,7 @@ namespace Wastu.Views;
 // membuat WPF tidak memakai PropertyDescriptor.AddValueChanged (yang menahan referensi).
 public abstract class ViewData : INotifyPropertyChanged
 {
+    public bool CanWrite => !App.State.ModeBacaSaja && !App.State.ButuhPemulihan;
     public event PropertyChangedEventHandler? PropertyChanged { add { } remove { } }
 }
 

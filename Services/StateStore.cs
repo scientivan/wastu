@@ -13,6 +13,7 @@ namespace Wastu.Services;
 // Bentuk berkas state.json. Model domain membungkus koleksinya, jadi disimpan lewat DTO ini.
 public sealed class StateDto
 {
+    public List<Domain.Bahan> Katalog { get; set; } = [];
     public List<ProyekDto> Proyek { get; set; } = [];
     public int? ProyekAktif { get; set; }
     public JenisKomponen Jenis { get; set; } = JenisKomponen.Dinding;
@@ -46,6 +47,11 @@ public sealed class ProyekDto
     public double BobotUsia { get; set; } = 0.25;
     public List<KomponenDto> Komponen { get; set; } = [];
     public IklimDto? Iklim { get; set; }
+    public bool JadwalTersimpanDiDatabase { get; set; }
+    public double FaktorPenuaanA { get; set; } = 0.5;
+    public Domain.Weather.HasilPrakiraan? PrakiraanCache { get; set; }
+    public List<SimulationHistoryEntry> RiwayatSimulasi { get; set; } = [];
+    public List<Domain.Services.Laporan> Laporan { get; set; } = [];
     public List<PekerjaanDto> Pekerjaan { get; set; } = [];
 }
 
@@ -79,6 +85,11 @@ public sealed class IklimDto
 
 public sealed class PekerjaanDto
 {
+    public Guid? Id { get; set; }
+    public Domain.Weather.AmbangPekerjaan? OverrideAmbang { get; set; }
+    public Domain.Weather.KeputusanJadwal? Keputusan { get; set; }
+    public string Status { get; set; } = "Draft";
+    public int? RevisiLokasiSaatKunci { get; set; }
     public string Nama { get; set; } = "";
     public JenisPekerjaan Jenis { get; set; }
     public DateOnly Mulai { get; set; }
@@ -86,6 +97,7 @@ public sealed class PekerjaanDto
     public DateOnly? Dikunci { get; set; }
 }
 
+[JsonNumberHandling(JsonNumberHandling.AllowNamedFloatingPointLiterals)]
 public sealed class CuacaDto
 {
     public DateOnly Tanggal { get; set; }
@@ -98,7 +110,8 @@ public sealed class CuacaDto
 
 [JsonSourceGenerationOptions(UseStringEnumConverter = true, WriteIndented = false)]
 [JsonSerializable(typeof(StateDto))]
-[JsonSerializable(typeof(Wastu.Models.JenisKomponen))]
+[JsonSerializable(typeof(Domain.JenisKomponen), TypeInfoPropertyName = "DomainJenisKomponen")]
+[JsonSerializable(typeof(Wastu.Models.JenisKomponen), TypeInfoPropertyName = "UiJenisKomponen")]
 [JsonSerializable(typeof(KomponenDto))]
 [JsonSerializable(typeof(ProyekDto))]
 [JsonSerializable(typeof(IklimDto))]

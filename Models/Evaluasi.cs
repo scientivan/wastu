@@ -11,12 +11,14 @@ public class Evaluasi
 
     internal Evaluasi(Bahan bahan, Domain.Evaluasi hasil) : this(bahan)
     {
+        HasilDomain = hasil;
         SkorKesesuaian = hasil.SkorKesesuaian;
         EmisiAwal = hasil.EmisiAwalKg;
         Alasan = hasil.Alasan;
         SubSkor = hasil.SubSkor;
     }
 
+    public Domain.Evaluasi? HasilDomain { get; internal set; }
     public double SkorKesesuaian { get => _skorKesesuaian; private set => _skorKesesuaian = value; }
     public double EmisiAwal { get => _emisiAwal; set => _emisiAwal = value; }
     public string Alasan { get => _alasan; set => _alasan = value; }
