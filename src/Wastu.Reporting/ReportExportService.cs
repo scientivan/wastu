@@ -11,15 +11,12 @@ using Wastu.Domain.Weather;
 
 namespace Wastu.Reporting;
 
-public sealed class ReportExportService : IReportExportService
+public sealed partial class ReportExportService : IReportExportService
 {
     private readonly ILaporanRepository _laporanRepository;
     private readonly IProyekRepository? _proyekRepository;
     private readonly IEvaluasiRepository? _evaluasiRepository;
-    private readonly IMaterialRepository? _materialRepository;
-    private readonly ISumberBahanRepository? _sumberBahanRepository;
     private readonly IPekerjaanRepository? _pekerjaanRepository;
-    private readonly IKonfigurasiModelRepository? _konfigurasiModelRepository;
     private readonly string _pendingMetadataDir;
     private readonly PdfReportBuilder _pdfBuilder;
 
@@ -36,10 +33,9 @@ public sealed class ReportExportService : IReportExportService
         _laporanRepository = laporanRepository ?? new LocalMemoryLaporanRepository();
         _proyekRepository = proyekRepository;
         _evaluasiRepository = evaluasiRepository;
-        _materialRepository = materialRepository;
-        _sumberBahanRepository = sumberBahanRepository;
         _pekerjaanRepository = pekerjaanRepository;
-        _konfigurasiModelRepository = konfigurasiModelRepository;
+        // Legacy constructor arguments remain source-compatible. Reports read captured
+        // evaluation inputs, never current material/source/model repositories.
 
         _pendingMetadataDir = pendingMetadataDirectory ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -71,12 +67,7 @@ public sealed class ReportExportService : IReportExportService
             throw new InvalidOperationException("Proyek belum memiliki komponen bangunan.");
         }
 
-        var profilIklim = await _proyekRepository.GetProfilIklimAsync(proyekId, ct).ConfigureAwait(false);
-        var config = _konfigurasiModelRepository is not null
-            ? await _konfigurasiModelRepository.GetActiveAsync(ct).ConfigureAwait(false)
-            : KonfigurasiModel.Bawaan;
-
-        var snapshot = await BuildSnapshotAsync(proyek, komponenList, profilIklim, config, opsi, ct).ConfigureAwait(false);
+        var snapshot = await BuildSnapshotAsync(proyek, komponenList, opsi, ct).ConfigureAwait(false);
         return await ExportSnapshotAsync(snapshot, opsi.PathTujuan, ct).ConfigureAwait(false);
     }
 
@@ -154,7 +145,7 @@ public sealed class ReportExportService : IReportExportService
             checksumSha256: sha256,
             snapshotHash: hash,
             ukuranByte: fileSize,
-            status: "Tersimpan");
+            status: "Tersimpan", snapshotJson: JsonSerializer.Serialize(snapshotFinal));
 
         // Try persisting to repository
         try
@@ -222,7 +213,7 @@ public sealed class ReportExportService : IReportExportService
             {
                 var meta = JsonSerializer.Deserialize<PendingReportMetadata>(await File.ReadAllTextAsync(file, ct));
                 if (meta is not null) reports.Add(new Laporan(meta.Id, meta.ProyekId, meta.PathBerkas,
-                    meta.DibuatPada, meta.ChecksumSha256, meta.SnapshotHash, meta.UkuranByte, "MenungguPencatatan"));
+                    meta.DibuatPada, meta.ChecksumSha256, meta.SnapshotHash, meta.UkuranByte, "MenungguPencatatan", meta.SnapshotJson));
             }
             catch (Exception ex) when (ex is JsonException or IOException) { }
         }
@@ -250,7 +241,7 @@ public sealed class ReportExportService : IReportExportService
                 if (meta is null) continue;
 
                 var existing = await _laporanRepository.GetByIdAsync(meta.Id, ct).ConfigureAwait(false);
-                if (existing is null)
+                if (existing is null || existing.SnapshotHash == meta.SnapshotHash)
                 {
                     var laporan = new Laporan(
                         id: meta.Id,
@@ -260,7 +251,7 @@ public sealed class ReportExportService : IReportExportService
                         checksumSha256: meta.ChecksumSha256,
                         snapshotHash: meta.SnapshotHash,
                         ukuranByte: meta.UkuranByte,
-                        status: "Tersimpan");
+                        status: "Tersimpan", snapshotJson: meta.SnapshotJson);
 
                     await _laporanRepository.SimpanAsync(laporan, ct).ConfigureAwait(false);
                 }
@@ -293,6 +284,7 @@ public sealed class ReportExportService : IReportExportService
             DibuatPada = laporan.DibuatPada,
             ChecksumSha256 = laporan.ChecksumSha256 ?? string.Empty,
             SnapshotHash = laporan.SnapshotHash,
+            SnapshotJson = laporan.SnapshotJson,
             UkuranByte = laporan.UkuranByte ?? 0,
             Status = "MenungguPencatatan",
             DicatatLokalPadaUtc = DateTimeOffset.UtcNow,
@@ -320,179 +312,6 @@ public sealed class ReportExportService : IReportExportService
         using var stream = File.OpenRead(filePath);
         var bytes = SHA256.HashData(stream);
         return Convert.ToHexString(bytes).ToLowerInvariant();
-    }
-
-    private async Task<SnapshotLaporan> BuildSnapshotAsync(
-        Proyek proyek,
-        IReadOnlyList<Komponen> semuaKomponen,
-        ProfilIklim? iklim,
-        KonfigurasiModel config,
-        OpsiEkspor opsi,
-        CancellationToken ct)
-    {
-        var komponenAktif = opsi.KomponenDipilih is { Count: > 0 }
-            ? semuaKomponen.Where(k => opsi.KomponenDipilih.Contains(k.Id)).ToList()
-            : semuaKomponen.ToList();
-
-        var snapshotKomponen = komponenAktif
-            .Select(k => new SnapshotKomponen(k.Jenis, k.LuasM2))
-            .ToList();
-
-        var snapshotIklim = iklim is not null
-            ? new SnapshotIklim
-            {
-                CurahHujanTahunanMm = iklim.CurahHujanTahunanMm,
-                KelembapanRataPct = iklim.KelembapanRataPct,
-                SuhuRataC = iklim.SuhuRataC,
-                JarakPesisirKm = iklim.JarakPesisirKm,
-                TingkatKorosi = iklim.TingkatKorosi.ToString(),
-                Provider = iklim.Metadata?.Penyedia ?? "Open-Meteo Historical Climate API",
-                Periode = iklim.Metadata?.PeriodeAwal.HasValue == true && iklim.Metadata?.PeriodeAkhir.HasValue == true
-                    ? $"{iklim.Metadata.PeriodeAwal:yyyy}-{iklim.Metadata.PeriodeAkhir:yyyy}"
-                    : "10 tahun historis (agregasi)",
-                Provenance = iklim.Provenance.ToString(),
-                DiambilPada = iklim.DiambilPada,
-                IsOffline = iklim.Provenance == ProvenanceIklim.Contoh || iklim.Provenance == ProvenanceIklim.EstimasiBawaan,
-                CatatanOffline = iklim.Provenance == ProvenanceIklim.Contoh ? "Diekspor dari data offline contoh." : null
-            }
-            : new SnapshotIklim();
-
-        // Materials & Rankings
-        var bahanList = new List<SnapshotBahan>();
-        var simulasiList = new List<SnapshotSimulasi>();
-
-        foreach (var komp in komponenAktif)
-        {
-            IReadOnlyList<Evaluasi> evaluasiKomp = _evaluasiRepository is not null
-                ? await _evaluasiRepository.ListByKomponenAsync(komp.Id, ct).ConfigureAwait(false)
-                : [];
-
-            // Sort by score descending to get true ranking
-            var sortedEvaluasi = evaluasiKomp.OrderByDescending(e => e.SkorKesesuaian).ToList();
-
-            // Filter by user selection if specified, otherwise include all or top materials
-            var targetEvaluasi = opsi.BahanDipilih is { Count: > 0 }
-                ? sortedEvaluasi.Where(e => opsi.BahanDipilih.Contains(e.BahanId)).ToList()
-                : sortedEvaluasi;
-
-            for (int i = 0; i < targetEvaluasi.Count; i++)
-            {
-                var eval = targetEvaluasi[i];
-                var rank = sortedEvaluasi.FindIndex(e => e.Id == eval.Id) + 1;
-
-                Bahan? bahan = _materialRepository is not null
-                    ? await _materialRepository.GetByIdAsync(eval.BahanId, ct).ConfigureAwait(false)
-                    : null;
-
-                var bahanNama = bahan?.Nama ?? $"Bahan {eval.BahanId:N}[..6]";
-
-                var sumberList = new List<SnapshotSumberProperti>();
-                if (_sumberBahanRepository is not null)
-                {
-                    var sumber = await _sumberBahanRepository.ListByBahanIdAsync(eval.BahanId, ct).ConfigureAwait(false);
-                    sumberList.AddRange(sumber.Select(s => new SnapshotSumberProperti(s.Properti, s.Referensi, s.Status.ToString(), s.Versi)));
-                }
-
-                var label = config.LabelUntuk(eval.SkorKesesuaian).ToString();
-                var labelFormatted = label switch
-                {
-                    "Cocok" => "Cocok",
-                    "PerluPertimbangan" => "Perlu Pertimbangan",
-                    _ => "Tidak Disarankan"
-                };
-
-                bahanList.Add(new SnapshotBahan
-                {
-                    BahanId = eval.BahanId,
-                    KomponenId = komp.Id,
-                    Jenis = komp.Jenis,
-                    Peringkat = rank > 0 ? rank : (i + 1),
-                    Nama = bahanNama,
-                    SkorKesesuaian = eval.SkorKesesuaian,
-                    LabelKesesuaian = labelFormatted,
-                    EmisiAwalKg = eval.EmisiAwalKg,
-                    SubSkorTermal = eval.SubSkor.Termal,
-                    SubSkorLembap = eval.SubSkor.Lembap,
-                    SubSkorKorosi = eval.SubSkor.Korosi,
-                    SubSkorUsia = eval.SubSkor.Usia,
-                    Alasan = eval.Alasan,
-                    SumberProperti = sumberList
-                });
-
-                // Horizon simulations for this material
-                var horizons = opsi.HorizonDipilih is { Count: > 0 }
-                    ? opsi.HorizonDipilih
-                    : [opsi.HorizonTahun];
-
-                var usiaNominal = bahan?.UsiaPakaiNominalTahun ?? 20.0;
-
-                foreach (var h in horizons)
-                {
-                    var sim = PerhitunganSimulasi.Simulasikan(eval.Id, eval, usiaNominal, h, config);
-
-                    simulasiList.Add(new SnapshotSimulasi
-                    {
-                        EvaluasiId = eval.Id,
-                        BahanNama = bahanNama,
-                        Jenis = komp.Jenis,
-                        HorizonTahun = h,
-                        UsiaPakaiNominal = usiaNominal,
-                        UsiaPakaiEfektif = sim.UsiaPakaiEfektifTahun,
-                        JumlahPenggantian = sim.JumlahPenggantian,
-                        EmisiAwalKg = eval.EmisiAwalKg,
-                        EmisiKumulatifKg = sim.EmisiKumulatifKg,
-                        FaktorPenuaanA = config.FaktorPenuaanA,
-                        VersiModel = config.VersiModel
-                    });
-                }
-            }
-        }
-
-        // Schedules
-        var jadwalList = new List<SnapshotPekerjaan>();
-        if (opsi.SertakanJadwal && _pekerjaanRepository is not null)
-        {
-            var pekerjaan = await _pekerjaanRepository.ListByProyekAsync(proyek.Id, ct).ConfigureAwait(false);
-            var terkunci = pekerjaan.Where(p => p.TanggalDikunci.HasValue).ToList();
-
-            foreach (var j in terkunci)
-            {
-                jadwalList.Add(new SnapshotPekerjaan
-                {
-                    PekerjaanId = j.Id,
-                    Nama = j.Nama,
-                    Jenis = j.Jenis,
-                    TanggalMulai = j.TanggalMulai,
-                    TanggalSelesai = j.TanggalSelesai,
-                    TanggalDikunci = j.TanggalDikunci,
-                    StatusCuaca = j.KeputusanTerakhir?.Status.ToString() ?? "Belum terverifikasi",
-                    AlasanCuaca = j.KeputusanTerakhir?.Catatan ?? ["Keputusan legacy tanpa snapshot cuaca."],
-                    Keputusan = j.KeputusanTerakhir,
-                    SumberAmbang = j.OverrideAmbang is null ? "Asumsi generik jenis pekerjaan" : "Override pekerjaan",
-                    KonfirmasiRisiko = j.Konfirmasi?.SetujuiRisiko ?? false,
-                    KonfirmasiDataLama = j.Konfirmasi?.SetujuiDataLama ?? false,
-                    Catatan = j.Konfirmasi?.Catatan
-                });
-            }
-        }
-
-        return new SnapshotLaporan
-        {
-            ProyekId = proyek.Id,
-            NamaProyek = proyek.Nama,
-            Kota = proyek.Kota,
-            Latitude = proyek.Latitude,
-            Longitude = proyek.Longitude,
-            Komponen = snapshotKomponen,
-            Iklim = snapshotIklim,
-            BahanTerpilih = bahanList,
-            SimulasiHorizon = simulasiList,
-            SertakanJadwal = opsi.SertakanJadwal,
-            JadwalTerkunci = jadwalList,
-            DibuatPadaUtc = DateTimeOffset.UtcNow,
-            DibuatPadaWib = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7)),
-            VersiModel = config.VersiModel
-        };
     }
 
     private sealed class LocalMemoryLaporanRepository : ILaporanRepository

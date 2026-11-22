@@ -12,6 +12,7 @@ public sealed record PendingReportMetadata
     public DateTimeOffset DibuatPada { get; init; }
     public string ChecksumSha256 { get; init; } = string.Empty;
     public string? SnapshotHash { get; init; }
+    public string? SnapshotJson { get; init; }
     public long UkuranByte { get; init; }
     public string Status { get; init; } = "MenungguPencatatan";
     public DateTimeOffset DicatatLokalPadaUtc { get; init; } = DateTimeOffset.UtcNow;

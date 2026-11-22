@@ -221,6 +221,16 @@ public sealed class DesktopWorkflowService
         return report;
     }
 
+    public async Task<Domain.Services.Laporan> RegenerateReportAsync(Guid id, string path, CancellationToken ct = default)
+    {
+        var project = _state.Proyek.Single(p => p.Laporan.Any(l => l.Id == id));
+        var original = project.Laporan.Single(l => l.Id == id);
+        var report = await _reports.RegenerateAsync(WorkflowMapper.KeDomain(original), path, ct);
+        project.TambahLaporan(WorkflowMapper.DariDomain(report));
+        if (!_state.ModeBacaSaja) _state.Ubah();
+        return report;
+    }
+
     private sealed class UnavailableReportRepository : Domain.Abstractions.ILaporanRepository
     {
         public Task SimpanAsync(Domain.Services.Laporan l, CancellationToken ct = default)

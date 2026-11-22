@@ -4,6 +4,20 @@ namespace Wastu.Services;
 
 public static class ReportSnapshotFactory
 {
+    public static async Task<SnapshotLaporan> BuildAsync(AppState state, Models.JenisKomponen jenis, int horizon,
+        bool includeSchedule, IReadOnlySet<string> selectedCodes, CancellationToken ct = default)
+    {
+        // Capture all inputs and persistence tasks before the first await.
+        var rank = state.Peringkat(jenis);
+        var snapshot = Build(state, jenis, horizon, includeSchedule, selectedCodes);
+        var originals = rank.Where(e => selectedCodes.Contains(state.Item(e.Bahan).Kode))
+            .Select(e => (Id: e.HasilDomain!.Id, Pending: state.EvaluasiTersimpanAsync(e, ct))).ToArray();
+        var persisted = await Task.WhenAll(originals.Select(e => e.Pending));
+        var ids = originals.Zip(persisted).ToDictionary(e => e.First.Id, e => e.Second.Id);
+        return snapshot with { SimulasiHorizon = snapshot.SimulasiHorizon
+            .Select(s => s with { EvaluasiId = ids[s.EvaluasiId] }).ToArray() };
+    }
+
     public static SnapshotLaporan Build(AppState state, Models.JenisKomponen jenis, int horizon,
         bool includeSchedule, IReadOnlySet<string> selectedCodes)
     {
@@ -14,7 +28,7 @@ public static class ReportSnapshotFactory
         var rank = state.Peringkat(jenis);
 
         // Map components
-        var compList = p.Komponen.Select(k => new SnapshotKomponen(
+        var compList = p.Komponen.Where(k => k.Jenis == jenis).Select(k => new SnapshotKomponen(
             k.Jenis == Models.JenisKomponen.Dinding ? Wastu.Domain.JenisKomponen.Dinding : Wastu.Domain.JenisKomponen.Atap,
             k.Luas)).ToList();
 
@@ -95,6 +109,7 @@ public static class ReportSnapshotFactory
             Kota = p.Kota,
             Latitude = p.Latitude,
             Longitude = p.Longitude,
+            ZonaWaktu = p.ZonaWaktu,
             Komponen = compList,
             Iklim = snapIklim,
             BahanTerpilih = selectedBahan,

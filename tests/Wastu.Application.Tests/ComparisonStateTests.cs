@@ -13,6 +13,23 @@ namespace Wastu.Application.Tests;
 public sealed class ComparisonStateTests
 {
     [Fact]
+    public async Task ReportCapturesCanonicalPersistedEvaluationIdsAndOnlyChosenComponent()
+    {
+        var evaluations = new EvaluasiRepositoryInMemory();
+        var batches = new BatchEvaluasiRepositoryInMemory(evaluations);
+        var scoring = new SuitabilityScoringService(new MaterialRepositoryInMemory([]),
+            new ProyekRepositoryInMemory(), batches, evaluations);
+        var state = BuatState(scoring);
+        state.Aktif.TambahKomponen(new Komponen { Jenis = JenisKomponen.Atap, Luas = 90 });
+        var ranking = state.Peringkat();
+        var codes = ranking.Take(2).Select(e => state.Item(e.Bahan).Kode).ToHashSet();
+        var snapshot = await ReportSnapshotFactory.BuildAsync(state, JenisKomponen.Dinding, 30, true, codes);
+        Assert.Equal(Domain.JenisKomponen.Dinding, Assert.Single(snapshot.Komponen).Jenis);
+        foreach (var simulation in snapshot.SimulasiHorizon)
+            Assert.NotNull(await evaluations.GetByIdAsync(simulation.EvaluasiId));
+    }
+
+    [Fact]
     public void RenderUlangMemakaiEvaluasiYangSamaSampaiInputBerubah()
     {
         var state = BuatState();

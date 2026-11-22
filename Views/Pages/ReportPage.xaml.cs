@@ -176,8 +176,10 @@ public partial class ReportPage : PageBase
         SnapshotLaporan snapshot;
         try
         {
-            snapshot = ReportSnapshotFactory.Build(S, _selectedJenis, _selectedHorizon,
-                _includeSchedule, _selectedMaterialCodes);
+            var captured = await _viewModel.CaptureAsync(S, _selectedJenis, _selectedHorizon,
+                _includeSchedule, _selectedMaterialCodes.ToHashSet());
+            if (captured is null) { Shell.Toast(_viewModel.Error ?? "Laporan dibatalkan."); return; }
+            snapshot = captured;
         }
         catch (Exception)
         {
@@ -213,6 +215,19 @@ public partial class ReportPage : PageBase
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
         }
+    }
+
+    private async void RegeneratePdf_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel.IsBusy || sender is not FrameworkElement { DataContext: ReportHistoryItem item }) return;
+        var dialog = new SaveFileDialog { Filter = "Berkas PDF (*.pdf)|*.pdf", Title = "Buat salinan laporan dari snapshot asli",
+            FileName = "Salinan-" + item.NamaBerkas, OverwritePrompt = true };
+        if (dialog.ShowDialog() != true) return;
+        var report = await _viewModel.RegenerateAsync(S.Workflows, item.Id, dialog.FileName);
+        Refresh();
+        Shell.Toast(report is null ? _viewModel.Error ?? "Salinan dibatalkan."
+            : report.Status == "MenungguPencatatan" ? "Salinan tersedia; pencatatan riwayat tertunda."
+            : "Salinan dibuat dengan angka dan asumsi snapshot asli.");
     }
 
     private void OpenPdf_Click(object sender, RoutedEventArgs e)
@@ -290,6 +305,7 @@ public sealed class ReportHistoryItem : ViewData
         StatusBerkas = l.StatusBerkas;
         StatusTeks = l.StatusKeterangan;
         IsAvailable = StatusBerkas == StatusBerkasLaporan.Tersedia;
+        HasSnapshot = !string.IsNullOrWhiteSpace(l.SnapshotJson);
     }
 
     public Guid Id { get; }
@@ -299,6 +315,7 @@ public sealed class ReportHistoryItem : ViewData
     public StatusBerkasLaporan StatusBerkas { get; }
     public string StatusTeks { get; }
     public bool IsAvailable { get; }
+    public bool HasSnapshot { get; }
     public Visibility MissingVisibility => IsAvailable ? Visibility.Collapsed : Visibility.Visible;
     public string BadgeStyle => IsAvailable ? "BadgeTersedia" : "BadgeHilang";
     public string StatusFg => IsAvailable ? "#166534" : "#B91C1C";

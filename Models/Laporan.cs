@@ -27,6 +27,7 @@ public class Laporan
     public string? SnapshotHash { get => _snapshotHash; set => _snapshotHash = value; }
     public long? UkuranByte { get => _ukuranByte; set => _ukuranByte = value; }
     public string Status { get => _status; set => _status = value; }
+    public string? SnapshotJson { get; set; }
 
     public string NamaBerkas => string.IsNullOrEmpty(_pathBerkas) ? "Laporan.pdf" : Path.GetFileName(_pathBerkas);
 

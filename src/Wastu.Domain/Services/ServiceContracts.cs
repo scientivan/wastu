@@ -188,7 +188,8 @@ public sealed record Laporan
         string? checksumSha256 = null,
         string? snapshotHash = null,
         long? ukuranByte = null,
-        string status = "Tersimpan")
+        string status = "Tersimpan",
+        string? snapshotJson = null)
     {
         Id = id;
         ProyekId = proyekId;
@@ -198,11 +199,13 @@ public sealed record Laporan
         SnapshotHash = snapshotHash;
         UkuranByte = ukuranByte;
         Status = status;
+        SnapshotJson = snapshotJson;
     }
 
     public Guid Id { get; init; }
     public Guid ProyekId { get; init; }
     public string PathBerkas { get; init; }
+    public string? SnapshotJson { get; init; }
     public DateTimeOffset DibuatPada { get; init; }
     public string? ChecksumSha256 { get; init; }
     public string? SnapshotHash { get; init; }

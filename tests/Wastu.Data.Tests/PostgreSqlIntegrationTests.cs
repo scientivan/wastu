@@ -439,7 +439,7 @@ public class PostgreSqlIntegrationTests
             checksumSha256: "sha256-hex-sample-1234567890abcdef",
             snapshotHash: "snapshot-hash-v2.5",
             ukuranByte: 2048000,
-            status: "Tersimpan");
+            status: "Tersimpan", snapshotJson: "{\"NamaProyek\":\"Proyek Laporan\",\"VersiModel\":\"v2.5-penelitian\"}");
 
         await laporanRepo.SimpanAsync(laporan);
 
@@ -452,7 +452,12 @@ public class PostgreSqlIntegrationTests
             Assert.Equal("sha256-hex-sample-1234567890abcdef", laporanDb.ChecksumSha256);
             Assert.Equal("snapshot-hash-v2.5", laporanDb.HashSnapshot);
             Assert.Equal(2048000, laporanDb.UkuranByte);
+            Assert.Equal(laporan.SnapshotJson, laporanDb.OpsiJson);
         }
+        var restoredReport = await laporanRepo.GetByIdAsync(laporanId);
+        Assert.Equal(laporan.SnapshotJson, restoredReport!.SnapshotJson);
+        await laporanRepo.SimpanAsync(restoredReport with { PathBerkas = "salinan.pdf" });
+        Assert.Equal(laporan.SnapshotJson, (await laporanRepo.GetByIdAsync(laporanId))!.SnapshotJson);
     }
 
     [PerluPostgreSql]

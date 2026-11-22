@@ -20,6 +20,17 @@ public sealed record SnapshotLaporan
     public string Kota { get; init; } = string.Empty;
     public double Latitude { get; init; }
     public double Longitude { get; init; }
+    public string ZonaWaktu { get; init; } = "Asia/Jakarta";
+    [JsonIgnore]
+    public DateTimeOffset DibuatPadaLokal => WaktuLokal(DibuatPadaUtc);
+
+    public DateTimeOffset WaktuLokal(DateTimeOffset utc)
+        => TimeZoneInfo.ConvertTime(utc, TimeZoneInfo.FindSystemTimeZoneById(ZonaWaktu));
+    [JsonIgnore]
+    public string LabelZona => ZonaWaktu switch
+    {
+        "Asia/Jayapura" => "WIT", "Asia/Makassar" => "WITA", "Asia/Jakarta" or "Asia/Pontianak" => "WIB", _ => ZonaWaktu
+    };
     public string KoordinatDisclaimer { get; init; } =
         "Koordinat berada dalam batas perkiraan kepulauan Indonesia (95°-141° BT, 11° LS - 6° LU).";
 
@@ -90,6 +101,7 @@ public sealed record SnapshotBahan
     public JenisKomponen Jenis { get; init; }
     public int Peringkat { get; init; }
     public string Nama { get; init; } = string.Empty;
+    public string? SusunanKetebalan { get; init; }
     public double SkorKesesuaian { get; init; }
     public string LabelKesesuaian { get; init; } = "Cocok"; // Cocok, Perlu Pertimbangan, Tidak Disarankan
     public double EmisiAwalKg { get; init; }

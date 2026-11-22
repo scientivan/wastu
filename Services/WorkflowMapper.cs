@@ -60,9 +60,9 @@ internal static class WorkflowMapper
     {
         Id = l.Id, ProyekId = l.ProyekId, PathBerkas = l.PathBerkas, DibuatPada = l.DibuatPada,
         TanggalDibuat = l.DibuatPada.LocalDateTime, ChecksumSha256 = l.ChecksumSha256,
-        SnapshotHash = l.SnapshotHash, UkuranByte = l.UkuranByte, Status = l.Status
+        SnapshotHash = l.SnapshotHash, UkuranByte = l.UkuranByte, Status = l.Status, SnapshotJson = l.SnapshotJson
     };
 
     public static Domain.Services.Laporan KeDomain(Models.Laporan l) => new(l.Id, l.ProyekId,
-        l.PathBerkas, l.DibuatPada, l.ChecksumSha256, l.SnapshotHash, l.UkuranByte, l.Status);
+        l.PathBerkas, l.DibuatPada, l.ChecksumSha256, l.SnapshotHash, l.UkuranByte, l.Status, l.SnapshotJson);
 }

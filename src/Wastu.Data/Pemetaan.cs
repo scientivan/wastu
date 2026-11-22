@@ -322,7 +322,7 @@ internal static class Pemetaan
         e.ChecksumSha256,
         e.HashSnapshot,
         e.UkuranByte,
-        e.StatusBerkas);
+        e.StatusBerkas, e.OpsiJson);
 
     internal static LaporanEntity KeEntity(Laporan l, string? opsiJson = null) => new()
     {
@@ -334,6 +334,6 @@ internal static class Pemetaan
         StatusBerkas = l.Status,
         ChecksumSha256 = l.ChecksumSha256,
         UkuranByte = l.UkuranByte,
-        OpsiJson = opsiJson
+        OpsiJson = l.SnapshotJson ?? opsiJson
     };
 }
