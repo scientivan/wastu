@@ -100,6 +100,7 @@ internal static partial class DebugSnapshot
 
             var climateClient = new AcceptanceClimate();
             App.State.HistoricalClient = climateClient;
+            App.State.DailyForecastClient = new AcceptanceForecast();
             foreach (var kind in new[] { "wall", "roof", "both" })
             {
                 int before = App.State.Proyek.Count;
@@ -280,6 +281,8 @@ internal static partial class DebugSnapshot
             await Shot("legacy-missing-components");
             Check(App.State.Peringkat().Length == 0 && App.State.Aktif.Komponen.Count == 0,
                 "Incomplete legacy project never receives an invented component or ranking");
+            Check(VisibleNamed<TextBox>("NameBox").Text == legacy.Nama,
+                "Cached project page displays the selected project even without a data revision");
             foreach (var key in new[] { "home", "materials", "compare", "sim", "weather", "report" })
             {
                 window.ShowShell(key);
@@ -312,6 +315,20 @@ internal static partial class DebugSnapshot
             return Task.FromResult(new Domain.ProfilIklim(2400, 80, 28, 5, TingkatKorosi.Tinggi,
                 provenance: ProvenanceIklim.Contoh));
         }
+    }
+
+    private sealed class AcceptanceForecast : IDailyForecastClient
+    {
+        public Task<IReadOnlyList<DailyForecast>> GetForecastAsync(double lat, double lon, int days, CancellationToken ct = default)
+        {
+            ct.ThrowIfCancellationRequested();
+            var today = KebijakanCachePrakiraan.HariIniPadaZona(DateTimeOffset.UtcNow, "Asia/Jakarta");
+            return Task.FromResult<IReadOnlyList<DailyForecast>>(Enumerable.Range(0, days)
+                .Select(i => new DailyForecast(today.AddDays(i), 20, 0, 20, 30, 70)).ToArray());
+        }
+        public async Task<HasilPrakiraan> GetForecastWithMetadataAsync(double lat, double lon, int days, CancellationToken ct = default)
+            => new(await GetForecastAsync(lat, lon, days, ct), "Asia/Jakarta", DateTimeOffset.UtcNow,
+                "Fixture Windows; bukan API nyata", 1);
     }
 
     private sealed class PendingAcceptanceClimate : IHistoricalClimateClient

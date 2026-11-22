@@ -20,7 +20,8 @@ public sealed partial class AppState
     internal string PendingReportDirectory => System.IO.Path.Combine(StateStore.ProfileFolder, "pending_reports",
         _toko is null ? "local" : System.IO.Path.GetFileNameWithoutExtension(_toko.SnapshotPath));
     private DesktopWorkflowService? _workflows;
-    public DesktopWorkflowService Workflows => _workflows ??= new(this, _backend);
+    internal Domain.Abstractions.IDailyForecastClient? DailyForecastClient { get; set; }
+    public DesktopWorkflowService Workflows => _workflows ??= new(this, _backend, DailyForecastClient);
 
     internal void SimpanHasil()
     {
