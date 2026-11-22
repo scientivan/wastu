@@ -249,7 +249,7 @@ internal static class Pemetaan
             e.BahanId,
             overrideAmbang,
             konfirmasi,
-            e.TerakhirDiperbaruiUtc);
+            e.TerakhirDiperbaruiUtc, e.RevisiLokasiSaatKunci);
     }
 
     internal static PekerjaanEntity KeEntity(Pekerjaan p) => new()
@@ -264,7 +264,7 @@ internal static class Pemetaan
         TanggalDikunci = p.TanggalDikunci,
         KomponenId = p.KomponenId,
         BahanId = p.BahanId,
-        RevisiLokasiSaatKunci = null,
+        RevisiLokasiSaatKunci = p.RevisiLokasiSaatKunci,
         OverrideAmbangJson = p.OverrideAmbang is not null ? JsonSerializer.Serialize(p.OverrideAmbang) : null,
         KonfirmasiJson = p.Konfirmasi is not null ? JsonSerializer.Serialize(p.Konfirmasi) : null,
         TerakhirDiperbaruiUtc = p.TerakhirDiperbaruiUtc

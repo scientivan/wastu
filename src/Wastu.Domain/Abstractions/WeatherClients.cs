@@ -43,6 +43,7 @@ public interface IDailyForecastClient
 /// Prakiraan satu hari (PRD §8.3). Semua nilai sudah dalam satuan yang sama dengan kolom
 /// tabel <c>prakiraan_cuaca</c> agar tidak perlu konversi di lapisan mana pun.
 /// </summary>
+[System.Text.Json.Serialization.JsonNumberHandling(System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals)]
 public sealed record DailyForecast(
     DateOnly Tanggal,
     double ProbabilitasHujanPct,

@@ -1,3 +1,5 @@
+using Wastu.Domain.Abstractions;
+
 namespace Wastu.Domain.Weather;
 
 /// <summary>
@@ -9,4 +11,6 @@ public sealed record HasilEvaluasiCuaca(
     IReadOnlyList<string> Alasan,
     bool DataLama = false,
     TimeSpan? UmurCache = null,
-    AmbangPekerjaan? AmbangEfektif = null);
+    AmbangPekerjaan? AmbangEfektif = null,
+    DailyForecast? Cuaca = null,
+    DateTimeOffset? DiambilPadaUtc = null);
