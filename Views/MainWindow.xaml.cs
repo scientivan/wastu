@@ -14,6 +14,7 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _toastTimer = new() { Interval = TimeSpan.FromMilliseconds(2800) };
     private WelcomeView? _welcome;
     private ShellView? _shell;
+    private RecoveryView? _recovery;
 
     public MainWindow()
     {
@@ -40,12 +41,18 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine(ex);
-            MessageBox.Show(this, "Data proyek tidak dapat dimuat. Periksa koneksi PostgreSQL dan skema Wastu.",
-                "Wastu", MessageBoxButton.OK, MessageBoxImage.Error);
-            Close();
-            return;
+            // Jangan pernah menutup aplikasi bila database gagal; alihkan ke tampilan pemulihan.
+            App.State = new AppState();
         }
         await ImageCache.PreloadAsync();
+
+        if (App.State.ButuhPemulihan)
+        {
+            ShowRecovery();
+            await minimum;
+            Splash.Dismiss(fade: false);
+            return;
+        }
 
         // Tujuan dibangun di balik splash supaya tampil seketika saat splash ditutup.
         var hasProject = App.State.AdaProyek;
@@ -61,6 +68,14 @@ public partial class MainWindow : Window
             await DebugSnapshot.RunAsync(this);
         }
 #endif
+    }
+
+    public void ShowRecovery()
+    {
+        HideToast();
+        _recovery = new RecoveryView(this);
+        Host.Child = _recovery;
+        Title = "Pemulihan Penyimpanan | Wastu";
     }
 
     public void ShowWelcome()
