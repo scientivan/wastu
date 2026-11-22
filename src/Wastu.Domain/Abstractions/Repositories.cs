@@ -69,6 +69,29 @@ public interface IBatchEvaluasiRepository
     Task<BatchEvaluasi?> GetLatestBatchByKomponenAsync(Guid komponenId, CancellationToken ct = default);
 
     Task<IReadOnlyList<BatchEvaluasi>> ListBatchesByProyekAsync(Guid proyekId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Mencari batch tersimpan yang identik untuk satu komponen berdasarkan hash
+    /// masukan dan versi model (PRD §4.3, §9.5). Implementasi bawaan memeriksa batch
+    /// terbaru; adapter dapat menimpa dengan pencarian terindeks tanpa mengubah
+    /// pemanggil, sehingga render ulang tidak membuat batch baru.
+    /// </summary>
+    async Task<BatchEvaluasi?> GetByHashAsync(
+        Guid komponenId,
+        string hashInput,
+        string versiModel,
+        CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(hashInput);
+        ArgumentException.ThrowIfNullOrWhiteSpace(versiModel);
+
+        BatchEvaluasi? terbaru = await GetLatestBatchByKomponenAsync(komponenId, ct).ConfigureAwait(false);
+        return terbaru is not null
+            && string.Equals(terbaru.HashInput, hashInput, StringComparison.Ordinal)
+            && string.Equals(terbaru.VersiModel, versiModel, StringComparison.Ordinal)
+                ? terbaru
+                : null;
+    }
 }
 
 /// <summary>Penyimpanan rencana pekerjaan lapangan sensitif cuaca (PRD §F6, §12).</summary>

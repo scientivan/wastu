@@ -50,7 +50,9 @@ public static class AmbangLayakKerja
 
     /// <summary>
     /// Skor kesesuaian di bawah nilai ini ditandai sebagai tidak disarankan, bukan
-    /// disembunyikan (PRD §F4).
+    /// disembunyikan (PRD §F4). Nilainya mengikuti ambang terpusat
+    /// <see cref="KonfigurasiModel.AmbangTidakDisarankan"/> (PRD-R10), bukan angka
+    /// terpisah yang bisa berbeda dari label UI.
     /// </summary>
-    public const double SkorMinimumDisarankan = 50;
+    public static readonly double SkorMinimumDisarankan = KonfigurasiModel.Bawaan.AmbangTidakDisarankan;
 }

@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Media;
+using Wastu.Domain;
 
 namespace Wastu.Views;
 
@@ -17,12 +18,13 @@ public sealed class TagData(string text, Brush bg, Brush fg) : ViewData
     public Brush Bg { get; } = bg;
     public Brush Fg { get; } = fg;
 
-    // tag(score) pada referensi
-    public static TagData Kesesuaian(double skor) => skor < 55
-        ? new("Tidak disarankan", Palette.TagRedBg, Palette.TagRedFg)
-        : skor < 75
-            ? new("Perlu pertimbangan", Palette.TagGoldBg, Palette.TagGoldFg)
-            : new("Cocok", Palette.TagBg, Palette.TagFg);
+    // Satu sumber kebenaran label: KonfigurasiModel.Bawaan (PRD-R10).
+    public static TagData Kesesuaian(double skor) => KonfigurasiModel.Bawaan.LabelUntuk(skor) switch
+    {
+        LabelKesesuaian.TidakDisarankan => new("Tidak disarankan", Palette.TagRedBg, Palette.TagRedFg),
+        LabelKesesuaian.PerluPertimbangan => new("Perlu pertimbangan", Palette.TagGoldBg, Palette.TagGoldFg),
+        _ => new("Cocok", Palette.TagBg, Palette.TagFg)
+    };
 }
 
 public static class Palette
