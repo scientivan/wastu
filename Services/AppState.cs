@@ -223,7 +223,7 @@ public sealed partial class AppState
 
     public Evaluasi[] Peringkat(JenisKomponen jenis)
     {
-        if (!AdaProyek || Aktif is null) return [];
+        if (!AdaProyek || Aktif is null || Aktif.MasalahData is not null) return [];
         var komp = Aktif.Komponen.FirstOrDefault(k => k.Jenis == jenis);
         if (komp is null) return [];
         double luas = komp.Luas;
@@ -277,6 +277,7 @@ public sealed partial class AppState
 
     public List<ItemKatalog> Terpilih()
     {
+        if (Aktif?.MasalahData is not null) return [];
         if (Luas <= 0) return [];
         var hasil = Dipilih.Select(kode => _katalog.FirstOrDefault(item => item.Kode == kode && item.Jenis == Jenis))
             .OfType<ItemKatalog>().Distinct().Take(2).ToList();
@@ -336,6 +337,7 @@ public sealed partial class AppState
         IReadOnlyList<(JenisKomponen Jenis, double Luas)> komponen, double? pesisirManual = null)
     {
         TolakTulis();
+        ValidasiInputProyek(nama, kota, lintang, bujur, komponen, pesisirManual);
         double pesisir = pesisirManual ?? JarakPesisir.CobaHitungKm(lintang, bujur) ?? 0;
 
         Bangunan lokal;
@@ -375,6 +377,7 @@ public sealed partial class AppState
         IReadOnlyList<(JenisKomponen Jenis, double Luas)> komponen, double pesisir, Guid? databaseId = null)
     {
         TolakTulis();
+        ValidasiInputProyek(nama, kota, lintang, bujur, komponen, pesisir);
         var proyek = new Bangunan
         {
             Id = Proyek.Count == 0 ? 1 : Proyek.Max(p => p.Id) + 1,
@@ -439,6 +442,7 @@ public sealed partial class AppState
         IReadOnlyList<(JenisKomponen Jenis, double Luas)> komponen, double? pesisirManual = null)
     {
         TolakTulis();
+        ValidasiInputProyek(nama, kota, lintang, bujur, komponen, pesisirManual);
         var proyek = Aktif;
         if (proyek is null) return null;
 
@@ -483,6 +487,8 @@ public sealed partial class AppState
             proyek.Latitude = lintang;
             proyek.Longitude = bujur;
             proyek.RevisiLokasi++;
+            foreach (var pekerjaan in proyek.Pekerjaan.Where(j => j.TanggalDikunci.HasValue))
+                pekerjaan.Status = "Perlu ditinjau";
             ResetPrakiraan();
 
             if (proyek.ProfilIklim is not null)
@@ -979,8 +985,6 @@ public sealed partial class AppState
                     proyek.TambahKomponen(new Komponen { Jenis = JenisKomponen.Dinding, Luas = p.Dinding });
                 if (p.Atap > 0)
                     proyek.TambahKomponen(new Komponen { Jenis = JenisKomponen.Atap, Luas = p.Atap });
-                if (proyek.Komponen.Count == 0)
-                    proyek.TambahKomponen(new Komponen { Jenis = JenisKomponen.Dinding, Luas = 100 });
             }
 
             foreach (var j in p.Pekerjaan) proyek.JadwalkanPekerjaan(WorkflowMapper.DariDto(j));

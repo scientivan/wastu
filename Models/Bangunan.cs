@@ -38,6 +38,20 @@ public class Bangunan
     public IReadOnlyList<Laporan> Laporan => _laporan.AsReadOnly();
     public IReadOnlyList<Pekerjaan> Pekerjaan => _pekerjaan.AsReadOnly();
 
+    public string? MasalahData
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(Nama) || string.IsNullOrWhiteSpace(Kota))
+                return "Nama atau kota proyek lama belum lengkap. Perbaiki profil sebelum menghitung.";
+            try { Domain.ValidasiKoordinat.Validasi(Latitude, Longitude); }
+            catch (ArgumentException) { return "Koordinat proyek lama di luar batas atau tidak valid. Periksa titik lokasi pada profil."; }
+            if (_komponen.Count == 0 || _komponen.Any(k => !double.IsFinite(k.Luas) || k.Luas <= 0))
+                return "Komponen atau luas proyek lama belum valid. Pilih dinding/atap dan isi luas sebenarnya pada profil.";
+            return null;
+        }
+    }
+
     public void TambahKomponen(Komponen k)
     {
         ArgumentNullException.ThrowIfNull(k);
