@@ -66,12 +66,14 @@ Verifikasi mencakup domain, repository PostgreSQL terisolasi, snapshot/pemulihan
 
 ## Alur Penggunaan
 
+Untuk paket tugas Modul 10, ekstrak ZIP ke folder yang bisa ditulis lalu klik dua kali **Wastu.exe**. Biarkan `.env` dan file pendukung tetap di folder yang sama. Paket Windows x64 membawa runtime .NET, sehingga SDK dan instalasi database tidak diperlukan. Konfigurasi awal `WASTU_STORAGE_MODE=local` menyimpan proyek pada perangkat ini. Data lokal default berada di `%LOCALAPPDATA%\Wastu`. Koneksi internet diperlukan untuk pembaruan iklim historis dan prakiraan Open-Meteo serta peta.
+
 1. **Buat Proyek Baru:** Beri nama, tentukan lokasi (pilih kota atau koordinat), lalu pilih satu atau kedua komponen dan isi luas bidangnya.
-2. **Perbarui Profil Iklim:** Tinjau ringkasan iklim lokasi di Beranda.
-3. **Bandingkan Bahan:** Telusuri katalog bahan, pilih dua bahan, lalu bandingkan kesesuaian dan emisinya.
-4. **Simulasikan Emisi:** Lihat dampak penggantian dini material sepanjang masa pakai rumah.
-5. **Jadwalkan Pekerjaan:** Ambil prakiraan cuaca, pilih hari yang layak, dan kunci jadwal pekerjaan.
-6. **Simpan Laporan Rekomendasi:** Ekspor laporan sebagai PDF.
+2. **Tinjau Profil Iklim:** Buka Profil Proyek untuk melihat sumber dan ringkasan iklim. Klik **Perbarui iklim** bila pengambilan awal gagal.
+3. **Bandingkan Bahan:** Cari material di Eksplor Material, pilih dua bahan sejenis, lalu baca skor, alasan, dan emisinya di Bandingkan. Mode V2 menerima empat persentase dengan total 100%.
+4. **Simulasikan Emisi:** Pilih horizon 20, 30, atau 50 tahun untuk melihat grafik emisi dan jumlah penggantian.
+5. **Jadwalkan Pekerjaan:** Perbarui prakiraan, tambahkan pekerjaan dan rentang tanggal, lalu pilih hari dan kunci jika data cuaca tersedia. Baca peringatan sebelum menyetujui hari berisiko.
+6. **Simpan Laporan Rekomendasi:** Pilih Dinding, Atap, atau Keduanya sesuai proyek dan centang material yang ingin dimasukkan. Pilih horizon, lalu **Simpan PDF**. Riwayat menyediakan **Buka PDF** dan **Buat salinan** untuk laporan yang mempunyai snapshot.
 
 ## Teknologi
 
@@ -82,6 +84,8 @@ Aplikasi desktop Windows berbasis WPF (.NET 8, C#) dengan data cuaca dan iklim d
 1. Buat database lokal dengan `database/01_create_database.sql` atau gunakan database PostgreSQL yang sudah tersedia.
 2. Siapkan skema dengan migrasi EF pada database kosong atau database dengan riwayat migrasi EF yang sudah cocok. SQL instalasi/seed di `database/` dipakai untuk pemeriksaan kesetaraan; jangan menjalankan SQL lalu langsung mengulang seluruh migrasi EF pada tabel yang sama.
 3. Isi `.env` sesuai `.env.example` dengan `host`, `port`, `database`, `user`, dan `password` dari Supabase. Aplikasi menyusun connection string Npgsql otomatis dengan SSL. Gunakan session pooler port 5432. Alternatifnya, isi `WASTU_CONNECTION_STRING` lengkap untuk mengesampingkan variabel terpisah.
+
+   Hapus baris `WASTU_STORAGE_MODE=local` jika mengubah konfigurasi paket tugas ke mode PostgreSQL. Simpan kredensial hanya pada perangkat yang menjalankan aplikasi.
 
 4. Jalankan `dotnet run --project Wastu.csproj` di Windows dengan .NET 8 SDK. Jalankan tes dengan perintah pada bagian Pengujian di bawah.
 

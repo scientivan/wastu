@@ -708,7 +708,7 @@ public sealed partial class AppState
 
     public static async Task<AppState> MuatAsync(bool paksaJsonLokal, CancellationToken cancellationToken = default)
     {
-        if (paksaJsonLokal)
+        if (paksaJsonLokal || KoneksiSupabase.ModeLokalDipilih())
             return await MuatModeJsonLokalAsync(cancellationToken).ConfigureAwait(false);
 
         string? koneksi;
