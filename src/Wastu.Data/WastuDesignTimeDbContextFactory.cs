@@ -10,7 +10,8 @@ public sealed class WastuDesignTimeDbContextFactory : IDesignTimeDbContextFactor
     public WastuDbContext CreateDbContext(string[] args)
     {
         string connectionString =
-            KoneksiSupabase.Cari()
+            Environment.GetEnvironmentVariable("WASTU_TEST_CONNECTION_STRING")
+            ?? KoneksiSupabase.Cari()
             ?? ConnectionStringPengganti;
 
         return new WastuDbContextFactory(connectionString).CreateDbContext();

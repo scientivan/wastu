@@ -21,4 +21,8 @@ public sealed class BahanEntity
     public double FaktorEmisi { get; set; }
 
     public string SumberData { get; set; } = string.Empty;
+
+    public string? SusunanKetebalan { get; set; }
+
+    public int VersiData { get; set; } = 1;
 }

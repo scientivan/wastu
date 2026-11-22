@@ -45,6 +45,7 @@ public sealed class EvaluasiRepositoryEf : IEvaluasiRepository
         ArgumentNullException.ThrowIfNull(evaluasi);
 
         await using WastuDbContext db = await _pabrik.CreateDbContextAsync(ct).ConfigureAwait(false);
+        await using var transaksi = await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
 
         foreach (Evaluasi item in evaluasi)
         {
@@ -55,7 +56,6 @@ public sealed class EvaluasiRepositoryEf : IEvaluasiRepository
             if (baris is null)
             {
                 baris = Pemetaan.KeEntity(item);
-                baris.DihitungPada = DateTimeOffset.UtcNow;
                 db.Evaluasi.Add(baris);
             }
             else
@@ -65,6 +65,7 @@ public sealed class EvaluasiRepositoryEf : IEvaluasiRepository
         }
 
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await transaksi.CommitAsync(ct).ConfigureAwait(false);
     }
 
     public async Task SimpanAsync(SimulasiEmisi simulasi, CancellationToken ct = default)
@@ -72,9 +73,14 @@ public sealed class EvaluasiRepositoryEf : IEvaluasiRepository
         ArgumentNullException.ThrowIfNull(simulasi);
 
         await using WastuDbContext db = await _pabrik.CreateDbContextAsync(ct).ConfigureAwait(false);
+        await using var transaksi = await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
+
+        string versi = simulasi.VersiModel ?? "v2.0";
 
         SimulasiEmisiEntity? baris = await db.SimulasiEmisi
-            .FirstOrDefaultAsync(x => x.EvaluasiId == simulasi.EvaluasiId, ct)
+            .FirstOrDefaultAsync(x => x.EvaluasiId == simulasi.EvaluasiId
+                && x.HorizonTahun == simulasi.HorizonTahun
+                && x.VersiModel == versi, ct)
             .ConfigureAwait(false);
 
         if (baris is null)
@@ -83,12 +89,14 @@ public sealed class EvaluasiRepositoryEf : IEvaluasiRepository
         }
         else
         {
-            baris.HorizonTahun = simulasi.HorizonTahun;
             baris.UsiaPakaiEfektifTahun = simulasi.UsiaPakaiEfektifTahun;
             baris.JumlahPenggantian = simulasi.JumlahPenggantian;
             baris.EmisiKumulatifKg = simulasi.EmisiKumulatifKg;
+            baris.FaktorPenuaanA = simulasi.FaktorPenuaanA;
+            baris.DihitungPadaUtc = simulasi.DihitungPadaUtc ?? DateTimeOffset.UtcNow;
         }
 
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await transaksi.CommitAsync(ct).ConfigureAwait(false);
     }
 }

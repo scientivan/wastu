@@ -22,6 +22,67 @@ namespace Wastu.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Wastu.Data.Entities.AmbangPekerjaanEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<double?>("CurahHujanMaksMm")
+                        .HasColumnType("double precision")
+                        .HasColumnName("curah_hujan_maks_mm");
+
+                    b.Property<string>("JenisPekerjaan")
+                        .HasColumnType("text")
+                        .HasColumnName("jenis_pekerjaan");
+
+                    b.Property<double?>("KelembapanMaksPct")
+                        .HasColumnType("double precision")
+                        .HasColumnName("kelembapan_maks_pct");
+
+                    b.Property<Guid?>("PekerjaanId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("pekerjaan_id");
+
+                    b.Property<double?>("ProbabilitasHujanMaksPct")
+                        .HasColumnType("double precision")
+                        .HasColumnName("probabilitas_hujan_maks_pct");
+
+                    b.Property<double?>("SuhuMaksC")
+                        .HasColumnType("double precision")
+                        .HasColumnName("suhu_maks_c");
+
+                    b.Property<double?>("SuhuMinC")
+                        .HasColumnType("double precision")
+                        .HasColumnName("suhu_min_c");
+
+                    b.Property<string>("SumberAmbang")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Default Asumsi")
+                        .HasColumnName("sumber_ambang");
+
+                    b.Property<string>("TingkatSuhu")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tingkat_suhu");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JenisPekerjaan")
+                        .HasDatabaseName("ambang_pekerjaan_jenis_pekerjaan_idx");
+
+                    b.HasIndex("PekerjaanId")
+                        .HasDatabaseName("ambang_pekerjaan_pekerjaan_id_idx");
+
+                    b.ToTable("ambang_pekerjaan", null, t =>
+                        {
+                            t.HasCheckConstraint("ambang_pekerjaan_tingkat_suhu_enum", "tingkat_suhu IN ('peringatan', 'keras')");
+                        });
+                });
+
             modelBuilder.Entity("Wastu.Data.Entities.BahanEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -60,9 +121,19 @@ namespace Wastu.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("sumber_data");
 
+                    b.Property<string>("SusunanKetebalan")
+                        .HasColumnType("text")
+                        .HasColumnName("susunan_ketebalan");
+
                     b.Property<double>("UsiaPakaiNominalTahun")
                         .HasColumnType("double precision")
                         .HasColumnName("usia_pakai_nominal_tahun");
+
+                    b.Property<int>("VersiData")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("versi_data");
 
                     b.HasKey("Id");
 
@@ -95,7 +166,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 1.3999999999999999,
                             Nama = "Beton bertulang (in-situ)",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 50.0
+                            UsiaPakaiNominalTahun = 50.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -107,7 +179,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.12,
                             Nama = "Beton ringan (hebel autoclave)",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 30.0
+                            UsiaPakaiNominalTahun = 30.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -119,7 +192,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.10000000000000001,
                             Nama = "Beton polibeton (hebel)",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 25.0
+                            UsiaPakaiNominalTahun = 25.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -131,7 +205,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.69999999999999996,
                             Nama = "Bata merah + plester aci",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 30.0
+                            UsiaPakaiNominalTahun = 30.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -143,7 +218,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.69999999999999996,
                             Nama = "Bata merah tanpa plester",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 20.0
+                            UsiaPakaiNominalTahun = 20.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -155,7 +231,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.59999999999999998,
                             Nama = "Bata beton (concrete block)",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 40.0
+                            UsiaPakaiNominalTahun = 40.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -167,7 +244,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.11,
                             Nama = "Bata silikat berpori",
                             SumberData = "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 30.0
+                            UsiaPakaiNominalTahun = 30.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -179,7 +257,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.089999999999999997,
                             Nama = "Bata ringan honeycomb (AHCC)",
                             SumberData = "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 30.0
+                            UsiaPakaiNominalTahun = 30.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -191,7 +270,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.25,
                             Nama = "Panel gipsum (dry wall)",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 20.0
+                            UsiaPakaiNominalTahun = 20.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -203,7 +283,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.14999999999999999,
                             Nama = "Papan kayu + pelindung",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 15.0
+                            UsiaPakaiNominalTahun = 15.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -215,7 +296,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.20000000000000001,
                             Nama = "Panel ACP (aluminium composite)",
                             SumberData = "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 25.0
+                            UsiaPakaiNominalTahun = 25.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -227,7 +309,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.040000000000000001,
                             Nama = "Panel EPS + plester",
                             SumberData = "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 25.0
+                            UsiaPakaiNominalTahun = 25.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -239,7 +322,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.25,
                             Nama = "Semen fiber reinforced board",
                             SumberData = "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 30.0
+                            UsiaPakaiNominalTahun = 30.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -251,7 +335,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 3.0,
                             Nama = "Batu andesit (dinding batu alam)",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 60.0
+                            UsiaPakaiNominalTahun = 60.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -263,7 +348,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.45000000000000001,
                             Nama = "Beton geopolimer",
                             SumberData = "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 45.0
+                            UsiaPakaiNominalTahun = 45.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -275,7 +361,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 1.3999999999999999,
                             Nama = "Dak beton bertulang",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 40.0
+                            UsiaPakaiNominalTahun = 40.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -287,7 +374,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.40000000000000002,
                             Nama = "Genting beton",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 30.0
+                            UsiaPakaiNominalTahun = 30.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -299,7 +387,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.29999999999999999,
                             Nama = "Genting keramik",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 35.0
+                            UsiaPakaiNominalTahun = 35.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -311,7 +400,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.59999999999999998,
                             Nama = "Genting tanah liat",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 30.0
+                            UsiaPakaiNominalTahun = 30.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -323,7 +413,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.080000000000000002,
                             Nama = "Genteng aspal (shingle)",
                             SumberData = "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 20.0
+                            UsiaPakaiNominalTahun = 20.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -335,7 +426,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.050000000000000003,
                             Nama = "Baja galvanis (trapezium)",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 15.0
+                            UsiaPakaiNominalTahun = 15.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -347,7 +439,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.050000000000000003,
                             Nama = "Baja AZ / galvalum",
                             SumberData = "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 20.0
+                            UsiaPakaiNominalTahun = 20.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -359,7 +452,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.11,
                             Nama = "Seng (zink)",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 12.0
+                            UsiaPakaiNominalTahun = 12.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -371,7 +465,8 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.070000000000000007,
                             Nama = "Constantra / fiber cement",
                             SumberData = "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 25.0
+                            UsiaPakaiNominalTahun = 25.0,
+                            VersiData = 1
                         },
                         new
                         {
@@ -383,7 +478,82 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.040000000000000001,
                             Nama = "Panel sandwich (inti EPS)",
                             SumberData = "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)",
-                            UsiaPakaiNominalTahun = 25.0
+                            UsiaPakaiNominalTahun = 25.0,
+                            VersiData = 1
+                        });
+                });
+
+            modelBuilder.Entity("Wastu.Data.Entities.BatchEvaluasiEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<double>("BobotKorosi")
+                        .HasColumnType("double precision")
+                        .HasColumnName("bobot_korosi");
+
+                    b.Property<double>("BobotLembap")
+                        .HasColumnType("double precision")
+                        .HasColumnName("bobot_lembap");
+
+                    b.Property<double>("BobotTermal")
+                        .HasColumnType("double precision")
+                        .HasColumnName("bobot_termal");
+
+                    b.Property<double>("BobotUsia")
+                        .HasColumnType("double precision")
+                        .HasColumnName("bobot_usia");
+
+                    b.Property<DateTimeOffset>("DihitungPadaUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("dihitung_pada_utc");
+
+                    b.Property<string>("HashInput")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("hash_input");
+
+                    b.Property<Guid>("KomponenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("komponen_id");
+
+                    b.Property<double>("LuasM2")
+                        .HasColumnType("double precision")
+                        .HasColumnName("luas_m2");
+
+                    b.Property<Guid>("ProyekId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("proyek_id");
+
+                    b.Property<int>("RevisiLokasi")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("revisi_lokasi");
+
+                    b.Property<string>("VersiModel")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("v2.0")
+                        .HasColumnName("versi_model");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProyekId")
+                        .HasDatabaseName("batch_evaluasi_proyek_id_idx");
+
+                    b.HasIndex("KomponenId", "HashInput", "VersiModel")
+                        .IsUnique()
+                        .HasDatabaseName("uk_batch_evaluasi_komponen_hash_versi");
+
+                    b.ToTable("batch_evaluasi", null, t =>
+                        {
+                            t.HasCheckConstraint("batch_evaluasi_luas_positif", "luas_m2 > 0");
+
+                            t.HasCheckConstraint("batch_evaluasi_revisi_positif", "revisi_lokasi >= 1");
                         });
                 });
 
@@ -403,13 +573,25 @@ namespace Wastu.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("bahan_id");
 
+                    b.Property<Guid?>("BatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("batch_id");
+
                     b.Property<DateTimeOffset>("DihitungPada")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("dihitung_pada");
 
+                    b.Property<DateTimeOffset?>("DihitungPadaUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("dihitung_pada_utc");
+
                     b.Property<double>("EmisiAwalKg")
                         .HasColumnType("double precision")
                         .HasColumnName("emisi_awal_kg");
+
+                    b.Property<string>("HashInput")
+                        .HasColumnType("text")
+                        .HasColumnName("hash_input");
 
                     b.Property<Guid>("KomponenId")
                         .HasColumnType("uuid")
@@ -435,10 +617,20 @@ namespace Wastu.Data.Migrations
                         .HasColumnType("double precision")
                         .HasColumnName("skor_usia");
 
+                    b.Property<string>("VersiModel")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("v2.0")
+                        .HasColumnName("versi_model");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BahanId")
                         .HasDatabaseName("evaluasi_bahan_id_idx");
+
+                    b.HasIndex("BatchId")
+                        .HasDatabaseName("evaluasi_batch_id_idx");
 
                     b.HasIndex("KomponenId")
                         .HasDatabaseName("evaluasi_komponen_id_idx");
@@ -451,6 +643,83 @@ namespace Wastu.Data.Migrations
 
                             t.HasCheckConstraint("evaluasi_skor_rentang", "skor_kesesuaian BETWEEN 0 AND 100");
                         });
+                });
+
+            modelBuilder.Entity("Wastu.Data.Entities.KeputusanJadwalEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CatatanJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("[]")
+                        .HasColumnName("catatan_json");
+
+                    b.Property<string>("CatatanKonfirmasi")
+                        .HasColumnType("text")
+                        .HasColumnName("catatan_konfirmasi");
+
+                    b.Property<DateTimeOffset>("DibuatPadaUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("dibuat_pada_utc");
+
+                    b.Property<DateTimeOffset?>("DikunciPadaUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("dikunci_pada_utc");
+
+                    b.Property<bool>("KonfirmasiDataLama")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("konfirmasi_data_lama");
+
+                    b.Property<Guid>("PekerjaanId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("pekerjaan_id");
+
+                    b.Property<bool>("PersetujuanRisiko")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("persetujuan_risiko");
+
+                    b.Property<string>("SnapshotAmbangJson")
+                        .HasColumnType("text")
+                        .HasColumnName("snapshot_ambang_json");
+
+                    b.Property<string>("SnapshotCuacaJson")
+                        .HasColumnType("text")
+                        .HasColumnName("snapshot_cuaca_json");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<DateOnly>("Tanggal")
+                        .HasColumnType("date")
+                        .HasColumnName("tanggal");
+
+                    b.Property<bool>("Terkunci")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("terkunci");
+
+                    b.Property<double?>("UmurDataJam")
+                        .HasColumnType("double precision")
+                        .HasColumnName("umur_data_jam");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PekerjaanId")
+                        .HasDatabaseName("keputusan_jadwal_pekerjaan_id_idx");
+
+                    b.ToTable("keputusan_jadwal", (string)null);
                 });
 
             modelBuilder.Entity("Wastu.Data.Entities.KomponenEntity", b =>
@@ -486,6 +755,349 @@ namespace Wastu.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Wastu.Data.Entities.KonfigurasiModelEntity", b =>
+                {
+                    b.Property<string>("VersiModel")
+                        .HasColumnType("text")
+                        .HasColumnName("versi_model");
+
+                    b.Property<double>("AcuanCurahHujanMm")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(3000.0)
+                        .HasColumnName("acuan_curah_hujan_mm");
+
+                    b.Property<double>("AcuanJarakPesisirKm")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(50.0)
+                        .HasColumnName("acuan_jarak_pesisir_km");
+
+                    b.Property<bool>("Aktif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("aktif");
+
+                    b.Property<double>("AmbangCocok")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(75.0)
+                        .HasColumnName("ambang_cocok");
+
+                    b.Property<double>("AmbangTidakDisarankan")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(55.0)
+                        .HasColumnName("ambang_tidak_disarankan");
+
+                    b.Property<double>("BobotLembapHujanAlpha")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(0.5)
+                        .HasColumnName("bobot_lembap_hujan_alpha");
+
+                    b.Property<DateTimeOffset>("DibuatPadaUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("dibuat_pada_utc");
+
+                    b.Property<double>("FaktorPenuaanA")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(0.5)
+                        .HasColumnName("faktor_penuaan_a");
+
+                    b.Property<double>("PitaTermalBatasAtasPanas")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(0.29999999999999999)
+                        .HasColumnName("pita_termal_batas_atas_panas");
+
+                    b.Property<double>("PitaTermalBatasAtasSejuk")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(0.59999999999999998)
+                        .HasColumnName("pita_termal_batas_atas_sejuk");
+
+                    b.Property<double>("PitaTermalBatasBawah")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(0.10000000000000001)
+                        .HasColumnName("pita_termal_batas_bawah");
+
+                    b.Property<double>("SuhuPanasC")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(32.0)
+                        .HasColumnName("suhu_panas_c");
+
+                    b.Property<double>("SuhuSejukC")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(26.0)
+                        .HasColumnName("suhu_sejuk_c");
+
+                    b.HasKey("VersiModel");
+
+                    b.ToTable("konfigurasi_model", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            VersiModel = "v2.0",
+                            AcuanCurahHujanMm = 3000.0,
+                            AcuanJarakPesisirKm = 50.0,
+                            Aktif = true,
+                            AmbangCocok = 75.0,
+                            AmbangTidakDisarankan = 55.0,
+                            BobotLembapHujanAlpha = 0.5,
+                            DibuatPadaUtc = new DateTimeOffset(new DateTime(2026, 11, 22, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            FaktorPenuaanA = 0.5,
+                            PitaTermalBatasAtasPanas = 0.29999999999999999,
+                            PitaTermalBatasAtasSejuk = 0.59999999999999998,
+                            PitaTermalBatasBawah = 0.10000000000000001,
+                            SuhuPanasC = 32.0,
+                            SuhuSejukC = 26.0
+                        });
+                });
+
+            modelBuilder.Entity("Wastu.Data.Entities.LaporanEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BangunanId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("bangunan_id");
+
+                    b.Property<string>("ChecksumSha256")
+                        .HasColumnType("text")
+                        .HasColumnName("checksum_sha256");
+
+                    b.Property<DateTimeOffset>("DibuatPadaUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("dibuat_pada_utc");
+
+                    b.Property<string>("HashSnapshot")
+                        .HasColumnType("text")
+                        .HasColumnName("hash_snapshot");
+
+                    b.Property<string>("OpsiJson")
+                        .HasColumnType("text")
+                        .HasColumnName("opsi_json");
+
+                    b.Property<string>("PathBerkas")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("path_berkas");
+
+                    b.Property<string>("StatusBerkas")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Tersimpan")
+                        .HasColumnName("status_berkas");
+
+                    b.Property<long?>("UkuranByte")
+                        .HasColumnType("bigint")
+                        .HasColumnName("ukuran_byte");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BangunanId")
+                        .HasDatabaseName("laporan_bangunan_id_idx");
+
+                    b.ToTable("laporan", (string)null);
+                });
+
+            modelBuilder.Entity("Wastu.Data.Entities.PekerjaanEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("BahanId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("bahan_id");
+
+                    b.Property<Guid>("BangunanId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("bangunan_id");
+
+                    b.Property<string>("Jenis")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("jenis");
+
+                    b.Property<Guid?>("KomponenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("komponen_id");
+
+                    b.Property<string>("KonfirmasiJson")
+                        .HasColumnType("text")
+                        .HasColumnName("konfirmasi_json");
+
+                    b.Property<string>("Nama")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("nama");
+
+                    b.Property<string>("OverrideAmbangJson")
+                        .HasColumnType("text")
+                        .HasColumnName("override_ambang_json");
+
+                    b.Property<int?>("RevisiLokasiSaatKunci")
+                        .HasColumnType("integer")
+                        .HasColumnName("revisi_lokasi_saat_kunci");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Draft")
+                        .HasColumnName("status");
+
+                    b.Property<DateOnly?>("TanggalDikunci")
+                        .HasColumnType("date")
+                        .HasColumnName("tanggal_dikunci");
+
+                    b.Property<DateOnly>("TanggalMulai")
+                        .HasColumnType("date")
+                        .HasColumnName("tanggal_mulai");
+
+                    b.Property<DateOnly>("TanggalSelesai")
+                        .HasColumnType("date")
+                        .HasColumnName("tanggal_selesai");
+
+                    b.Property<DateTimeOffset>("TerakhirDiperbaruiUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("terakhir_diperbarui_utc");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BahanId");
+
+                    b.HasIndex("BangunanId")
+                        .HasDatabaseName("pekerjaan_bangunan_id_idx");
+
+                    b.HasIndex("KomponenId");
+
+                    b.ToTable("pekerjaan", null, t =>
+                        {
+                            t.HasCheckConstraint("pekerjaan_jenis_enum", "jenis IN ('pengecoran', 'pengecatan')");
+
+                            t.HasCheckConstraint("pekerjaan_rentang_tanggal_valid", "tanggal_mulai <= tanggal_selesai");
+
+                            t.HasCheckConstraint("pekerjaan_status_enum", "status IN ('Draft', 'Terkunci', 'PerluDitinjau', 'Selesai')");
+                        });
+                });
+
+            modelBuilder.Entity("Wastu.Data.Entities.PrakiraanCacheEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("BangunanId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("bangunan_id");
+
+                    b.Property<string>("CatatanKualitas")
+                        .HasColumnType("text")
+                        .HasColumnName("catatan_kualitas");
+
+                    b.Property<double>("CurahHujanMm")
+                        .HasColumnType("double precision")
+                        .HasColumnName("curah_hujan_mm");
+
+                    b.Property<bool>("DataLengkap")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("data_lengkap");
+
+                    b.Property<bool>("DataParsial")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("data_parsial");
+
+                    b.Property<DateTimeOffset>("DiambilPadaUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("diambil_pada_utc");
+
+                    b.Property<double>("KelembapanMaksPct")
+                        .HasColumnType("double precision")
+                        .HasColumnName("kelembapan_maks_pct");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("latitude");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("longitude");
+
+                    b.Property<string>("Penyedia")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Open-Meteo")
+                        .HasColumnName("penyedia");
+
+                    b.Property<double>("ProbabilitasHujanPct")
+                        .HasColumnType("double precision")
+                        .HasColumnName("probabilitas_hujan_pct");
+
+                    b.Property<int>("RevisiLokasi")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("revisi_lokasi");
+
+                    b.Property<double>("SuhuMaksC")
+                        .HasColumnType("double precision")
+                        .HasColumnName("suhu_maks_c");
+
+                    b.Property<double>("SuhuMinC")
+                        .HasColumnType("double precision")
+                        .HasColumnName("suhu_min_c");
+
+                    b.Property<DateOnly>("TanggalCuaca")
+                        .HasColumnType("date")
+                        .HasColumnName("tanggal_cuaca");
+
+                    b.Property<string>("ZonaWaktu")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Asia/Jakarta")
+                        .HasColumnName("zona_waktu");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BangunanId", "RevisiLokasi", "TanggalCuaca")
+                        .HasDatabaseName("prakiraan_cache_bangunan_revisi_tanggal_idx");
+
+                    b.HasIndex("Latitude", "Longitude", "RevisiLokasi", "TanggalCuaca")
+                        .HasDatabaseName("prakiraan_cache_lat_lon_revisi_tanggal_idx");
+
+                    b.ToTable("prakiraan_cache", null, t =>
+                        {
+                            t.HasCheckConstraint("prakiraan_cache_curah_hujan_nonnegatif", "curah_hujan_mm >= 0");
+
+                            t.HasCheckConstraint("prakiraan_cache_kelembapan_rentang", "kelembapan_maks_pct BETWEEN 0 AND 100");
+
+                            t.HasCheckConstraint("prakiraan_cache_probabilitas_rentang", "probabilitas_hujan_pct BETWEEN 0 AND 100");
+
+                            t.HasCheckConstraint("prakiraan_cache_revisi_positif", "revisi_lokasi >= 1");
+                        });
+                });
+
             modelBuilder.Entity("Wastu.Data.Entities.ProfilIklimEntity", b =>
                 {
                     b.Property<Guid>("BangunanId")
@@ -508,6 +1120,46 @@ namespace Wastu.Data.Migrations
                         .HasColumnType("double precision")
                         .HasColumnName("kelembapan_rata_pct");
 
+                    b.Property<string>("MetodePesisir")
+                        .HasColumnType("text")
+                        .HasColumnName("metode_pesisir");
+
+                    b.Property<string>("ModelIklim")
+                        .HasColumnType("text")
+                        .HasColumnName("model_iklim");
+
+                    b.Property<string>("Penyedia")
+                        .HasColumnType("text")
+                        .HasColumnName("penyedia");
+
+                    b.Property<DateOnly?>("PeriodeAkhir")
+                        .HasColumnType("date")
+                        .HasColumnName("periode_akhir");
+
+                    b.Property<DateOnly?>("PeriodeAwal")
+                        .HasColumnType("date")
+                        .HasColumnName("periode_awal");
+
+                    b.Property<string>("Provenance")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("LegacyUnknown")
+                        .HasColumnName("provenance");
+
+                    b.Property<int>("RevisiLokasi")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("revisi_lokasi");
+
+                    b.Property<string>("StatusPengambilan")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Tersedia")
+                        .HasColumnName("status_pengambilan");
+
                     b.Property<double>("SuhuRataC")
                         .HasColumnType("double precision")
                         .HasColumnName("suhu_rata_c");
@@ -516,6 +1168,10 @@ namespace Wastu.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("tingkat_korosi");
+
+                    b.Property<string>("ZonaWaktu")
+                        .HasColumnType("text")
+                        .HasColumnName("zona_waktu");
 
                     b.HasKey("BangunanId");
 
@@ -562,6 +1218,16 @@ namespace Wastu.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("nama");
 
+                    b.Property<int>("RevisiLokasi")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("revisi_lokasi");
+
+                    b.Property<string>("ZonaWaktu")
+                        .HasColumnType("text")
+                        .HasColumnName("zona_waktu");
+
                     b.HasKey("Id");
 
                     b.ToTable("bangunan", null, t =>
@@ -572,13 +1238,29 @@ namespace Wastu.Data.Migrations
 
             modelBuilder.Entity("Wastu.Data.Entities.SimulasiEmisiEntity", b =>
                 {
-                    b.Property<Guid>("EvaluasiId")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("evaluasi_id");
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset?>("DihitungPadaUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("dihitung_pada_utc");
 
                     b.Property<double>("EmisiKumulatifKg")
                         .HasColumnType("double precision")
                         .HasColumnName("emisi_kumulatif_kg");
+
+                    b.Property<Guid>("EvaluasiId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("evaluasi_id");
+
+                    b.Property<double>("FaktorPenuaanA")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(0.5)
+                        .HasColumnName("faktor_penuaan_a");
 
                     b.Property<int>("HorizonTahun")
                         .HasColumnType("integer")
@@ -592,7 +1274,18 @@ namespace Wastu.Data.Migrations
                         .HasColumnType("double precision")
                         .HasColumnName("usia_pakai_efektif_tahun");
 
-                    b.HasKey("EvaluasiId");
+                    b.Property<string>("VersiModel")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("v2.0")
+                        .HasColumnName("versi_model");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EvaluasiId", "HorizonTahun", "VersiModel")
+                        .IsUnique()
+                        .HasDatabaseName("uk_simulasi_emisi_evaluasi_horizon_versi");
 
                     b.ToTable("simulasi_emisi", null, t =>
                         {
@@ -606,6 +1299,86 @@ namespace Wastu.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Wastu.Data.Entities.SumberPropertiBahanEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BahanId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("bahan_id");
+
+                    b.Property<string>("CatatanKonversi")
+                        .HasColumnType("text")
+                        .HasColumnName("catatan_konversi");
+
+                    b.Property<string>("Properti")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("properti");
+
+                    b.Property<string>("Referensi")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("referensi");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("perkiraan")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Tautan")
+                        .HasColumnType("text")
+                        .HasColumnName("tautan");
+
+                    b.Property<string>("Versi")
+                        .HasColumnType("text")
+                        .HasColumnName("versi");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BahanId")
+                        .HasDatabaseName("sumber_properti_bahan_bahan_id_idx");
+
+                    b.ToTable("sumber_properti_bahan", null, t =>
+                        {
+                            t.HasCheckConstraint("sumber_properti_bahan_status_enum", "status IN ('perkiraan', 'terverifikasi', 'manual')");
+                        });
+                });
+
+            modelBuilder.Entity("Wastu.Data.Entities.AmbangPekerjaanEntity", b =>
+                {
+                    b.HasOne("Wastu.Data.Entities.PekerjaanEntity", "Pekerjaan")
+                        .WithMany()
+                        .HasForeignKey("PekerjaanId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Pekerjaan");
+                });
+
+            modelBuilder.Entity("Wastu.Data.Entities.BatchEvaluasiEntity", b =>
+                {
+                    b.HasOne("Wastu.Data.Entities.KomponenEntity", "Komponen")
+                        .WithMany()
+                        .HasForeignKey("KomponenId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Wastu.Data.Entities.ProyekEntity", "Proyek")
+                        .WithMany()
+                        .HasForeignKey("ProyekId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Komponen");
+
+                    b.Navigation("Proyek");
+                });
+
             modelBuilder.Entity("Wastu.Data.Entities.EvaluasiEntity", b =>
                 {
                     b.HasOne("Wastu.Data.Entities.BahanEntity", "Bahan")
@@ -613,6 +1386,11 @@ namespace Wastu.Data.Migrations
                         .HasForeignKey("BahanId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("Wastu.Data.Entities.BatchEvaluasiEntity", "Batch")
+                        .WithMany()
+                        .HasForeignKey("BatchId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Wastu.Data.Entities.KomponenEntity", "Komponen")
                         .WithMany()
@@ -622,7 +1400,20 @@ namespace Wastu.Data.Migrations
 
                     b.Navigation("Bahan");
 
+                    b.Navigation("Batch");
+
                     b.Navigation("Komponen");
+                });
+
+            modelBuilder.Entity("Wastu.Data.Entities.KeputusanJadwalEntity", b =>
+                {
+                    b.HasOne("Wastu.Data.Entities.PekerjaanEntity", "Pekerjaan")
+                        .WithMany()
+                        .HasForeignKey("PekerjaanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Pekerjaan");
                 });
 
             modelBuilder.Entity("Wastu.Data.Entities.KomponenEntity", b =>
@@ -632,6 +1423,52 @@ namespace Wastu.Data.Migrations
                         .HasForeignKey("BangunanId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Bangunan");
+                });
+
+            modelBuilder.Entity("Wastu.Data.Entities.LaporanEntity", b =>
+                {
+                    b.HasOne("Wastu.Data.Entities.ProyekEntity", "Bangunan")
+                        .WithMany()
+                        .HasForeignKey("BangunanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Bangunan");
+                });
+
+            modelBuilder.Entity("Wastu.Data.Entities.PekerjaanEntity", b =>
+                {
+                    b.HasOne("Wastu.Data.Entities.BahanEntity", "Bahan")
+                        .WithMany()
+                        .HasForeignKey("BahanId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Wastu.Data.Entities.ProyekEntity", "Bangunan")
+                        .WithMany()
+                        .HasForeignKey("BangunanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Wastu.Data.Entities.KomponenEntity", "Komponen")
+                        .WithMany()
+                        .HasForeignKey("KomponenId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Bahan");
+
+                    b.Navigation("Bangunan");
+
+                    b.Navigation("Komponen");
+                });
+
+            modelBuilder.Entity("Wastu.Data.Entities.PrakiraanCacheEntity", b =>
+                {
+                    b.HasOne("Wastu.Data.Entities.ProyekEntity", "Bangunan")
+                        .WithMany()
+                        .HasForeignKey("BangunanId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Bangunan");
                 });
@@ -650,12 +1487,23 @@ namespace Wastu.Data.Migrations
             modelBuilder.Entity("Wastu.Data.Entities.SimulasiEmisiEntity", b =>
                 {
                     b.HasOne("Wastu.Data.Entities.EvaluasiEntity", "Evaluasi")
-                        .WithOne()
-                        .HasForeignKey("Wastu.Data.Entities.SimulasiEmisiEntity", "EvaluasiId")
+                        .WithMany()
+                        .HasForeignKey("EvaluasiId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Evaluasi");
+                });
+
+            modelBuilder.Entity("Wastu.Data.Entities.SumberPropertiBahanEntity", b =>
+                {
+                    b.HasOne("Wastu.Data.Entities.BahanEntity", "Bahan")
+                        .WithMany()
+                        .HasForeignKey("BahanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Bahan");
                 });
 #pragma warning restore 612, 618
         }
