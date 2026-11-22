@@ -60,20 +60,9 @@ public sealed class AmbangPekerjaanRepositoryInMemory : IAmbangPekerjaanReposito
             var p = await _pekerjaanRepo.GetByIdAsync(pekerjaanId, ct).ConfigureAwait(false);
             if (p is not null)
             {
-                var updated = new Pekerjaan(
-                    p.Id,
-                    p.ProyekId,
-                    p.Nama,
-                    p.Jenis,
-                    p.TanggalMulai,
-                    p.TanggalSelesai,
-                    p.Status,
-                    p.TanggalDikunci,
-                    p.KomponenId,
-                    p.BahanId,
-                    ambang,
-                    p.Konfirmasi,
-                    DateTimeOffset.UtcNow);
+                var updated = p with { OverrideAmbang = ambang,
+                    Status = p.TanggalDikunci.HasValue ? StatusPekerjaan.PerluDitinjau : p.Status,
+                    TerakhirDiperbaruiUtc = DateTimeOffset.UtcNow };
 
                 await _pekerjaanRepo.UpdateAsync(updated, ct).ConfigureAwait(false);
             }
