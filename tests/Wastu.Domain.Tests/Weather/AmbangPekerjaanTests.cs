@@ -5,6 +5,16 @@ namespace Wastu.Domain.Tests.Weather;
 public class AmbangPekerjaanTests
 {
     [Fact]
+    public void NegativeTemperaturesAreValidButNegativeRainIsRejected()
+    {
+        var threshold = new AmbangPekerjaan(40, 5, 85, -10, 35);
+        threshold.PastikanValid();
+        var adjusted = threshold with { SuhuMaksC = -5 };
+        adjusted.PastikanValid();
+        Assert.Equal(-10, adjusted.SuhuMinC);
+        Assert.Throws<ArgumentOutOfRangeException>(() => threshold with { CurahHujanMaksMm = -1 });
+    }
+    [Fact]
     public void Pengecoran_SesuaiTabelPRD12()
     {
         AmbangPekerjaan ambang = AmbangLayakKerja.Pengecoran;

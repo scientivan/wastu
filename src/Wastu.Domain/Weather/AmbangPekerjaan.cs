@@ -23,8 +23,8 @@ public sealed record AmbangPekerjaan
         Validasi(probabilitasHujanMaksPct, nameof(probabilitasHujanMaksPct), 100);
         Validasi(curahHujanMaksMm, nameof(curahHujanMaksMm));
         Validasi(kelembapanMaksPct, nameof(kelembapanMaksPct), 100);
-        Validasi(suhuMinC, nameof(suhuMinC));
-        Validasi(suhuMaksC, nameof(suhuMaksC));
+        Validasi(suhuMinC, nameof(suhuMinC), batasBawah: double.NegativeInfinity);
+        Validasi(suhuMaksC, nameof(suhuMaksC), batasBawah: double.NegativeInfinity);
 
         if (suhuMinC is not null && suhuMaksC is not null && suhuMinC > suhuMaksC)
         {
@@ -85,7 +85,7 @@ public sealed record AmbangPekerjaan
         get => _suhuMinC;
         init
         {
-            Validasi(value, nameof(SuhuMinC));
+            Validasi(value, nameof(SuhuMinC), batasBawah: double.NegativeInfinity);
             _suhuMinC = value;
         }
     }
@@ -96,7 +96,7 @@ public sealed record AmbangPekerjaan
         get => _suhuMaksC;
         init
         {
-            Validasi(value, nameof(SuhuMaksC));
+            Validasi(value, nameof(SuhuMaksC), batasBawah: double.NegativeInfinity);
             _suhuMaksC = value;
         }
     }
@@ -112,8 +112,8 @@ public sealed record AmbangPekerjaan
         Validasi(ProbabilitasHujanMaksPct, nameof(ProbabilitasHujanMaksPct), 100);
         Validasi(CurahHujanMaksMm, nameof(CurahHujanMaksMm));
         Validasi(KelembapanMaksPct, nameof(KelembapanMaksPct), 100);
-        Validasi(SuhuMinC, nameof(SuhuMinC));
-        Validasi(SuhuMaksC, nameof(SuhuMaksC));
+        Validasi(SuhuMinC, nameof(SuhuMinC), batasBawah: double.NegativeInfinity);
+        Validasi(SuhuMaksC, nameof(SuhuMaksC), batasBawah: double.NegativeInfinity);
 
         if (SuhuMinC is not null && SuhuMaksC is not null && SuhuMinC > SuhuMaksC)
         {
@@ -123,7 +123,8 @@ public sealed record AmbangPekerjaan
         }
     }
 
-    private static void Validasi(double? nilai, string nama, double batasAtas = double.PositiveInfinity)
+    private static void Validasi(double? nilai, string nama, double batasAtas = double.PositiveInfinity,
+        double batasBawah = 0)
     {
         if (nilai is null)
         {
@@ -135,7 +136,7 @@ public sealed record AmbangPekerjaan
             throw new ArgumentException($"Ambang {nama} harus berupa angka finite.", nama);
         }
 
-        if (nilai < 0)
+        if (nilai < batasBawah)
         {
             throw new ArgumentOutOfRangeException(nama, nilai, "Ambang tidak boleh negatif.");
         }

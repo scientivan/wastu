@@ -13,4 +13,5 @@ public sealed record HasilEvaluasiCuaca(
     TimeSpan? UmurCache = null,
     AmbangPekerjaan? AmbangEfektif = null,
     DailyForecast? Cuaca = null,
-    DateTimeOffset? DiambilPadaUtc = null);
+    DateTimeOffset? DiambilPadaUtc = null,
+    string? ZonaWaktu = null);

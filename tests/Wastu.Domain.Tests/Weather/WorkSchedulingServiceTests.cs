@@ -7,6 +7,25 @@ namespace Wastu.Domain.Tests.Weather;
 
 public class WorkSchedulingServiceTests
 {
+    [Fact]
+    public async Task LockDateUsesForecastTimezoneWhenProjectTimezoneIsOutdated()
+    {
+        var now = new DateTimeOffset(2026, 11, 20, 16, 30, 0, TimeSpan.Zero);
+        var projects = new ProyekRepositoryInMemory();
+        var jobs = new PekerjaanRepositoryInMemory();
+        var cache = new PrakiraanCacheRepositoryInMemory();
+        var project = new Proyek(Guid.NewGuid(), "WIT", "Jayapura", -2.5, 140.7, zonaWaktu: "Asia/Jakarta");
+        await projects.AddAsync(project);
+        var date = new DateOnly(2026, 11, 20);
+        var job = new Pekerjaan(Guid.NewGuid(), project.Id, "Cat", JenisPekerjaan.Pengecatan, date, date);
+        await jobs.AddAsync(job);
+        await cache.SimpanCacheAsync(project.Latitude, project.Longitude,
+            new([new(date, 20, 0, 20, 30, 70)], "Asia/Jayapura", now, "Fixture"));
+        var service = new WorkSchedulingService(jobs, projects, cache, new StubForecastClient(),
+            new AmbangPekerjaanRepositoryInMemory(jobs), new TestTimeProvider(now));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.LockDateAsync(job.Id, date));
+        Assert.Null((await jobs.GetByIdAsync(job.Id))!.TanggalDikunci);
+    }
     private sealed class TestTimeProvider : TimeProvider
     {
         private DateTimeOffset _utcNow;

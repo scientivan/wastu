@@ -96,7 +96,7 @@ public sealed class WorkSchedulingService : IWorkSchedulingService
                 dataLama: isStale,
                 umurCache: umurCache);
 
-            daftarHasil.Add(evaluasi with { Cuaca = daily, DiambilPadaUtc = hasil?.DiambilPadaUtc });
+            daftarHasil.Add(evaluasi with { Cuaca = daily, DiambilPadaUtc = hasil?.DiambilPadaUtc, ZonaWaktu = hasil?.ZonaWaktu });
         }
 
         return daftarHasil;
@@ -125,19 +125,19 @@ public sealed class WorkSchedulingService : IWorkSchedulingService
                 $"Tanggal yang dikunci ({tanggal}) berada di luar rentang rencana pekerjaan ({pekerjaan.TanggalMulai}..{pekerjaan.TanggalSelesai}).");
         }
 
-        // 2. Validasi tanggal lampau pada zona waktu proyek (T23)
-        var nowUtc = _timeProvider.GetUtcNow();
-        var hariIniZonaProyek = KebijakanCachePrakiraan.HariIniPadaZona(nowUtc, proyek.ZonaWaktu);
-        if (tanggal < hariIniZonaProyek)
-        {
-            throw new InvalidOperationException(
-                $"Tanggal yang dikunci ({tanggal}) tidak boleh merupakan tanggal lampau pada zona waktu proyek ({proyek.ZonaWaktu ?? "Asia/Jakarta"}). Hari ini adalah {hariIniZonaProyek}.");
-        }
-
         // 3. Evaluasi hari terkait
         var evaluasiList = await EvaluateDaysDetailedAsync(pekerjaanId, ct).ConfigureAwait(false);
         var evaluasi = evaluasiList.FirstOrDefault(e => e.Tanggal == tanggal)
             ?? throw new InvalidOperationException($"Evaluasi cuaca untuk tanggal {tanggal} tidak ditemukan.");
+
+        // 2. Validasi tanggal lampau pada zona waktu proyek (T23)
+        var nowUtc = _timeProvider.GetUtcNow();
+        var hariIniZonaProyek = KebijakanCachePrakiraan.HariIniPadaZona(nowUtc, evaluasi.ZonaWaktu ?? proyek.ZonaWaktu);
+        if (tanggal < hariIniZonaProyek)
+        {
+            throw new InvalidOperationException(
+                $"Tanggal yang dikunci ({tanggal}) tidak boleh merupakan tanggal lampau pada zona waktu proyek ({evaluasi.ZonaWaktu ?? proyek.ZonaWaktu ?? "Asia/Jakarta"}). Hari ini adalah {hariIniZonaProyek}.");
+        }
 
         // 4. Tolak penguncian cuaca bila data tidak tersedia (F6-05, T29)
         if (evaluasi.Status == StatusKelayakanCuaca.DataTidakTersedia)
