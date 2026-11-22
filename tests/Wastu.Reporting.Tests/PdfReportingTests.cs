@@ -178,8 +178,8 @@ public sealed class PdfReportingTests : IDisposable
         // Verifikasi bahan peringkat 10 hadir dalam teks PDF
         Assert.Contains("Bata Ringan AAC", fullText);
         Assert.Contains("Peringkat 10", fullText);
-        Assert.Contains("58.4/100", fullText);
-        Assert.Contains("34.2", fullText);
+        Assert.Contains(rank10Skor.ToString("F1") + "/100", fullText);
+        Assert.Contains(rank10Emisi.ToString("F1"), fullText);
         Assert.Contains("#10", fullText);
         Assert.Contains("Alasan evaluasi teknis lengkap", fullText);
     }
@@ -279,8 +279,8 @@ public sealed class PdfReportingTests : IDisposable
         Assert.Contains("CO₂", fullText);
 
         // Verifikasi kedua komponen tercantum
-        Assert.Contains("Dinding: 120.0 m²", fullText);
-        Assert.Contains("Atap: 85.0 m²", fullText);
+        Assert.Contains($"Dinding: {120.0:F1} m²", fullText);
+        Assert.Contains($"Atap: {85.0:F1} m²", fullText);
 
         // Verifikasi disclaimer estimasi dan sumber transparansi
         Assert.Contains("Hasil simulasi emisi adalah proyeksi estimasi model matematis", fullText);
@@ -336,7 +336,10 @@ public sealed class PdfReportingTests : IDisposable
         var service = new ReportExportService(laporanRepo, pendingMetadataDirectory: _pendingDir);
         var snapshot = BuatContohSnapshot();
 
-        var invalidPath = "/root/unwritable_wastu_path_test/sub/report.pdf";
+        // A file cannot be used as a directory on either Windows or Unix, even as administrator.
+        var blockedDirectory = Path.Combine(_testDir, "blocked-directory");
+        await File.WriteAllTextAsync(blockedDirectory, "not a directory");
+        var invalidPath = Path.Combine(blockedDirectory, "sub", "report.pdf");
         await Assert.ThrowsAnyAsync<Exception>(() => service.ExportSnapshotAsync(snapshot, invalidPath));
 
         var riwayatKosong = await laporanRepo.ListByProyekAsync(snapshot.ProyekId);
