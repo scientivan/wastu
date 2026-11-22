@@ -29,6 +29,8 @@ public partial class ShellView : UserControl
     private void StateChanged() => Dispatcher.InvokeAsync(() =>
     {
         if (CurrentPage is "home" or "material" or "compare" or "sim" or "report") Show(force: false);
+        else if (CurrentPage == "project" && _page is ProjectPage project && App.State.AdaProyek)
+            project.RefreshClimateDisplay(); // Update the climate card without overwriting form inputs.
     });
     private (bool Compact, bool Wide) _tier;
 
