@@ -343,7 +343,10 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
             .Select(item => item with { SumberProperti = item.SumberProperti?
                 .OrderBy(s => s.Properti, StringComparer.Ordinal)
                 .ThenBy(s => s.Referensi, StringComparer.Ordinal)
-                .ThenBy(s => s.Versi, StringComparer.Ordinal).ToArray() }));
+                .ThenBy(s => s.Versi, StringComparer.Ordinal)
+                .ThenBy(s => s.Tautan, StringComparer.Ordinal)
+                .ThenBy(s => s.Status)
+                .ThenBy(s => s.CatatanKonversi, StringComparer.Ordinal).ToArray() }));
 
         return HashInputEvaluasi.Hitung(komponen.LuasM2, iklim, bobot, konfigurasiEfektif, identitasKatalog);
     }

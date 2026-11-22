@@ -40,6 +40,11 @@ internal static partial class DebugSnapshot
                 Check(App.State.Aktif.Pekerjaan.Any(j => j.Keputusan?.PersetujuanRisiko == true), "Risk decision persisted");
                 Check(App.State.Aktif.RiwayatSimulasi.Select(s => s.Hasil.HorizonTahun).Distinct().Count() == 3,
                     "20/30/50 year history persisted");
+                var expectedIds = System.Text.Json.JsonSerializer.Deserialize<Guid[]>(await File.ReadAllTextAsync(
+                    Path.Combine(StateStore.ProfileFolder, "expected-evaluation-ids.json")))!;
+                Check(expectedIds.Length > 0 && expectedIds.ToHashSet().SetEquals(
+                    App.State.Proyek.SelectMany(p => p.RiwayatEvaluasi).Select(e => e.Id)),
+                    "Original evaluation IDs and complete input histories survive restart");
                 window.ShowShell("report");
                 await Shot("restart-report");
                 return;
@@ -291,6 +296,8 @@ internal static partial class DebugSnapshot
             App.State.Proyek.Remove(legacy);
             App.State.PilihProyek(active.Id);
             log.Add(await PerfAsync(window));
+            await File.WriteAllTextAsync(Path.Combine(StateStore.ProfileFolder, "expected-evaluation-ids.json"),
+                System.Text.Json.JsonSerializer.Serialize(App.State.Proyek.SelectMany(p => p.RiwayatEvaluasi).Select(e => e.Id).ToArray()));
             App.State.SimpanSekarang();
         }
         catch (Exception ex) { log.Add("FAIL " + ex); }

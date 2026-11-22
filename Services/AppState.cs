@@ -240,8 +240,23 @@ public sealed partial class AppState
 
         if (!_peringkat.TryGetValue(komp.Id, out var cache) || cache.Hash != hash)
         {
-            var hasil = SuitabilityScoringService.Rank(domainKomponen, iklim, bahanList, bobot,
-                    proyek: WorkflowMapper.KeDomain(Aktif))
+            var stored = Aktif.RiwayatEvaluasi.Where(e => e.KomponenId == komp.Id && e.HashInput == hash).ToArray();
+            bool complete = stored.Length == bahanList.Length
+                && stored.Select(e => e.BahanId).ToHashSet().SetEquals(bahanList.Select(b => b.Id));
+            var domainResults = complete ? stored.OrderByDescending(e => e.SkorKesesuaian)
+                    .ThenBy(e => e.EmisiAwalKg).ThenBy(e => e.BahanId).ToArray()
+                : SuitabilityScoringService.Rank(domainKomponen, iklim, bahanList, bobot,
+                    proyek: WorkflowMapper.KeDomain(Aktif)).ToArray();
+            if (!complete && !TulisanDitolak && _backend is null && _skoring is null)
+            {
+                var batchId = Guid.NewGuid();
+                var now = DateTimeOffset.UtcNow;
+                domainResults = domainResults.Select(e => e with { BatchId = batchId, HashInput = hash,
+                    VersiModel = Domain.KonfigurasiModel.Bawaan.VersiModel, DihitungPadaUtc = now }).ToArray();
+                Aktif.RiwayatEvaluasi.AddRange(domainResults);
+                SimpanHasil();
+            }
+            var hasil = domainResults
                 .Select(e => new Evaluasi(bahanDict[e.BahanId].Bahan, e)).ToArray();
             cache = new PeringkatTersimpan(hash, hasil);
             _peringkat[komp.Id] = cache;
@@ -880,6 +895,7 @@ public sealed partial class AppState
                 JadwalTersimpanDiDatabase = true,
                 FaktorPenuaanA = lokal?.FaktorPenuaanA ?? 0.5,
                 RiwayatSimulasi = lokal?.RiwayatSimulasi ?? [],
+                RiwayatEvaluasi = lokal?.RiwayatEvaluasi ?? [],
                 PrakiraanCache = await backend.PrakiraanCacheRepository.GetCacheAsync(data.Latitude, data.Longitude, data.RevisiLokasi, ct),
                 Pekerjaan = (await backend.PekerjaanRepository.ListByProyekAsync(data.Id, ct)).Select(WorkflowMapper.KeDto).ToList(),
                 Laporan = (await backend.LaporanRepository.ListByProyekAsync(data.Id, ct)).ToList()
@@ -997,6 +1013,7 @@ public sealed partial class AppState
             foreach (var j in p.Pekerjaan) proyek.JadwalkanPekerjaan(WorkflowMapper.DariDto(j));
             foreach (var l in p.Laporan) proyek.TambahLaporan(WorkflowMapper.DariDomain(l));
             proyek.RiwayatSimulasi.AddRange(p.RiwayatSimulasi);
+            proyek.RiwayatEvaluasi.AddRange(p.RiwayatEvaluasi);
             state.Proyek.Add(proyek);
         }
 
@@ -1045,6 +1062,7 @@ public sealed partial class AppState
             PrakiraanCache = p.PrakiraanCache,
             RiwayatSimulasi = p.RiwayatSimulasi.ToList(),
             Laporan = p.Laporan.Select(WorkflowMapper.KeDomain).ToList(),
+            RiwayatEvaluasi = p.RiwayatEvaluasi.ToList(),
             BobotTermal = p.Bobot.Termal,
             BobotLembap = p.Bobot.Lembap,
             BobotKorosi = p.Bobot.Korosi,

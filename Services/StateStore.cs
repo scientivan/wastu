@@ -51,6 +51,7 @@ public sealed class ProyekDto
     public double FaktorPenuaanA { get; set; } = 0.5;
     public Domain.Weather.HasilPrakiraan? PrakiraanCache { get; set; }
     public List<SimulationHistoryEntry> RiwayatSimulasi { get; set; } = [];
+    public List<Domain.Evaluasi> RiwayatEvaluasi { get; set; } = [];
     public List<Domain.Services.Laporan> Laporan { get; set; } = [];
     public List<PekerjaanDto> Pekerjaan { get; set; } = [];
 }

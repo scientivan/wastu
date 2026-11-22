@@ -13,6 +13,31 @@ namespace Wastu.Application.Tests;
 public sealed class ComparisonStateTests
 {
     [Fact]
+    public void JsonHistoryPreservesOriginalInputsAndEvaluationIdsAcrossRestartAndWeightChanges()
+    {
+        var state = BuatState();
+        var original = state.Peringkat();
+        var originalIds = original.Select(e => e.HasilDomain!.Id).ToArray();
+        state.AturBobotPersentase(10, 10, 10, 70);
+        state.Peringkat();
+        var count = state.Aktif.RiwayatEvaluasi.Count;
+        Assert.Equal(30, count);
+        var dtoMethod = typeof(AppState).GetMethod("KeDto", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        var dto = System.Text.Json.JsonSerializer.Deserialize<StateDto>(
+            System.Text.Json.JsonSerializer.Serialize((StateDto)dtoMethod.Invoke(state, null)!))!;
+        var restored = new AppState();
+        typeof(AppState).GetMethod("TerapkanDto", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+            .Invoke(null, [restored, dto]);
+        restored.ResetBobotAktif();
+        Assert.Equal(originalIds, restored.Peringkat().Select(e => e.HasilDomain!.Id));
+        Assert.Equal(count, restored.Aktif.RiwayatEvaluasi.Count);
+        var history = restored.Aktif.RiwayatEvaluasi.First();
+        Assert.Equal(120, history.Input!.Komponen.LuasM2);
+        Assert.NotEmpty(history.Input.Bahan.SumberProperti!);
+        Assert.Equal(state.Aktif.StableId, history.Input.Proyek!.Id);
+    }
+
+    [Fact]
     public async Task ReportCapturesCanonicalPersistedEvaluationIdsAndOnlyChosenComponent()
     {
         var evaluations = new EvaluasiRepositoryInMemory();

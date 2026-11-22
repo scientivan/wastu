@@ -33,6 +33,7 @@ public class Bangunan
     public double FaktorPenuaanA { get; set; } = 0.5;
     public Domain.Weather.HasilPrakiraan? PrakiraanCache { get; set; }
     public List<Services.SimulationHistoryEntry> RiwayatSimulasi { get; } = [];
+    public List<Domain.Evaluasi> RiwayatEvaluasi { get; } = [];
     public ProfilIklim? ProfilIklim { get; set; }
     public IReadOnlyList<Komponen> Komponen => _komponen.AsReadOnly();
     public IReadOnlyList<Laporan> Laporan => _laporan.AsReadOnly();

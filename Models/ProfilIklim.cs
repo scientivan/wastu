@@ -68,7 +68,7 @@ public class ProfilIklim
             MetodePesisir: VersiAlgoritmePesisir,
             Provenance: Provenance,
             StatusPengambilan: StatusPengambilan,
-            RevisiLokasi: RevisiLokasi,
+            RevisiLokasi: RevisiLokasi ?? 1,
             KualitasCache: KualitasCache,
             VersiAlgoritmePesisir: VersiAlgoritmePesisir);
 

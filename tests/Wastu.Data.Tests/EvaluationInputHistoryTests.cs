@@ -120,5 +120,9 @@ public sealed class EvaluationInputHistoryTests
         var roundtrip = JsonSerializer.Deserialize<Evaluasi>(JsonSerializer.Serialize(first))!;
         Assert.Equal(b.Nama, roundtrip.Input!.Bahan.Nama);
         Assert.Equal(700, roundtrip.Input.Iklim.CurahHujanTahunanMm);
+        SumberPropertiBahan[] references = [new(b.Id, "faktor_emisi", "Rujukan", tautan: "https://example.org/a"),
+            new(b.Id, "faktor_emisi", "Rujukan", tautan: "https://example.org/b")];
+        Assert.Equal(SuitabilityScoringService.HitungHash(c, climate, [b with { SumberProperti = references }], KriteriaBobot.Default),
+            SuitabilityScoringService.HitungHash(c, climate, [b with { SumberProperti = references.Reverse().ToArray() }], KriteriaBobot.Default));
     }
 }
