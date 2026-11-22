@@ -20,6 +20,7 @@ public sealed class KonfigurasiModelRepositoryEf : IKonfigurasiModelRepository
         await using WastuDbContext db = await _pabrik.CreateDbContextAsync(ct).ConfigureAwait(false);
 
         var aktif = await db.KonfigurasiModel.AsNoTracking()
+            .OrderByDescending(x => x.DibuatPadaUtc)
             .FirstOrDefaultAsync(x => x.Aktif, ct)
             .ConfigureAwait(false);
 
@@ -54,6 +55,17 @@ public sealed class KonfigurasiModelRepositoryEf : IKonfigurasiModelRepository
 
         await using WastuDbContext db = await _pabrik.CreateDbContextAsync(ct).ConfigureAwait(false);
         await using var transaksi = await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
+
+        // Deactivate existing active configuration
+        var previousAktif = await db.KonfigurasiModel
+            .Where(x => x.Aktif)
+            .ToListAsync(ct)
+            .ConfigureAwait(false);
+
+        foreach (var p in previousAktif)
+        {
+            p.Aktif = false;
+        }
 
         var existing = await db.KonfigurasiModel
             .FirstOrDefaultAsync(x => x.VersiModel == konfigurasi.VersiModel, ct)
