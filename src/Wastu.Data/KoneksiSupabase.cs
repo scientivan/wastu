@@ -6,15 +6,15 @@ public static class KoneksiSupabase
 {
     public const string NamaVariabelLingkungan = "WASTU_CONNECTION_STRING";
 
-    public static bool ModeLokalDipilih()
+    public static string? ModeDiminta()
     {
         var mode = Environment.GetEnvironmentVariable("WASTU_STORAGE_MODE");
         if (string.IsNullOrWhiteSpace(mode))
         {
             try { mode = KonfigurasiLingkungan.Baca().GetValueOrDefault("WASTU_STORAGE_MODE"); }
-            catch (InvalidOperationException) { return false; } // Startup displays the existing recovery message.
+            catch (InvalidOperationException) { return null; } // Startup displays the existing recovery message.
         }
-        return string.Equals(mode?.Trim(), "local", StringComparison.OrdinalIgnoreCase);
+        return mode?.Trim().ToLowerInvariant();
     }
 
     public static string Ambil()

@@ -169,6 +169,27 @@ internal static class SupabaseVerification
             bool ranOne = Regex.IsMatch(raw, @"Passed:\s+1\b") && Regex.IsMatch(raw, @"Skipped:\s+0\b");
             checks.Add(new("AlurSupabaseTests ran in isolated schema", child.ExitCode == 0 && ranOne,
                 "Exit code " + child.ExitCode + "; exactly one passing, non-skipped test: " + ranOne));
+
+            if (Environment.GetEnvironmentVariable("WASTU_SUPABASE_DESKTOP_SCRIPT") is { Length: > 0 } script)
+            {
+                await projects.DeleteAsync(p.Id);
+                if ((await projects.ListAsync()).Count != 0)
+                    throw new InvalidOperationException("Desktop verification requires an empty test workspace.");
+                var exe = Environment.GetEnvironmentVariable("WASTU_SUPABASE_DESKTOP_EXE")
+                    ?? throw new InvalidOperationException("Specify the published Wastu.exe.");
+                var ui = new ProcessStartInfo("python") { UseShellExecute = false, CreateNoWindow = true };
+                foreach (var argument in new[] { script, exe, output, Path.Combine(output, "desktop-state") })
+                    ui.ArgumentList.Add(argument);
+                ui.Environment[KoneksiSupabase.NamaVariabelLingkungan] = scoped.ConnectionString;
+                ui.Environment["WASTU_STORAGE_MODE"] = "postgres";
+                ui.Environment.Remove("WASTU_SNAPSHOT");
+                using var desktopTest = Process.Start(ui)!;
+                using var uiDeadline = new CancellationTokenSource(TimeSpan.FromMinutes(8));
+                try { await desktopTest.WaitForExitAsync(uiDeadline.Token); }
+                catch (OperationCanceledException) { desktopTest.Kill(entireProcessTree: true); await desktopTest.WaitForExitAsync(); }
+                checks.Add(new("Published Windows desktop uses Supabase for F1–F7", desktopTest.ExitCode == 0
+                    && File.Exists(Path.Combine(output, "desktop.json"))));
+            }
         }
         catch (Exception ex) { checks.Add(new("Verification completed without setup/runtime failure", false, SafeError(ex))); }
         finally
