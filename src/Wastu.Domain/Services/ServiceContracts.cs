@@ -18,8 +18,14 @@ public interface IProjectService
     Task<Proyek> CreateProjectAsync(string nama, string kota, double latitude, double longitude,
         double luasDinding, double luasAtap, CancellationToken ct = default);
 
+    Task<Proyek> CreateProjectAsync(string nama, string kota, double latitude, double longitude,
+        IReadOnlyList<InputKomponen> komponen, CancellationToken ct = default);
+
     Task<ProfilIklim?> UpdateProjectAsync(Guid proyekId, string nama, string kota, double latitude, double longitude,
         double luasDinding, double luasAtap, CancellationToken ct = default);
+
+    Task<ProfilIklim?> UpdateProjectAsync(Guid proyekId, string nama, string kota, double latitude, double longitude,
+        IReadOnlyList<InputKomponen> komponen, CancellationToken ct = default);
 
     Task DeleteAsync(Guid proyekId, CancellationToken ct = default);
 

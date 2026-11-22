@@ -4,34 +4,32 @@ namespace Wastu.Domain;
 /// Proyek bangunan milik pengguna beserta lokasinya (PRD §F1).
 /// </summary>
 /// <remarks>
-/// Koordinat wajib berada dalam wilayah Indonesia pada MVP — batas ini divalidasi
-/// di sini karena CHECK constraint <c>bangunan_berada_di_indonesia</c> hanya menyala
-/// setelah data menyentuh database, sedangkan userspace bisa keliru memasukkan koordinat.
+/// Koordinat divalidasi terhadap batas kasar wilayah Indonesia via <see cref="ValidasiKoordinat"/>.
 /// </remarks>
 public sealed record Proyek
 {
-    private const double LatitudeMin = -11;
-    private const double LatitudeMaks = 6;
-    private const double LongitudeMin = 94;
-    private const double LongitudeMaks = 142;
-
     public Proyek(Guid id, string nama, string kota, double latitude, double longitude)
+        : this(id, nama, kota, latitude, longitude, 1, null)
+    {
+    }
+
+    public Proyek(
+        Guid id,
+        string nama,
+        string kota,
+        double latitude,
+        double longitude,
+        int revisiLokasi = 1,
+        string? zonaWaktu = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(nama);
         ArgumentException.ThrowIfNullOrWhiteSpace(kota);
+        ValidasiKoordinat.Validasi(latitude, longitude);
 
-        if (!double.IsFinite(latitude) || latitude is < LatitudeMin or > LatitudeMaks)
+        if (revisiLokasi < 1)
         {
             throw new ArgumentOutOfRangeException(
-                nameof(latitude), latitude,
-                $"Lintang harus {LatitudeMin} sampai {LatitudeMaks}° agar berada di wilayah Indonesia.");
-        }
-
-        if (!double.IsFinite(longitude) || longitude is < LongitudeMin or > LongitudeMaks)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(longitude), longitude,
-                $"Bujur harus {LongitudeMin} sampai {LongitudeMaks}° agar berada di wilayah Indonesia.");
+                nameof(revisiLokasi), revisiLokasi, "Revisi lokasi minimal bernilai 1.");
         }
 
         Id = id;
@@ -39,6 +37,8 @@ public sealed record Proyek
         Kota = kota;
         Latitude = latitude;
         Longitude = longitude;
+        RevisiLokasi = revisiLokasi;
+        ZonaWaktu = zonaWaktu;
     }
 
     public Guid Id { get; init; }
@@ -52,4 +52,10 @@ public sealed record Proyek
 
     /// <summary>Bujur lokasi, derajat WGS84.</summary>
     public double Longitude { get; init; }
+
+    /// <summary>Nomor revisi koordinat lokasi proyek (default 1, bertambah setiap koordinat diubah).</summary>
+    public int RevisiLokasi { get; init; } = 1;
+
+    /// <summary>Zona waktu IANA untuk lokasi proyek (misal "Asia/Jakarta").</summary>
+    public string? ZonaWaktu { get; init; }
 }
