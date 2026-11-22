@@ -117,6 +117,17 @@ public class PerhitunganSimulasiTests
         Assert.Equal(75.0, PerhitunganSimulasi.EmisiKumulatifPadaTitik(emisiAwal, 18.0, h, l), Presisi);  // x3
         Assert.Equal(100.0, PerhitunganSimulasi.EmisiKumulatifPadaTitik(emisiAwal, 27.0, h, l), Presisi); // x4
         Assert.Equal(100.0, PerhitunganSimulasi.EmisiKumulatifPadaTitik(emisiAwal, 30.0, h, l), Presisi); // x4 (endpoint)
+
+        IReadOnlyList<TitikSimulasi> kurva = PerhitunganSimulasi.TitikKurvaStep(emisiAwal, h, l);
+        Assert.Equal(8, kurva.Count);
+        Assert.Equal(new TitikSimulasi(0.0, 25.0), kurva[0]);
+        Assert.Equal(new TitikSimulasi(9.0, 25.0), kurva[1]);
+        Assert.Equal(new TitikSimulasi(9.0, 50.0), kurva[2]);
+        Assert.Equal(new TitikSimulasi(18.0, 50.0), kurva[3]);
+        Assert.Equal(new TitikSimulasi(18.0, 75.0), kurva[4]);
+        Assert.Equal(new TitikSimulasi(27.0, 75.0), kurva[5]);
+        Assert.Equal(new TitikSimulasi(27.0, 100.0), kurva[6]);
+        Assert.Equal(new TitikSimulasi(30.0, 100.0), kurva[7]);
     }
 
     // ------------------------------------------------------------- batas presisi numerik
