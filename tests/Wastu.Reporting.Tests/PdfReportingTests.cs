@@ -394,6 +394,8 @@ public sealed class PdfReportingTests : IDisposable
         // File PDF UTUH dan TERSEDIA di disk
         Assert.True(File.Exists(validPath));
         Assert.Equal("MenungguPencatatan", laporanPending.Status);
+        Assert.NotNull(laporanPending.SnapshotJson);
+        Assert.Equal(laporanPending.SnapshotJson, Assert.Single(await offlineService.ReadPendingReportsAsync()).SnapshotJson);
 
         // Memeriksa pending metadata di disk
         var pendingFiles = Directory.GetFiles(_pendingDir, "*.pending.json");

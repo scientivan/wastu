@@ -22,6 +22,14 @@ public static class Format
     // new Date().toLocaleString('id-ID')
     public static string WaktuLokal(DateTime waktu) => waktu.ToString("d/M/yyyy, HH.mm.ss", Id);
 
+    public static string WaktuProyek(DateTimeOffset waktu, string zonaWaktu)
+    {
+        var lokal = TimeZoneInfo.ConvertTime(waktu, TimeZoneInfo.FindSystemTimeZoneById(zonaWaktu));
+        string zona = zonaWaktu switch { "Asia/Jayapura" => "WIT", "Asia/Makassar" => "WITA",
+            "Asia/Jakarta" or "Asia/Pontianak" => "WIB", _ => zonaWaktu };
+        return lokal.ToString("d MMMM yyyy, HH:mm", Id) + " " + zona;
+    }
+
     public static string Masukan(double nilai) => nilai.ToString("0.##########", Id);
 
     // Menerima koma (id-ID) maupun titik desimal seperti input number di browser.

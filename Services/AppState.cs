@@ -223,7 +223,7 @@ public sealed partial class AppState
 
     public Evaluasi[] Peringkat(JenisKomponen jenis)
     {
-        if (!AdaProyek || Aktif is null) return [];
+        if (!AdaProyek || Aktif is null || Aktif.MasalahData is not null) return [];
         var komp = Aktif.Komponen.FirstOrDefault(k => k.Jenis == jenis);
         if (komp is null) return [];
         double luas = komp.Luas;
@@ -235,12 +235,28 @@ public sealed partial class AppState
         var bahanList = bahanDict.Values.Select(item => item.DataDomain).ToArray();
         if (bahanList.Length == 0) return [];
         var bobot = BobotAktif;
-        var iklim = Iklim.KeDomain();
+        var iklim = Iklim.KeDomain(Aktif.ZonaWaktu);
         string hash = SuitabilityScoringService.HitungHash(domainKomponen, iklim, bahanList, bobot);
 
         if (!_peringkat.TryGetValue(komp.Id, out var cache) || cache.Hash != hash)
         {
-            var hasil = SuitabilityScoringService.Rank(domainKomponen, iklim, bahanList, bobot)
+            var stored = Aktif.RiwayatEvaluasi.Where(e => e.KomponenId == komp.Id && e.HashInput == hash).ToArray();
+            bool complete = stored.Length == bahanList.Length
+                && stored.Select(e => e.BahanId).ToHashSet().SetEquals(bahanList.Select(b => b.Id));
+            var domainResults = complete ? stored.OrderByDescending(e => e.SkorKesesuaian)
+                    .ThenBy(e => e.EmisiAwalKg).ThenBy(e => e.BahanId).ToArray()
+                : SuitabilityScoringService.Rank(domainKomponen, iklim, bahanList, bobot,
+                    proyek: WorkflowMapper.KeDomain(Aktif)).ToArray();
+            if (!complete && !TulisanDitolak && _backend is null && _skoring is null)
+            {
+                var batchId = Guid.NewGuid();
+                var now = DateTimeOffset.UtcNow;
+                domainResults = domainResults.Select(e => e with { BatchId = batchId, HashInput = hash,
+                    VersiModel = Domain.KonfigurasiModel.Bawaan.VersiModel, DihitungPadaUtc = now }).ToArray();
+                Aktif.RiwayatEvaluasi.AddRange(domainResults);
+                SimpanHasil();
+            }
+            var hasil = domainResults
                 .Select(e => new Evaluasi(bahanDict[e.BahanId].Bahan, e)).ToArray();
             cache = new PeringkatTersimpan(hash, hasil);
             _peringkat[komp.Id] = cache;
@@ -253,7 +269,8 @@ public sealed partial class AppState
             && (cache.Penyimpanan is null || cache.Penyimpanan.IsFaulted || cache.Penyimpanan.IsCanceled))
         {
             // Capture the exact displayed inputs before any asynchronous work or project switch.
-            cache.Penyimpanan = skoring.RankSnapshotAsync(domainKomponen, iklim, bahanList, bobot);
+            cache.Penyimpanan = skoring.RankSnapshotAsync(domainKomponen, iklim, bahanList, bobot,
+                proyek: WorkflowMapper.KeDomain(Aktif));
             _ = AmatiPenyimpananAsync(cache.Penyimpanan);
         }
 
@@ -275,6 +292,7 @@ public sealed partial class AppState
 
     public List<ItemKatalog> Terpilih()
     {
+        if (Aktif?.MasalahData is not null) return [];
         if (Luas <= 0) return [];
         var hasil = Dipilih.Select(kode => _katalog.FirstOrDefault(item => item.Kode == kode && item.Jenis == Jenis))
             .OfType<ItemKatalog>().Distinct().Take(2).ToList();
@@ -334,6 +352,7 @@ public sealed partial class AppState
         IReadOnlyList<(JenisKomponen Jenis, double Luas)> komponen, double? pesisirManual = null)
     {
         TolakTulis();
+        ValidasiInputProyek(nama, kota, lintang, bujur, komponen, pesisirManual);
         double pesisir = pesisirManual ?? JarakPesisir.CobaHitungKm(lintang, bujur) ?? 0;
 
         Bangunan lokal;
@@ -373,6 +392,7 @@ public sealed partial class AppState
         IReadOnlyList<(JenisKomponen Jenis, double Luas)> komponen, double pesisir, Guid? databaseId = null)
     {
         TolakTulis();
+        ValidasiInputProyek(nama, kota, lintang, bujur, komponen, pesisir);
         var proyek = new Bangunan
         {
             Id = Proyek.Count == 0 ? 1 : Proyek.Max(p => p.Id) + 1,
@@ -437,6 +457,7 @@ public sealed partial class AppState
         IReadOnlyList<(JenisKomponen Jenis, double Luas)> komponen, double? pesisirManual = null)
     {
         TolakTulis();
+        ValidasiInputProyek(nama, kota, lintang, bujur, komponen, pesisirManual);
         var proyek = Aktif;
         if (proyek is null) return null;
 
@@ -481,6 +502,8 @@ public sealed partial class AppState
             proyek.Latitude = lintang;
             proyek.Longitude = bujur;
             proyek.RevisiLokasi++;
+            foreach (var pekerjaan in proyek.Pekerjaan.Where(j => j.TanggalDikunci.HasValue))
+                pekerjaan.Status = "Perlu ditinjau";
             ResetPrakiraan();
 
             if (proyek.ProfilIklim is not null)
@@ -655,6 +678,7 @@ public sealed partial class AppState
         double? pesisirManual = null, string? sumber = null)
     {
         double jarakPesisir = pesisirManual ?? profil.JarakPesisirKm;
+        if (!string.IsNullOrWhiteSpace(profil.Metadata?.ZonaWaktu)) proyek.ZonaWaktu = profil.Metadata.ZonaWaktu;
         proyek.ProfilIklim = new ProfilIklim
         {
             CurahHujanTahunan = profil.CurahHujanTahunanMm,
@@ -672,6 +696,8 @@ public sealed partial class AppState
             PeriodeMulai = profil.Metadata?.PeriodeAwal,
             PeriodeSelesai = profil.Metadata?.PeriodeAkhir,
             Provider = profil.Metadata?.Penyedia ?? (!string.IsNullOrWhiteSpace(profil.Metadata?.Provider) ? profil.Metadata.Provider : "Open-Meteo Historical Weather API"),
+            Model = profil.Metadata?.Model,
+            ZonaWaktu = profil.Metadata?.ZonaWaktu ?? proyek.ZonaWaktu,
             VersiAlgoritmePesisir = profil.Metadata?.VersiAlgoritmePesisir ?? JarakPesisirCalculator.VersiAlgoritme,
             RevisiLokasi = profil.Metadata?.RevisiLokasi ?? profil.RevisiLokasi,
             PesisirTersedia = jarakPesisir > 0 || JarakPesisir.CobaHitungKm(proyek.Latitude, proyek.Longitude).HasValue
@@ -837,7 +863,7 @@ public sealed partial class AppState
                 Atap = atap,
                 JarakPesisir = jarakPesisir,
                 RevisiLokasi = data.RevisiLokasi,
-                ZonaWaktu = data.ZonaWaktu ?? "Asia/Jakarta",
+                ZonaWaktu = profil?.Metadata?.ZonaWaktu ?? data.ZonaWaktu ?? "Asia/Jakarta",
                 GunakanBobotKustom = lokal?.GunakanBobotKustom ?? false,
                 BobotTermal = lokal?.BobotTermal ?? 0.25,
                 BobotLembap = lokal?.BobotLembap ?? 0.25,
@@ -859,6 +885,8 @@ public sealed partial class AppState
                         PeriodeMulai = profil.Metadata?.PeriodeAwal,
                         PeriodeSelesai = profil.Metadata?.PeriodeAkhir,
                         Provider = profil.Metadata?.Penyedia ?? "Open-Meteo Historical Weather API",
+                        Model = profil.Metadata?.Model,
+                        ZonaWaktu = profil.Metadata?.ZonaWaktu ?? data.ZonaWaktu,
                         VersiAlgoritmePesisir = profil.Metadata?.VersiAlgoritmePesisir ?? JarakPesisirCalculator.VersiAlgoritme,
                         RevisiLokasi = profil.Metadata?.RevisiLokasi ?? profil.RevisiLokasi,
                         PesisirTersedia = jarakPesisir > 0 || JarakPesisir.CobaHitungKm(data.Latitude, data.Longitude).HasValue
@@ -867,6 +895,7 @@ public sealed partial class AppState
                 JadwalTersimpanDiDatabase = true,
                 FaktorPenuaanA = lokal?.FaktorPenuaanA ?? 0.5,
                 RiwayatSimulasi = lokal?.RiwayatSimulasi ?? [],
+                RiwayatEvaluasi = lokal?.RiwayatEvaluasi ?? [],
                 PrakiraanCache = await backend.PrakiraanCacheRepository.GetCacheAsync(data.Latitude, data.Longitude, data.RevisiLokasi, ct),
                 Pekerjaan = (await backend.PekerjaanRepository.ListByProyekAsync(data.Id, ct)).Select(WorkflowMapper.KeDto).ToList(),
                 Laporan = (await backend.LaporanRepository.ListByProyekAsync(data.Id, ct)).ToList()
@@ -933,6 +962,8 @@ public sealed partial class AppState
                         PeriodeMulai = i.PeriodeMulai,
                         PeriodeSelesai = i.PeriodeSelesai,
                         Provider = i.Provider,
+                        Model = i.Model,
+                        ZonaWaktu = i.ZonaWaktu ?? p.ZonaWaktu,
                         VersiAlgoritmePesisir = string.IsNullOrEmpty(i.VersiAlgoritmePesisir) ? JarakPesisirCalculator.VersiAlgoritme : i.VersiAlgoritmePesisir,
                         RevisiLokasi = i.RevisiLokasi ?? p.RevisiLokasi,
                         CatatanOverridePesisir = i.CatatanOverridePesisir,
@@ -977,13 +1008,12 @@ public sealed partial class AppState
                     proyek.TambahKomponen(new Komponen { Jenis = JenisKomponen.Dinding, Luas = p.Dinding });
                 if (p.Atap > 0)
                     proyek.TambahKomponen(new Komponen { Jenis = JenisKomponen.Atap, Luas = p.Atap });
-                if (proyek.Komponen.Count == 0)
-                    proyek.TambahKomponen(new Komponen { Jenis = JenisKomponen.Dinding, Luas = 100 });
             }
 
             foreach (var j in p.Pekerjaan) proyek.JadwalkanPekerjaan(WorkflowMapper.DariDto(j));
             foreach (var l in p.Laporan) proyek.TambahLaporan(WorkflowMapper.DariDomain(l));
             proyek.RiwayatSimulasi.AddRange(p.RiwayatSimulasi);
+            proyek.RiwayatEvaluasi.AddRange(p.RiwayatEvaluasi);
             state.Proyek.Add(proyek);
         }
 
@@ -1032,6 +1062,7 @@ public sealed partial class AppState
             PrakiraanCache = p.PrakiraanCache,
             RiwayatSimulasi = p.RiwayatSimulasi.ToList(),
             Laporan = p.Laporan.Select(WorkflowMapper.KeDomain).ToList(),
+            RiwayatEvaluasi = p.RiwayatEvaluasi.ToList(),
             BobotTermal = p.Bobot.Termal,
             BobotLembap = p.Bobot.Lembap,
             BobotKorosi = p.Bobot.Korosi,
@@ -1058,6 +1089,8 @@ public sealed partial class AppState
                     PeriodeMulai = i.PeriodeMulai,
                     PeriodeSelesai = i.PeriodeSelesai,
                     Provider = i.Provider,
+                    Model = i.Model,
+                    ZonaWaktu = i.ZonaWaktu ?? p.ZonaWaktu,
                     VersiAlgoritmePesisir = i.VersiAlgoritmePesisir,
                     RevisiLokasi = i.RevisiLokasi,
                     CatatanOverridePesisir = i.CatatanOverridePesisir,

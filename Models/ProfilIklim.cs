@@ -35,6 +35,8 @@ public class ProfilIklim
     public DateOnly? PeriodeMulai { get; set; }
     public DateOnly? PeriodeSelesai { get; set; }
     public string Provider { get; set; } = "";
+    public string? Model { get; set; }
+    public string? ZonaWaktu { get; set; }
     public string VersiAlgoritmePesisir { get; set; } = JarakPesisirCalculator.VersiAlgoritme;
     public int? RevisiLokasi { get; set; }
     public string? CatatanOverridePesisir { get; set; }
@@ -51,7 +53,7 @@ public class ProfilIklim
         (Provenance is ProvenanceIklim.ApiHistoris or ProvenanceIklim.CacheHistoris or ProvenanceIklim.ManualOverride && DiambilPadaUtc.HasValue) ||
         (Provenance is ProvenanceIklim.LegacyUnknown && !string.IsNullOrEmpty(_diperbaruiPada));
 
-    internal Domain.ProfilIklim KeDomain()
+    internal Domain.ProfilIklim KeDomain(string? zonaWaktuProyek = null)
     {
         var tingkat = JarakPesisirKm < 10 ? Domain.TingkatKorosi.Tinggi
             : JarakPesisirKm < 35 ? Domain.TingkatKorosi.Sedang : Domain.TingkatKorosi.Rendah;
@@ -60,13 +62,13 @@ public class ProfilIklim
             PeriodeAwal: PeriodeMulai,
             PeriodeAkhir: PeriodeSelesai,
             Penyedia: !string.IsNullOrWhiteSpace(Provider) ? Provider : (Sumber.Length > 0 ? Sumber : "Open-Meteo"),
-            Model: null,
+            Model: Model,
             DiambilPadaUtc: DiambilPadaUtc,
-            ZonaWaktu: "Asia/Jakarta",
+            ZonaWaktu: ZonaWaktu ?? zonaWaktuProyek ?? "Asia/Jakarta",
             MetodePesisir: VersiAlgoritmePesisir,
             Provenance: Provenance,
             StatusPengambilan: StatusPengambilan,
-            RevisiLokasi: RevisiLokasi,
+            RevisiLokasi: RevisiLokasi ?? 1,
             KualitasCache: KualitasCache,
             VersiAlgoritmePesisir: VersiAlgoritmePesisir);
 

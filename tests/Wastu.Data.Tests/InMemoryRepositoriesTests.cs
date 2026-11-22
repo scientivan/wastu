@@ -9,6 +9,33 @@ namespace Wastu.Data.Tests;
 public class InMemoryRepositoriesTests
 {
     [Fact]
+    public async Task KeputusanMemoriMempertahankanRisikoTanpaDuplikasiDanOverrideTidakMenghapusBukti()
+    {
+        var repo = new PekerjaanRepositoryInMemory();
+        var date = new DateOnly(2026, 11, 22);
+        var decision = new KeputusanJadwal(date, StatusKelayakanCuaca.TidakLayak, ["Hujan 90%"],
+            Terkunci: true, PersetujuanRisiko: true, RevisiLokasiSaatKunci: 3,
+            Cuaca: new DailyForecast(date, 90, 0, 20, 30, 70));
+        var job = new Pekerjaan(Guid.NewGuid(), Guid.NewGuid(), "Cat risiko", JenisPekerjaan.Pengecatan,
+            date, date, StatusPekerjaan.Terkunci, date, revisiLokasiSaatKunci: 3, keputusanTerakhir: decision);
+        await repo.AddAsync(job);
+        await repo.AddAsync(job);
+        await repo.UpdateAsync(job);
+        var recorded = Assert.Single(repo.AmbilKeputusanHistoris());
+        Assert.Equal(StatusKelayakanCuaca.TidakLayak, recorded.Status);
+        Assert.Equal(90, recorded.Cuaca!.ProbabilitasHujanPct);
+        var thresholds = new AmbangPekerjaanRepositoryInMemory(repo);
+        await thresholds.SimpanOverrideAsync(job.Id, new AmbangPekerjaan(30, null, 85, 10, 35));
+        var updated = (await repo.GetByIdAsync(job.Id))!;
+        Assert.Equal(StatusPekerjaan.PerluDitinjau, updated.Status);
+        Assert.Equal(decision, updated.KeputusanTerakhir);
+        Assert.Equal(3, updated.RevisiLokasiSaatKunci);
+        Assert.Single(repo.AmbilKeputusanHistoris());
+        await repo.AddAsync(job with { Id = Guid.NewGuid(), KeputusanTerakhir = null });
+        Assert.Equal(StatusKelayakanCuaca.DataTidakTersedia, repo.AmbilKeputusanHistoris()[1].Status);
+    }
+
+    [Fact]
     public async Task SumberBahanRepositoryInMemory_MenyimpanDanMengambilSumberDenganBenar()
     {
         var repo = new SumberBahanRepositoryInMemory();

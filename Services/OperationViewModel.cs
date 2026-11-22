@@ -69,6 +69,19 @@ public sealed class ScheduleViewModel : OperationViewModel
 
 public sealed class ReportViewModel : OperationViewModel
 {
+    public async Task<Reporting.SnapshotLaporan?> CaptureAsync(AppState state, Models.JenisKomponen kind,
+        int horizon, bool schedule, IReadOnlySet<string> codes)
+    {
+        Reporting.SnapshotLaporan? snapshot = null;
+        await RunAsync(async ct => snapshot = await ReportSnapshotFactory.BuildAsync(state, kind, horizon, schedule, codes, ct));
+        return snapshot;
+    }
+    public async Task<Domain.Services.Laporan?> RegenerateAsync(DesktopWorkflowService service, Guid id, string path)
+    {
+        Domain.Services.Laporan? report = null;
+        await RunAsync(async ct => report = await service.RegenerateReportAsync(id, path, ct));
+        return report;
+    }
     public async Task<Domain.Services.Laporan?> ExportAsync(DesktopWorkflowService service,
         Reporting.SnapshotLaporan snapshot, string path)
     {

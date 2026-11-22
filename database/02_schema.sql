@@ -118,6 +118,7 @@ CREATE TABLE IF NOT EXISTS evaluasi (
     versi_model       text NOT NULL DEFAULT 'v2.0',
     hash_input        text,
     dihitung_pada_utc timestamp with time zone,
+    input_snapshot_json jsonb,
     CONSTRAINT pk_evaluasi PRIMARY KEY (id),
     CONSTRAINT evaluasi_skor_rentang CHECK (skor_kesesuaian BETWEEN 0 AND 100),
     CONSTRAINT evaluasi_emisi_awal_nonnegatif CHECK (emisi_awal_kg >= 0),
@@ -142,7 +143,7 @@ CREATE TABLE IF NOT EXISTS simulasi_emisi (
     dihitung_pada_utc          timestamp with time zone,
     CONSTRAINT pk_simulasi_emisi PRIMARY KEY (id),
     CONSTRAINT uk_simulasi_emisi_evaluasi_horizon_versi
-        UNIQUE (evaluasi_id, horizon_tahun, versi_model),
+        UNIQUE (evaluasi_id, horizon_tahun, versi_model, faktor_penuaan_a),
     CONSTRAINT simulasi_emisi_horizon_positif CHECK (horizon_tahun > 0),
     CONSTRAINT simulasi_emisi_usia_efektif_positif CHECK (usia_pakai_efektif_tahun > 0),
     CONSTRAINT simulasi_emisi_jumlah_penggantian_nonnegatif CHECK (jumlah_penggantian >= 0),

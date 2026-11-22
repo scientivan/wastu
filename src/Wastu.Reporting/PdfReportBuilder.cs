@@ -111,7 +111,7 @@ public sealed class PdfReportBuilder
         gfx.DrawString("WASTU", _fontTitle, new XSolidBrush(AccentGreen), new XPoint(MarginLeft, currentY + 14));
         gfx.DrawString("Laporan Rekomendasi Material & Penjadwalan Berkelanjutan", _fontSubSection, new XSolidBrush(PrimaryColor), new XPoint(MarginLeft + 68, currentY + 12));
 
-        var subText = $"Proyek: {snapshot.NamaProyek} ({snapshot.Kota})  •  Dibuat: {snapshot.DibuatPadaWib:dd MMMM yyyy HH:mm} WIB";
+        var subText = $"Proyek: {snapshot.NamaProyek} ({snapshot.Kota})  •  Dibuat: {snapshot.DibuatPadaLokal:dd MMMM yyyy HH:mm} {snapshot.LabelZona}";
         gfx.DrawString(subText, _fontSubtitle, new XSolidBrush(MutedColor), new XPoint(MarginLeft, currentY + 28));
 
         currentY += 36;
@@ -158,7 +158,7 @@ public sealed class PdfReportBuilder
     {
         var iklim = snapshot.Iklim;
         var diambilStr = iklim.DiambilPada.HasValue
-            ? iklim.DiambilPada.Value.ToOffset(TimeSpan.FromHours(7)).ToString("dd/MM/yyyy HH:mm") + " WIB"
+            ? snapshot.WaktuLokal(iklim.DiambilPada.Value).ToString("dd/MM/yyyy HH:mm") + " " + snapshot.LabelZona
             : "Tidak tercatat";
         var offlineTag = iklim.IsOffline ? " [MODE LURING / OFFLINE SNAPSHOT]" : "";
         var provText = $"Sumber: {iklim.Provider}  •  Periode: {iklim.Periode}  •  Status: {iklim.Provenance}{offlineTag}  •  Diambil: {diambilStr}";
@@ -233,12 +233,13 @@ public sealed class PdfReportBuilder
 
         foreach (var mat in snapshot.BahanTerpilih)
         {
-            var alasanLines = WrapText(gfx, mat.Alasan, _fontSmall, wAlasan - 10);
+            var alasanLines = WrapText(gfx, mat.Alasan + (string.IsNullOrWhiteSpace(mat.SusunanKetebalan)
+                ? "" : " Susunan/acuan luas: " + mat.SusunanKetebalan), _fontSmall, wAlasan - 10);
             if (alasanLines.Count == 0) alasanLines.Add("-");
 
             // Add source summary if present
             var sumberSummary = mat.SumberProperti.Count > 0
-                ? "Sumber: " + string.Join("; ", mat.SumberProperti.Select(s => $"{s.Properti} ({s.Sumber})"))
+                ? "Sumber: " + string.Join("; ", mat.SumberProperti.Select(s => $"{s.Properti} = {s.Nilai} ({s.Sumber})"))
                 : string.Empty;
             var sumberLines = string.IsNullOrEmpty(sumberSummary)
                 ? []
@@ -628,7 +629,7 @@ public sealed class PdfReportBuilder
             g.DrawString(leftText, _fontFooter, new XSolidBrush(MutedColor), new XPoint(MarginLeft, footerY));
 
             // Right: Page number and UTC + WIB timestamps
-            var rightText = $"Halaman {i + 1} dari {totalPages}  •  {snapshot.DibuatPadaWib:dd/MM/yyyy HH:mm} WIB";
+            var rightText = $"Halaman {i + 1} dari {totalPages}  •  {snapshot.DibuatPadaLokal:dd/MM/yyyy HH:mm} {snapshot.LabelZona}";
             var rightWidth = g.MeasureString(rightText, _fontFooter).Width;
             g.DrawString(rightText, _fontFooter, new XSolidBrush(MutedColor), new XPoint(MarginLeft + ContentWidth - rightWidth, footerY));
         }

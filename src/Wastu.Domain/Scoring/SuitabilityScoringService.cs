@@ -69,7 +69,8 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
                 $"Proyek {komponen.ProyekId} belum memiliki profil iklim. Jalankan analisis iklim lebih dulu (PRD §F3).");
 
         IReadOnlyList<Bahan> bahan = await _material.ListByKindAsync(komponen.Jenis, ct).ConfigureAwait(false);
-        return await RankSnapshotAsync(komponen, iklim, bahan, bobotEfektif, ct).ConfigureAwait(false);
+        var proyek = await _proyek.GetByIdAsync(komponen.ProyekId, ct).ConfigureAwait(false);
+        return await RankSnapshotAsync(komponen, iklim, bahan, bobotEfektif, ct, proyek).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -81,7 +82,8 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
         ProfilIklim iklim,
         IReadOnlyList<Bahan> katalog,
         KriteriaBobot? bobot = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        Proyek? proyek = null)
     {
         ArgumentNullException.ThrowIfNull(komponen);
         ArgumentNullException.ThrowIfNull(iklim);
@@ -95,7 +97,8 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
 
         // Salin koleksi sebelum await pertama; record domain menyimpan nilai
         // immutable, sedangkan daftar milik pemanggil masih dapat disunting.
-        Bahan[] kategori = katalog.Where(item => item is not null && item.Jenis == komponen.Jenis).ToArray();
+        Bahan[] kategori = katalog.Where(item => item is not null && item.Jenis == komponen.Jenis)
+            .Select(item => item with { SumberProperti = item.SumberProperti?.ToArray() }).ToArray();
 
         if (kategori.Length == 0)
         {
@@ -122,7 +125,7 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
                     }
                 }
 
-                IReadOnlyList<Evaluasi> baru = Rank(komponen, iklim, kategori, bobotEfektif, _konfigurasi);
+                IReadOnlyList<Evaluasi> baru = Rank(komponen, iklim, kategori, bobotEfektif, _konfigurasi, proyek);
                 DateTimeOffset dihitungPada = _clock.GetUtcNow();
                 var batchBaru = tersimpan ?? new BatchEvaluasi(
                     Guid.NewGuid(),
@@ -167,7 +170,7 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
             }
         }
 
-        return Rank(komponen, iklim, kategori, bobotEfektif, _konfigurasi);
+        return Rank(komponen, iklim, kategori, bobotEfektif, _konfigurasi, proyek);
     }
 
     private async Task<Evaluasi[]> BacaEvaluasiBatchAsync(BatchEvaluasi batch, CancellationToken ct)
@@ -203,7 +206,8 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
         ProfilIklim iklim,
         IReadOnlyList<Bahan> katalog,
         KriteriaBobot? bobot = null,
-        KonfigurasiModel? konfigurasi = null)
+        KonfigurasiModel? konfigurasi = null,
+        Proyek? proyek = null)
     {
         ArgumentNullException.ThrowIfNull(komponen);
         ArgumentNullException.ThrowIfNull(iklim);
@@ -229,6 +233,7 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
         // lolos filter tampilan atau sedang dipilih pengguna (PRD §9.2).
         double usiaMin = bahan.Min(item => item.UsiaPakaiNominalTahun);
         double usiaMaks = bahan.Max(item => item.UsiaPakaiNominalTahun);
+        var kategoriIds = Array.AsReadOnly(bahan.Select(item => item.Id).Order().ToArray());
 
         var hasil = new List<Evaluasi>(bahan.Length);
 
@@ -246,7 +251,10 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
                 SkorKesesuaian: PerhitunganSkor.SkorKesesuaian(subSkor, bobotEfektif),
                 EmisiAwalKg: PerhitunganSkor.EmisiAwal(item, komponen),
                 SubSkor: subSkor,
-                Alasan: PerhitunganSkor.SusunAlasan(item, iklim, subSkor, konfigurasiEfektif)));
+                Alasan: PerhitunganSkor.SusunAlasan(item, iklim, subSkor, konfigurasiEfektif),
+                Input: new InputEvaluasi(komponen,
+                    item with { SumberProperti = item.SumberProperti?.ToArray() },
+                    iklim, bobotEfektif, konfigurasiEfektif, usiaMin, usiaMaks, proyek, kategoriIds)));
         }
 
         return Urutkan(hasil, bahan);
@@ -330,10 +338,15 @@ public sealed class SuitabilityScoringService : ISuitabilityScoringService
         KonfigurasiModel? konfigurasi = null)
     {
         KonfigurasiModel konfigurasiEfektif = konfigurasi ?? KonfigurasiModel.Bawaan;
-        string identitasKatalog = string.Join("|", kategori
+        string identitasKatalog = "input-v1:" + System.Text.Json.JsonSerializer.Serialize(kategori
             .OrderBy(item => item.Id)
-            .Select(item => FormattableString.Invariant(
-                $"{item.Id:N}:{item.VersiData}:{item.Nama}:{(int)item.Jenis}:{item.KonduktivitasTermal:R}:{item.KetahananLembap}:{item.KetahananKorosi}:{item.UsiaPakaiNominalTahun:R}:{item.FaktorEmisi:R}")));
+            .Select(item => item with { SumberProperti = item.SumberProperti?
+                .OrderBy(s => s.Properti, StringComparer.Ordinal)
+                .ThenBy(s => s.Referensi, StringComparer.Ordinal)
+                .ThenBy(s => s.Versi, StringComparer.Ordinal)
+                .ThenBy(s => s.Tautan, StringComparer.Ordinal)
+                .ThenBy(s => s.Status)
+                .ThenBy(s => s.CatatanKonversi, StringComparer.Ordinal).ToArray() }));
 
         return HashInputEvaluasi.Hitung(komponen.LuasM2, iklim, bobot, konfigurasiEfektif, identitasKatalog);
     }

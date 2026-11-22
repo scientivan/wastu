@@ -40,6 +40,11 @@ internal static partial class DebugSnapshot
                 Check(App.State.Aktif.Pekerjaan.Any(j => j.Keputusan?.PersetujuanRisiko == true), "Risk decision persisted");
                 Check(App.State.Aktif.RiwayatSimulasi.Select(s => s.Hasil.HorizonTahun).Distinct().Count() == 3,
                     "20/30/50 year history persisted");
+                var expectedIds = System.Text.Json.JsonSerializer.Deserialize<Guid[]>(await File.ReadAllTextAsync(
+                    Path.Combine(StateStore.ProfileFolder, "expected-evaluation-ids.json")))!;
+                Check(expectedIds.Length > 0 && expectedIds.ToHashSet().SetEquals(
+                    App.State.Proyek.SelectMany(p => p.RiwayatEvaluasi).Select(e => e.Id)),
+                    "Original evaluation IDs and complete input histories survive restart");
                 window.ShowShell("report");
                 await Shot("restart-report");
                 return;
@@ -100,6 +105,7 @@ internal static partial class DebugSnapshot
 
             var climateClient = new AcceptanceClimate();
             App.State.HistoricalClient = climateClient;
+            App.State.DailyForecastClient = new AcceptanceForecast();
             foreach (var kind in new[] { "wall", "roof", "both" })
             {
                 int before = App.State.Proyek.Count;
@@ -250,6 +256,11 @@ internal static partial class DebugSnapshot
             Check(File.ReadAllText(report.PathBerkas).StartsWith("%PDF-"), "Direct PDF export has PDF signature");
             Check(snapshot.BahanTerpilih.Single().Peringkat == 10, "Report includes rank 10 selection");
             Check(snapshot.JadwalTerkunci.Last().StatusCuaca == "TidakLayak", "Report preserves risky decision");
+            var copy = await App.State.Workflows.RegenerateReportAsync(report.Id, Path.Combine(folder, "windows-report-copy.pdf"));
+            Check(copy.Id == report.Id && copy.SnapshotHash == report.SnapshotHash,
+                "Historical report copy preserves original identity and input hash");
+            Check(copy.SnapshotJson == report.SnapshotJson && File.Exists(copy.PathBerkas),
+                "Historical report copy preserves all captured values");
             window.ShowShell("report");
             await Shot("report-history");
 
@@ -266,7 +277,27 @@ internal static partial class DebugSnapshot
             var name = VisibleNamed<TextBox>("NameBox");
             name.Focus();
             Check(name.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next)), "Keyboard focus traverses next control");
+            var active = App.State.Aktif;
+            var legacy = new Models.Bangunan { Id = 999, Nama = "Proyek legacy tanpa luas", Kota = "Jakarta",
+                Latitude = -6.2, Longitude = 106.8 };
+            App.State.Proyek.Add(legacy);
+            App.State.PilihProyek(legacy.Id);
+            window.ShowShell("project");
+            await Shot("legacy-missing-components");
+            Check(App.State.Peringkat().Length == 0 && App.State.Aktif.Komponen.Count == 0,
+                "Incomplete legacy project never receives an invented component or ranking");
+            Check(VisibleNamed<TextBox>("NameBox").Text == legacy.Nama,
+                "Cached project page displays the selected project even without a data revision");
+            foreach (var key in new[] { "home", "materials", "compare", "sim", "weather", "report" })
+            {
+                window.ShowShell(key);
+                await Idle(window);
+            }
+            App.State.Proyek.Remove(legacy);
+            App.State.PilihProyek(active.Id);
             log.Add(await PerfAsync(window));
+            await File.WriteAllTextAsync(Path.Combine(StateStore.ProfileFolder, "expected-evaluation-ids.json"),
+                System.Text.Json.JsonSerializer.Serialize(App.State.Proyek.SelectMany(p => p.RiwayatEvaluasi).Select(e => e.Id).ToArray()));
             App.State.SimpanSekarang();
         }
         catch (Exception ex) { log.Add("FAIL " + ex); }
@@ -291,6 +322,20 @@ internal static partial class DebugSnapshot
             return Task.FromResult(new Domain.ProfilIklim(2400, 80, 28, 5, TingkatKorosi.Tinggi,
                 provenance: ProvenanceIklim.Contoh));
         }
+    }
+
+    private sealed class AcceptanceForecast : IDailyForecastClient
+    {
+        public Task<IReadOnlyList<DailyForecast>> GetForecastAsync(double lat, double lon, int days, CancellationToken ct = default)
+        {
+            ct.ThrowIfCancellationRequested();
+            var today = KebijakanCachePrakiraan.HariIniPadaZona(DateTimeOffset.UtcNow, "Asia/Jakarta");
+            return Task.FromResult<IReadOnlyList<DailyForecast>>(Enumerable.Range(0, days)
+                .Select(i => new DailyForecast(today.AddDays(i), 20, 0, 20, 30, 70)).ToArray());
+        }
+        public async Task<HasilPrakiraan> GetForecastWithMetadataAsync(double lat, double lon, int days, CancellationToken ct = default)
+            => new(await GetForecastAsync(lat, lon, days, ct), "Asia/Jakarta", DateTimeOffset.UtcNow,
+                "Fixture Windows; bukan API nyata", 1);
     }
 
     private sealed class PendingAcceptanceClimate : IHistoricalClimateClient

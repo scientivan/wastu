@@ -5,10 +5,23 @@ namespace Wastu.Services;
 
 public sealed partial class AppState
 {
+    private static void ValidasiInputProyek(string nama, string kota, double lintang, double bujur,
+        IReadOnlyList<(Models.JenisKomponen Jenis, double Luas)> komponen, double? pesisir)
+    {
+        _ = new Domain.Proyek(Guid.NewGuid(), nama, kota, lintang, bujur);
+        ArgumentNullException.ThrowIfNull(komponen);
+        if (komponen.Count == 0 || komponen.Select(k => k.Jenis).Distinct().Count() != komponen.Count)
+            throw new ArgumentException("Pilih minimal satu komponen tanpa jenis duplikat.", nameof(komponen));
+        foreach (var k in komponen) _ = new Domain.InputKomponen((Domain.JenisKomponen)k.Jenis, k.Luas);
+        if (pesisir is { } jarak && (!double.IsFinite(jarak) || jarak < 0))
+            throw new ArgumentOutOfRangeException(nameof(pesisir), "Jarak pesisir harus finite dan tidak negatif.");
+    }
+
     internal string PendingReportDirectory => System.IO.Path.Combine(StateStore.ProfileFolder, "pending_reports",
         _toko is null ? "local" : System.IO.Path.GetFileNameWithoutExtension(_toko.SnapshotPath));
     private DesktopWorkflowService? _workflows;
-    public DesktopWorkflowService Workflows => _workflows ??= new(this, _backend);
+    internal Domain.Abstractions.IDailyForecastClient? DailyForecastClient { get; set; }
+    public DesktopWorkflowService Workflows => _workflows ??= new(this, _backend, DailyForecastClient);
 
     internal void SimpanHasil()
     {

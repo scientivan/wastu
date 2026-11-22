@@ -223,6 +223,7 @@
                                             </Border>
                                         </StackPanel>
                                         <c:CssText Text="{Binding TanggalFormat}" Style="{StaticResource Small}" Margin="0,0,0,2" />
+                                        <c:CssText Text="{Binding Selection}" Style="{StaticResource Small}" Margin="0,0,0,2" TextWrapping="Wrap" />
                                         <c:CssText Text="{Binding PathBerkas}" Style="{StaticResource Small}" Foreground="{StaticResource Muted}" />
                                         <c:CssText Text="⚠️ Berkas PDF tidak ditemukan pada lokasi ini. Berkas mungkin telah dipindahkan atau dihapus."
                                                    Visibility="{Binding MissingVisibility}"
@@ -231,6 +232,9 @@
 
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
                                         <Button Style="{StaticResource BtnLight}" Content="Buka PDF" Click="OpenPdf_Click" />
+                                        <Button Style="{StaticResource BtnLight}" Content="Buat salinan" IsEnabled="{Binding HasSnapshot}"
+                                                ToolTip="Memakai angka, sumber, dan asumsi asli laporan; pilih lokasi baru jika berkas hilang."
+                                                Margin="8,0,0,0" Click="RegeneratePdf_Click" />
                                     </StackPanel>
                                 </Grid>
                             </Border>

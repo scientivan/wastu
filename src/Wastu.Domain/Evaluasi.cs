@@ -27,4 +27,5 @@ public sealed record Evaluasi(
     Guid? BatchId = null,
     string? VersiModel = null,
     string? HashInput = null,
-    DateTimeOffset? DihitungPadaUtc = null);
+    DateTimeOffset? DihitungPadaUtc = null,
+    InputEvaluasi? Input = null);

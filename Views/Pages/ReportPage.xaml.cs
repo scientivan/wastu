@@ -176,8 +176,10 @@ public partial class ReportPage : PageBase
         SnapshotLaporan snapshot;
         try
         {
-            snapshot = ReportSnapshotFactory.Build(S, _selectedJenis, _selectedHorizon,
-                _includeSchedule, _selectedMaterialCodes);
+            var captured = await _viewModel.CaptureAsync(S, _selectedJenis, _selectedHorizon,
+                _includeSchedule, _selectedMaterialCodes.ToHashSet());
+            if (captured is null) { Shell.Toast(_viewModel.Error ?? "Laporan dibatalkan."); return; }
+            snapshot = captured;
         }
         catch (Exception)
         {
@@ -213,6 +215,19 @@ public partial class ReportPage : PageBase
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
         }
+    }
+
+    private async void RegeneratePdf_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel.IsBusy || sender is not FrameworkElement { DataContext: ReportHistoryItem item }) return;
+        var dialog = new SaveFileDialog { Filter = "Berkas PDF (*.pdf)|*.pdf", Title = "Buat salinan laporan dari snapshot asli",
+            FileName = "Salinan-" + item.NamaBerkas, OverwritePrompt = true };
+        if (dialog.ShowDialog() != true) return;
+        var report = await _viewModel.RegenerateAsync(S.Workflows, item.Id, dialog.FileName);
+        Refresh();
+        Shell.Toast(report is null ? _viewModel.Error ?? "Salinan dibatalkan."
+            : report.Status == "MenungguPencatatan" ? "Salinan tersedia; pencatatan riwayat tertunda."
+            : "Salinan dibuat dengan angka dan asumsi snapshot asli.");
     }
 
     private void OpenPdf_Click(object sender, RoutedEventArgs e)
@@ -281,24 +296,29 @@ public sealed class SelectableMaterialItem : ViewData
 
 public sealed class ReportHistoryItem : ViewData
 {
-    public ReportHistoryItem(Models.Laporan l)
+    public ReportHistoryItem(Models.Laporan l, string projectZone)
     {
         Id = l.Id;
         PathBerkas = l.PathBerkas;
         NamaBerkas = l.NamaBerkas;
-        TanggalFormat = l.DibuatPada.ToOffset(TimeSpan.FromHours(7)).ToString("dd MMMM yyyy, HH:mm") + " WIB";
+        var description = ReportHistoryDescription.Create(l, projectZone);
+        TanggalFormat = description.Timestamp;
+        Selection = description.Selection;
         StatusBerkas = l.StatusBerkas;
         StatusTeks = l.StatusKeterangan;
         IsAvailable = StatusBerkas == StatusBerkasLaporan.Tersedia;
+        HasSnapshot = description.CanRegenerate;
     }
 
     public Guid Id { get; }
     public string PathBerkas { get; }
     public string NamaBerkas { get; }
     public string TanggalFormat { get; }
+    public string Selection { get; }
     public StatusBerkasLaporan StatusBerkas { get; }
     public string StatusTeks { get; }
     public bool IsAvailable { get; }
+    public bool HasSnapshot { get; }
     public Visibility MissingVisibility => IsAvailable ? Visibility.Collapsed : Visibility.Visible;
     public string BadgeStyle => IsAvailable ? "BadgeTersedia" : "BadgeHilang";
     public string StatusFg => IsAvailable ? "#166534" : "#B91C1C";
@@ -352,7 +372,7 @@ public sealed class ReportData : ViewData
         NoLocked = Locked.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
         // History
-        ReportHistory = p.Laporan.Select(l => new ReportHistoryItem(l)).ToList();
+        ReportHistory = p.Laporan.Select(l => new ReportHistoryItem(l, p.ZonaWaktu)).ToList();
         NoHistory = ReportHistory.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 

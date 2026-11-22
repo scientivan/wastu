@@ -80,10 +80,12 @@ Aplikasi desktop Windows berbasis WPF (.NET 8, C#) dengan data cuaca dan iklim d
 ## Menjalankan dengan PostgreSQL
 
 1. Buat database lokal dengan `database/01_create_database.sql` atau gunakan database PostgreSQL yang sudah tersedia.
-2. Jalankan `database/02_schema.sql` dan `database/03_seed_supabase.sql` pada database tersebut.
+2. Siapkan skema dengan migrasi EF pada database kosong atau database dengan riwayat migrasi EF yang sudah cocok. SQL instalasi/seed di `database/` dipakai untuk pemeriksaan kesetaraan; jangan menjalankan SQL lalu langsung mengulang seluruh migrasi EF pada tabel yang sama.
 3. Isi `.env` sesuai `.env.example` dengan `host`, `port`, `database`, `user`, dan `password` dari Supabase. Aplikasi menyusun connection string Npgsql otomatis dengan SSL. Gunakan session pooler port 5432. Alternatifnya, isi `WASTU_CONNECTION_STRING` lengkap untuk mengesampingkan variabel terpisah.
 
 4. Jalankan `dotnet run --project Wastu.csproj` di Windows dengan .NET 8 SDK. Jalankan tes dengan perintah pada bagian Pengujian di bawah.
+
+Pemilik database menjalankan migrasi sekali sebelum aplikasi baru dipakai, sesudah backup diverifikasi. Dengan konfigurasi lokal/environment di atas tersedia, gunakan `dotnet ef database update --project src/Wastu.Data` dari root repository (tool `dotnet-ef` 8.0.11 sesuai dependency proyek). Untuk deployment remote, pemilik database dapat menyiapkan migration bundle/script; klien aplikasi biasa hanya memeriksa kecocokan skema. Database lama yang dibuat lewat SQL tanpa riwayat EF memerlukan pemeriksaan baseline terlebih dahulu; jangan menandai semua migrasi telah diterapkan tanpa memeriksa skemanya. Migrasi otomatis lokal beserta backup/recovery masih merupakan pekerjaan terbuka.
 
 File `.env` dicari dari direktori kerja, lalu direktori executable, termasuk folder induknya. Environment variable yang terisi lebih diutamakan daripada nilai dalam file. `.env` tidak disertakan dalam build atau publish dan tidak boleh di-commit. Untuk menjalankan hasil publish, sediakan `.env` sendiri di direktori executable atau atur environment variable. Konfigurasi database yang hanya terisi sebagian akan menghasilkan kesalahan agar aplikasi tidak diam-diam beralih ke mode lokal.
 
@@ -123,4 +125,10 @@ Untuk mengulang pemeriksaan WPF, bangun dengan `dotnet build Wastu.csproj -c Rel
 
 `tests/Wastu.WindowsVerification` menyediakan mode `benchmark` (komputasi kategori tanpa HTTP/cache/UI), `api` (satu historis dan 20 prakiraan nyata), serta `database` (alur service dan restart). Jalankan memakai `dotnet run --project tests/Wastu.WindowsVerification -c Release -- <mode> <folder-hasil>`. Mode database hanya menerima `WASTU_TEST_CONNECTION_STRING` untuk database khusus `wastu_windows_ui` pada `127.0.0.1`; tidak memakai database aplikasi pengguna. Jalankan tes Data dengan database uji terpisah sebagaimana dijelaskan di atas.
 
-Penerimaan keseluruhan WP08 tetap terbuka: studi minimal lima pengguna belum tersedia, pemisahan ViewModel halaman lainnya belum lengkap, dan alur edit/buka kunci pekerjaan, spesifikasi produk opsional, serta regenerasi PDF dari snapshot historis masih perlu dituntaskan. Folder hasil pengujian dan dokumen verifikasi lokal bukan bagian distribusi atau repository.
+Evaluasi baru menyimpan sifat/sumber bahan, profil iklim, komponen, bobot, konfigurasi, dan populasi normalisasi aslinya. Perubahan katalog atau faktor penuaan tidak menimpa hasil sebelumnya. Evaluasi legacy tanpa input asli tetap tersimpan dan memerlukan evaluasi baru sebelum simulasi; aplikasi tidak menebak usia historis dari katalog terkini.
+
+Laporan baru menyimpan snapshot lengkap bersama metadata PostgreSQL/JSON maupun antrean pencatatan luring. Tindakan **Buat salinan** pada riwayat mempertahankan identitas, waktu, angka, sumber, bobot, dan asumsi laporan asli, termasuk ketika PDF lama hilang. Snapshot harus lolos pemeriksaan identitas/hash; laporan legacy tanpa snapshot tidak dapat dibuat ulang dengan angka tebakan. Backup database mencakup snapshot laporan; file PDF fisik tetap harus dicadangkan terpisah.
+
+Migrasi `20261122110423_PreserveEvaluationInputs` menambahkan kolom nullable input evaluasi dan memperluas identitas simulasi dengan faktor penuaan. Terapkan melalui prosedur migrasi database uji/deployment yang dijelaskan di atas; aplikasi tidak memigrasi database pengguna diam-diam. Data legacy tidak diisi ulang dengan input katalog terbaru. Proyek JSON lama tanpa komponen/luas tetap dapat diperbaiki pada profil dan tidak diberi komponen 100 m² otomatis.
+
+Penerimaan keseluruhan WP08 tetap terbuka: studi minimal lima pengguna belum tersedia, pemisahan ViewModel halaman lainnya belum lengkap, dan alur edit/buka kunci pekerjaan serta spesifikasi produk opsional masih perlu dituntaskan. Audit cache cuaca, migrasi legacy, dan konfigurasi ambang umum juga masih mempunyai pekerjaan terbuka. Folder hasil pengujian dan dokumen verifikasi lokal bukan bagian distribusi atau repository.

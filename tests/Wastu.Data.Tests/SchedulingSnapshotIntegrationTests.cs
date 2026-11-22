@@ -35,6 +35,12 @@ public sealed class SchedulingSnapshotIntegrationTests
         Assert.Equal(weather, restored.KeputusanTerakhir.Cuaca);
         Assert.Equal(30, restored.KeputusanTerakhir.AmbangEfektif!.ProbabilitasHujanMaksPct);
         Assert.True(restored.KeputusanTerakhir.PersetujuanRisiko);
+        await limits.SimpanOverrideAsync(job.Id, new(20, null, 85, 10, 35));
+        var afterOverride = (await jobs.GetByIdAsync(job.Id))!;
+        Assert.Equal(StatusPekerjaan.PerluDitinjau, afterOverride.Status);
+        Assert.Equal(4, afterOverride.RevisiLokasiSaatKunci);
+        Assert.Equal(System.Text.Json.JsonSerializer.Serialize(restored.KeputusanTerakhir),
+            System.Text.Json.JsonSerializer.Serialize(afterOverride.KeputusanTerakhir));
         await jobs.UpdateAsync(restored with { Status = StatusPekerjaan.PerluDitinjau });
         await cache.PruneExpiredAsync(DateTimeOffset.UtcNow.AddDays(1));
         var reviewed = await jobs.GetByIdAsync(job.Id);

@@ -32,6 +32,7 @@ public static class HashInputEvaluasi
         var sb = new StringBuilder();
         sb.Append(CultureInfo.InvariantCulture, $"luas:{luasM2:R}|");
         sb.Append(CultureInfo.InvariantCulture, $"iklim:{iklim.CurahHujanTahunanMm:R},{iklim.KelembapanRataPct:R},{iklim.SuhuRataC:R},{iklim.JarakPesisirKm:R},{(int)iklim.TingkatKorosi},{iklim.RevisiLokasi}|");
+        sb.Append($"provenance:{iklim.Provenance}:{System.Text.Json.JsonSerializer.Serialize(iklim.Metadata)}|");
         sb.Append(CultureInfo.InvariantCulture, $"bobot:{bobot.Termal:R},{bobot.Lembap:R},{bobot.Korosi:R},{bobot.Usia:R}|");
         sb.Append(CultureInfo.InvariantCulture, $"model:{model.VersiModel},{model.BobotLembapHujanAlpha:R},{model.AcuanCurahHujanMm:R},{model.AcuanJarakPesisirKm:R},{model.PitaTermalBatasBawah:R},{model.PitaTermalBatasAtasSejuk:R},{model.PitaTermalBatasAtasPanas:R},{model.SuhuSejukC:R},{model.SuhuPanasC:R},{model.FaktorPenuaanA:R},{model.AmbangTidakDisarankan:R},{model.AmbangCocok:R}|");
         sb.Append($"katalog:{katalogIdentitas}");

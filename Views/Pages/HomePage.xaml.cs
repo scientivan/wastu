@@ -33,7 +33,7 @@ public sealed class HomeData : ViewData
     {
         var p = s.Aktif;
         var jobs = p.Pekerjaan;
-        var today = DateTime.Today;
+        var today = Domain.Weather.KebijakanCachePrakiraan.HariIniPadaZona(DateTimeOffset.UtcNow, p.ZonaWaktu).ToDateTime(TimeOnly.MinValue);
         var next = jobs.Where(j => j.TanggalDikunci >= today).MinBy(j => j.TanggalDikunci);
         var forecast = s.PrakiraanAktif();
 

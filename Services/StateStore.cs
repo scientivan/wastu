@@ -51,6 +51,7 @@ public sealed class ProyekDto
     public double FaktorPenuaanA { get; set; } = 0.5;
     public Domain.Weather.HasilPrakiraan? PrakiraanCache { get; set; }
     public List<SimulationHistoryEntry> RiwayatSimulasi { get; set; } = [];
+    public List<Domain.Evaluasi> RiwayatEvaluasi { get; set; } = [];
     public List<Domain.Services.Laporan> Laporan { get; set; } = [];
     public List<PekerjaanDto> Pekerjaan { get; set; } = [];
 }
@@ -77,6 +78,8 @@ public sealed class IklimDto
     public DateOnly? PeriodeMulai { get; set; }
     public DateOnly? PeriodeSelesai { get; set; }
     public string Provider { get; set; } = "";
+    public string? Model { get; set; }
+    public string? ZonaWaktu { get; set; }
     public string VersiAlgoritmePesisir { get; set; } = "";
     public int? RevisiLokasi { get; set; }
     public string? CatatanOverridePesisir { get; set; }

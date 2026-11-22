@@ -115,6 +115,7 @@ public sealed class AmbangPekerjaanRepositoryEf : IAmbangPekerjaanRepository
         if (pekerjaan is not null)
         {
             pekerjaan.OverrideAmbangJson = JsonSerializer.Serialize(ambang);
+            if (pekerjaan.TanggalDikunci.HasValue) pekerjaan.Status = Wastu.Domain.Weather.StatusPekerjaan.PerluDitinjau;
             pekerjaan.TerakhirDiperbaruiUtc = DateTimeOffset.UtcNow;
         }
 

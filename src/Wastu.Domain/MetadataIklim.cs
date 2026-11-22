@@ -3,6 +3,7 @@ namespace Wastu.Domain;
 /// <summary>
 /// Metadata lengkap penyedia, waktu pengambilan, zona waktu, dan provenance data iklim (PRD-R09).
 /// </summary>
+[method: System.Text.Json.Serialization.JsonConstructor]
 public sealed record MetadataIklim(
     DateOnly? PeriodeAwal,
     DateOnly? PeriodeAkhir,

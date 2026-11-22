@@ -13,6 +13,48 @@ namespace Wastu.Application.Tests;
 public sealed class ComparisonStateTests
 {
     [Fact]
+    public void JsonHistoryPreservesOriginalInputsAndEvaluationIdsAcrossRestartAndWeightChanges()
+    {
+        var state = BuatState();
+        var original = state.Peringkat();
+        var originalIds = original.Select(e => e.HasilDomain!.Id).ToArray();
+        state.AturBobotPersentase(10, 10, 10, 70);
+        state.Peringkat();
+        var count = state.Aktif.RiwayatEvaluasi.Count;
+        Assert.Equal(30, count);
+        var dtoMethod = typeof(AppState).GetMethod("KeDto", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        var dto = System.Text.Json.JsonSerializer.Deserialize<StateDto>(
+            System.Text.Json.JsonSerializer.Serialize((StateDto)dtoMethod.Invoke(state, null)!))!;
+        var restored = new AppState();
+        typeof(AppState).GetMethod("TerapkanDto", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+            .Invoke(null, [restored, dto]);
+        restored.ResetBobotAktif();
+        Assert.Equal(originalIds, restored.Peringkat().Select(e => e.HasilDomain!.Id));
+        Assert.Equal(count, restored.Aktif.RiwayatEvaluasi.Count);
+        var history = restored.Aktif.RiwayatEvaluasi.First();
+        Assert.Equal(120, history.Input!.Komponen.LuasM2);
+        Assert.NotEmpty(history.Input.Bahan.SumberProperti!);
+        Assert.Equal(state.Aktif.StableId, history.Input.Proyek!.Id);
+    }
+
+    [Fact]
+    public async Task ReportCapturesCanonicalPersistedEvaluationIdsAndOnlyChosenComponent()
+    {
+        var evaluations = new EvaluasiRepositoryInMemory();
+        var batches = new BatchEvaluasiRepositoryInMemory(evaluations);
+        var scoring = new SuitabilityScoringService(new MaterialRepositoryInMemory([]),
+            new ProyekRepositoryInMemory(), batches, evaluations);
+        var state = BuatState(scoring);
+        state.Aktif.TambahKomponen(new Komponen { Jenis = JenisKomponen.Atap, Luas = 90 });
+        var ranking = state.Peringkat();
+        var codes = ranking.Take(2).Select(e => state.Item(e.Bahan).Kode).ToHashSet();
+        var snapshot = await ReportSnapshotFactory.BuildAsync(state, JenisKomponen.Dinding, 30, true, codes);
+        Assert.Equal(Domain.JenisKomponen.Dinding, Assert.Single(snapshot.Komponen).Jenis);
+        foreach (var simulation in snapshot.SimulasiHorizon)
+            Assert.NotNull(await evaluations.GetByIdAsync(simulation.EvaluasiId));
+    }
+
+    [Fact]
     public void RenderUlangMemakaiEvaluasiYangSamaSampaiInputBerubah()
     {
         var state = BuatState();
@@ -148,7 +190,8 @@ public sealed class ComparisonStateTests
     private static AppState BuatState(SuitabilityScoringService? scoring = null)
     {
         var state = scoring is null ? new AppState() : new AppState(scoring);
-        var proyek = new Bangunan { Id = 1, Kota = "Jakarta", DatabaseId = Guid.NewGuid() };
+        var proyek = new Bangunan { Id = 1, Nama = "Proyek uji", Kota = "Jakarta",
+            Latitude = -6.2, Longitude = 106.8, DatabaseId = Guid.NewGuid() };
         proyek.TambahKomponen(new Komponen { Jenis = JenisKomponen.Dinding, Luas = 120, DatabaseId = Guid.NewGuid() });
         state.Proyek.Add(proyek);
         state.ProyekAktifId = 1;

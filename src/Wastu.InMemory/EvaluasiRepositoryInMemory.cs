@@ -11,7 +11,7 @@ namespace Wastu.InMemory;
 public sealed class EvaluasiRepositoryInMemory : IEvaluasiRepository
 {
     private readonly ConcurrentDictionary<Guid, Evaluasi> _evaluasi = new();
-    private readonly ConcurrentDictionary<(Guid EvaluasiId, int HorizonTahun, string VersiModel), SimulasiEmisi> _simulasi = new();
+    private readonly ConcurrentDictionary<(Guid EvaluasiId, int HorizonTahun, string VersiModel, double FaktorPenuaanA), SimulasiEmisi> _simulasi = new();
 
     /// <inheritdoc />
     public Task<IReadOnlyList<Evaluasi>> ListByKomponenAsync(Guid komponenId, CancellationToken ct = default)
@@ -46,16 +46,15 @@ public sealed class EvaluasiRepositoryInMemory : IEvaluasiRepository
     {
         ArgumentNullException.ThrowIfNull(simulasi);
         string versi = simulasi.VersiModel ?? "v2.0";
-        _simulasi[(simulasi.EvaluasiId, simulasi.HorizonTahun, versi)] = simulasi;
+        _simulasi[(simulasi.EvaluasiId, simulasi.HorizonTahun, versi, simulasi.FaktorPenuaanA)] = simulasi;
         return Task.CompletedTask;
     }
 
     /// <summary>
     /// Hasil simulasi yang tersimpan untuk sebuah evaluasi dan horizon tahun.
     /// </summary>
-    public SimulasiEmisi? AmbilSimulasi(Guid evaluasiId, int horizonTahun = 30, string versiModel = "v2.0")
-        => _simulasi.GetValueOrDefault((evaluasiId, horizonTahun, versiModel))
-           ?? _simulasi.Values.FirstOrDefault(s => s.EvaluasiId == evaluasiId && s.HorizonTahun == horizonTahun);
+    public SimulasiEmisi? AmbilSimulasi(Guid evaluasiId, int horizonTahun = 30, string versiModel = "v2.0", double faktorPenuaanA = 0.5)
+        => _simulasi.GetValueOrDefault((evaluasiId, horizonTahun, versiModel, faktorPenuaanA));
 
     /// <summary>
     /// Mengambil semua simulasi yang tersimpan untuk sebuah evaluasi.

@@ -195,7 +195,7 @@ public sealed class DesktopWorkflowService
                     _backend.MaterialRepository, config).SimulateSnapshotAsync(domain, item.Bahan.UsiaPakaiTahun, horizon, ct);
             string hash = domain.HashInput ?? Domain.Scoring.SuitabilityScoringService.HitungHash(
                 new Domain.Komponen(domain.KomponenId, p.StableId, item.DataDomain.Jenis,
-                    p.LuasKomponen(item.Jenis)), p.ProfilIklim!.KeDomain(),
+                    p.LuasKomponen(item.Jenis)), p.ProfilIklim!.KeDomain(p.ZonaWaktu),
                 _state.KatalogAktif.Where(k => k.Jenis == item.Jenis).Select(k => k.DataDomain).ToArray(), _state.BobotAktif);
             var entry = new SimulationHistoryEntry(hash, item.DataDomain.Id, item.Bahan.UsiaPakaiTahun, simulation, domain.EmisiAwalKg);
             result.Add(entry);
@@ -216,6 +216,16 @@ public sealed class DesktopWorkflowService
         // The project and inputs were captured before the dialog/await.
         var project = _state.Proyek.Single(p => p.StableId == snapshot.ProyekId);
         var report = await _reports.ExportSnapshotAsync(snapshot, path, ct);
+        project.TambahLaporan(WorkflowMapper.DariDomain(report));
+        if (!_state.ModeBacaSaja) _state.Ubah();
+        return report;
+    }
+
+    public async Task<Domain.Services.Laporan> RegenerateReportAsync(Guid id, string path, CancellationToken ct = default)
+    {
+        var project = _state.Proyek.Single(p => p.Laporan.Any(l => l.Id == id));
+        var original = project.Laporan.Single(l => l.Id == id);
+        var report = await _reports.RegenerateAsync(WorkflowMapper.KeDomain(original), path, ct);
         project.TambahLaporan(WorkflowMapper.DariDomain(report));
         if (!_state.ModeBacaSaja) _state.Ubah();
         return report;

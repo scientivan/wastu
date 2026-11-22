@@ -80,7 +80,8 @@ public sealed class EvaluasiRepositoryEf : IEvaluasiRepository
         SimulasiEmisiEntity? baris = await db.SimulasiEmisi
             .FirstOrDefaultAsync(x => x.EvaluasiId == simulasi.EvaluasiId
                 && x.HorizonTahun == simulasi.HorizonTahun
-                && x.VersiModel == versi, ct)
+                && x.VersiModel == versi
+                && x.FaktorPenuaanA == simulasi.FaktorPenuaanA, ct)
             .ConfigureAwait(false);
 
         if (baris is null)

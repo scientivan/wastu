@@ -217,6 +217,7 @@ public sealed class WastuDbContext : DbContext
         b.Property(x => x.VersiModel).HasColumnName("versi_model").HasDefaultValue("v2.0").IsRequired();
         b.Property(x => x.HashInput).HasColumnName("hash_input");
         b.Property(x => x.DihitungPadaUtc).HasColumnName("dihitung_pada_utc");
+        b.Property(x => x.InputSnapshotJson).HasColumnName("input_snapshot_json").HasColumnType("jsonb");
 
         b.HasIndex(x => x.KomponenId).HasDatabaseName("evaluasi_komponen_id_idx");
         b.HasIndex(x => x.BahanId).HasDatabaseName("evaluasi_bahan_id_idx");
@@ -259,7 +260,7 @@ public sealed class WastuDbContext : DbContext
         b.Property(x => x.FaktorPenuaanA).HasColumnName("faktor_penuaan_a").HasDefaultValue(0.5);
         b.Property(x => x.DihitungPadaUtc).HasColumnName("dihitung_pada_utc");
 
-        b.HasIndex(x => new { x.EvaluasiId, x.HorizonTahun, x.VersiModel })
+        b.HasIndex(x => new { x.EvaluasiId, x.HorizonTahun, x.VersiModel, x.FaktorPenuaanA })
             .IsUnique()
             .HasDatabaseName("uk_simulasi_emisi_evaluasi_horizon_versi");
 

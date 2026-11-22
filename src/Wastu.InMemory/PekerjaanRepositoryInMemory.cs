@@ -8,6 +8,7 @@ public sealed class PekerjaanRepositoryInMemory : IPekerjaanRepository
 {
     private readonly ConcurrentDictionary<Guid, Pekerjaan> _pekerjaan = new();
     private readonly List<KeputusanJadwal> _keputusan = new();
+    private readonly Dictionary<Guid, string> _keputusanTerakhir = new();
 
     public Task<IReadOnlyList<Pekerjaan>> ListByProyekAsync(Guid proyekId, CancellationToken ct = default)
     {
@@ -28,19 +29,7 @@ public sealed class PekerjaanRepositoryInMemory : IPekerjaanRepository
         ArgumentNullException.ThrowIfNull(pekerjaan);
         _pekerjaan[pekerjaan.Id] = pekerjaan;
 
-        if (pekerjaan.Status == StatusPekerjaan.Terkunci && pekerjaan.TanggalDikunci.HasValue)
-        {
-            lock (_keputusan)
-            {
-                _keputusan.Add(new KeputusanJadwal(
-                    pekerjaan.TanggalDikunci.Value,
-                    StatusKelayakanCuaca.Layak,
-                    ["Jadwal dikunci oleh pengguna."],
-                    Terkunci: true,
-                    DikunciPadaUtc: pekerjaan.TerakhirDiperbaruiUtc,
-                    Konfirmasi: pekerjaan.Konfirmasi));
-            }
-        }
+        CatatKeputusan(pekerjaan);
 
         return Task.CompletedTask;
     }
@@ -50,21 +39,27 @@ public sealed class PekerjaanRepositoryInMemory : IPekerjaanRepository
         ArgumentNullException.ThrowIfNull(pekerjaan);
         _pekerjaan[pekerjaan.Id] = pekerjaan;
 
-        if (pekerjaan.Status == StatusPekerjaan.Terkunci && pekerjaan.TanggalDikunci.HasValue)
+        CatatKeputusan(pekerjaan);
+        return Task.CompletedTask;
+    }
+
+    private void CatatKeputusan(Pekerjaan pekerjaan)
+    {
+        var decision = pekerjaan.KeputusanTerakhir;
+        if (decision is null && pekerjaan.TanggalDikunci is { } date)
+            decision = new KeputusanJadwal(date, StatusKelayakanCuaca.DataTidakTersedia,
+                ["Keputusan legacy tanpa snapshot cuaca; kelayakan belum terverifikasi."], Terkunci: true,
+                DikunciPadaUtc: pekerjaan.TerakhirDiperbaruiUtc, Konfirmasi: pekerjaan.Konfirmasi);
+        if (decision is not null)
         {
             lock (_keputusan)
             {
-                _keputusan.Add(new KeputusanJadwal(
-                    pekerjaan.TanggalDikunci.Value,
-                    StatusKelayakanCuaca.Layak,
-                    ["Jadwal dikunci oleh pengguna."],
-                    Terkunci: true,
-                    DikunciPadaUtc: pekerjaan.TerakhirDiperbaruiUtc,
-                    Konfirmasi: pekerjaan.Konfirmasi));
+                string fingerprint = System.Text.Json.JsonSerializer.Serialize(decision);
+                if (_keputusanTerakhir.GetValueOrDefault(pekerjaan.Id) == fingerprint) return;
+                _keputusanTerakhir[pekerjaan.Id] = fingerprint;
+                _keputusan.Add(decision with { Catatan = decision.Catatan.ToArray() });
             }
         }
-
-        return Task.CompletedTask;
     }
 
     public Task DeleteAsync(Guid id, CancellationToken ct = default)

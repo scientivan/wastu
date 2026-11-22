@@ -16,6 +16,7 @@ public sealed record ProfilIklim
     {
     }
 
+    [System.Text.Json.Serialization.JsonConstructor]
     public ProfilIklim(
         double curahHujanTahunanMm,
         double kelembapanRataPct,

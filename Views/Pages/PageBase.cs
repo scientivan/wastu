@@ -9,6 +9,8 @@ public abstract class PageBase : UserControl
     public ShellView Shell { get; set; } = null!;
 
     private int _revision = -1;
+    private AppState? _session;
+    private Guid? _projectId;
     private (bool, bool) _tier;
 
     protected static AppState S => App.State;
@@ -17,12 +19,15 @@ public abstract class PageBase : UserControl
     public void Show(bool force)
     {
         var tier = (Viewport.Width <= 1200, Viewport.Width >= 1700);
-        if (!force && _revision == S.Revisi && tier == _tier)
+        if (!force && ReferenceEquals(_session, S) && _projectId == S.Aktif?.StableId
+            && _revision == S.Revisi && tier == _tier)
         {
             OnRevisit();
             return;
         }
         _revision = S.Revisi;
+        _session = S;
+        _projectId = S.Aktif?.StableId;
         _tier = tier;
         Refresh();
     }
