@@ -8,9 +8,10 @@ public sealed record ItemKatalog(Bahan Bahan, JenisKomponen Jenis, string Gambar
 
     internal Domain.Bahan DataDomain { get; } = new(DatabaseId ?? Guid.NewGuid(), Bahan.Nama,
         (Domain.JenisKomponen)Jenis, Bahan.KonduktivitasTermal, Bahan.KetahananLembap,
-        Bahan.KetahananKorosi, Bahan.UsiaPakaiTahun, Bahan.FaktorEmisi, Bahan.DataSource);
+        Bahan.KetahananKorosi, Bahan.UsiaPakaiTahun, Bahan.FaktorEmisi, Bahan.DataSource,
+        Bahan.SusunanKetebalan, 1, Bahan.SumberProperti);
 
-    internal static ItemKatalog DariDomain(Domain.Bahan data, int index)
+    internal static ItemKatalog DariDomain(Domain.Bahan data, int index = 0)
     {
         var jenis = (JenisKomponen)data.Jenis;
         return new ItemKatalog(new Bahan
@@ -22,8 +23,34 @@ public sealed record ItemKatalog(Bahan Bahan, JenisKomponen Jenis, string Gambar
             KetahananKorosi = data.KetahananKorosi,
             UsiaPakaiTahun = data.UsiaPakaiNominalTahun,
             FaktorEmisi = data.FaktorEmisi,
-            DataSource = data.SumberData
-        }, jenis, jenis == JenisKomponen.Atap ? "tile" : "concrete", data.Id);
+            DataSource = data.SumberData,
+            SusunanKetebalan = data.SusunanKetebalan,
+            SumberProperti = data.SumberProperti ?? []
+        }, jenis, TentukanGambar(data), data.Id);
+    }
+
+    internal static string TentukanGambar(Domain.Bahan data)
+    {
+        var nama = data.Nama.ToLowerInvariant();
+        if (data.Jenis == Domain.JenisKomponen.Atap)
+        {
+            if (nama.Contains("beton")) return "concrete";
+            if (nama.Contains("keramik") || nama.Contains("tanah liat") || nama.Contains("aspal")) return "tile";
+            if (nama.Contains("baja") || nama.Contains("seng") || nama.Contains("sandwich") || nama.Contains("metal") || nama.Contains("zincalume") || nama.Contains("aluminium")) return "metal";
+            if (nama.Contains("fiber") || nama.Contains("constantra")) return "fiber";
+            if (nama.Contains("kayu") || nama.Contains("sirap")) return "timber";
+            return "tile";
+        }
+        else
+        {
+            if (nama.Contains("ringan") || nama.Contains("hebel") || nama.Contains("silikat") || nama.Contains("aac")) return "aac";
+            if (nama.Contains("bata merah") || nama.Contains("bata ekspos") || nama.Contains("interlock")) return "brick";
+            if (nama.Contains("beton") || nama.Contains("batako") || nama.Contains("andesit") || nama.Contains("batu")) return "concrete";
+            if (nama.Contains("gipsum") || nama.Contains("fiber") || nama.Contains("eps") || nama.Contains("semen")) return "fiber";
+            if (nama.Contains("kayu") || nama.Contains("papan")) return "timber";
+            if (nama.Contains("acp") || nama.Contains("aluminium") || nama.Contains("metal")) return "metal";
+            return "concrete";
+        }
     }
 }
 
@@ -63,51 +90,11 @@ public static class Katalog
 
     private static List<ItemKatalog> Bangun()
     {
-        // nama, jenis, konduktivitas, lembap, korosi, usia, faktor emisi, gambar, sumber
-        (string, JenisKomponen, double, int, int, int, double, string, string)[] data =
-        [
-            ("Bata Ringan AAC", JenisKomponen.Dinding, .16, 4, 5, 40, 112, "aac", "Referensi literatur"),
-            ("Bata Merah", JenisKomponen.Dinding, .7, 3, 4, 40, 180, "brick", "Referensi literatur"),
-            ("Batako Beton", JenisKomponen.Dinding, 1.1, 3, 4, 30, 160, "concrete", "Referensi literatur"),
-            ("Panel Semen Fiber", JenisKomponen.Dinding, .35, 5, 5, 35, 140, "fiber", "Referensi literatur"),
-            ("Bata Hebel Presisi", JenisKomponen.Dinding, .17, 4, 5, 40, 130, "aac", "Estimasi awal"),
-            ("Bata Ekspos", JenisKomponen.Dinding, .75, 3, 4, 45, 170, "brick", "Estimasi awal"),
-            ("Bata Keramik Berongga", JenisKomponen.Dinding, .35, 4, 4, 45, 120, "brick", "Estimasi awal"),
-            ("Bata Kapur Pasir", JenisKomponen.Dinding, .9, 3, 4, 38, 145, "concrete", "Estimasi awal"),
-            ("Panel GRC", JenisKomponen.Dinding, .4, 4, 5, 32, 120, "fiber", "Estimasi awal"),
-            ("Blok Beton Ringan", JenisKomponen.Dinding, .3, 4, 4, 36, 145, "aac", "Estimasi awal"),
-            ("Panel Beton Pracetak", JenisKomponen.Dinding, 1.4, 5, 5, 60, 260, "concrete", "Estimasi awal"),
-            ("Dinding Tanah Padat", JenisKomponen.Dinding, .65, 2, 4, 38, 70, "brick", "Estimasi awal"),
-            ("Bata Interlock", JenisKomponen.Dinding, .55, 3, 4, 40, 100, "brick", "Estimasi awal"),
-            ("Panel Insulasi Sandwich", JenisKomponen.Dinding, .08, 5, 3, 30, 170, "fiber", "Estimasi awal"),
-            ("Bata Beton Berpori", JenisKomponen.Dinding, .22, 4, 4, 35, 138, "aac", "Estimasi awal"),
-            ("Genteng Tanah Liat", JenisKomponen.Atap, .7, 5, 5, 50, 95, "tile", "Referensi literatur"),
-            ("Atap Metal Berlapis", JenisKomponen.Atap, 45, 5, 3, 35, 105, "metal", "Referensi literatur"),
-            ("Genteng Beton", JenisKomponen.Atap, 1.5, 4, 5, 40, 180, "concrete", "Referensi literatur"),
-            ("Atap Fiber Semen", JenisKomponen.Atap, .45, 4, 4, 35, 130, "fiber", "Referensi literatur"),
-            ("Genteng Keramik Glasir", JenisKomponen.Atap, .9, 5, 5, 55, 155, "tile", "Estimasi awal"),
-            ("Atap Zincalume", JenisKomponen.Atap, 50, 5, 3, 30, 120, "metal", "Estimasi awal"),
-            ("Atap Aluminium", JenisKomponen.Atap, 205, 5, 4, 40, 140, "metal", "Estimasi awal"),
-            ("Sirap Kayu Terlindungi", JenisKomponen.Atap, .14, 2, 2, 25, 70, "timber", "Estimasi awal"),
-            ("Genteng Bitumen", JenisKomponen.Atap, .19, 4, 4, 30, 90, "metal", "Estimasi awal"),
-            ("Panel Atap Sandwich", JenisKomponen.Atap, .07, 5, 4, 30, 175, "metal", "Estimasi awal"),
-        ];
-
-        var hasil = new List<ItemKatalog>(data.Length);
-        for (var i = 0; i < data.Length; i++)
+        var sumber = Wastu.Data.KatalogSeed.BahanDomain;
+        var hasil = new List<ItemKatalog>(sumber.Count);
+        for (var i = 0; i < sumber.Count; i++)
         {
-            var (nama, jenis, termal, lembap, korosi, usia, faktor, gambar, sumber) = data[i];
-            hasil.Add(new ItemKatalog(new Bahan
-            {
-                Id = i,
-                Nama = nama,
-                KonduktivitasTermal = termal,
-                KetahananLembap = lembap,
-                KetahananKorosi = korosi,
-                UsiaPakaiTahun = usia,
-                FaktorEmisi = faktor,
-                DataSource = sumber
-            }, jenis, gambar));
+            hasil.Add(ItemKatalog.DariDomain(sumber[i], i));
         }
         return hasil;
     }

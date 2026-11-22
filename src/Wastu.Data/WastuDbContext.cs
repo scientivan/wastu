@@ -293,6 +293,8 @@ public sealed class WastuDbContext : DbContext
             .WithMany()
             .HasForeignKey(x => x.BahanId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        b.HasData(KatalogSeed.SumberProperti);
     }
 
     private static void AturBatchEvaluasi(ModelBuilder modelBuilder)

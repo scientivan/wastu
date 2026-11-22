@@ -26,7 +26,34 @@ public sealed class MaterialRepositoryEf : IMaterialRepository
             .ToListAsync(ct)
             .ConfigureAwait(false);
 
-        return baris.Select(Pemetaan.KeDomain).ToList();
+        var ids = baris.Select(b => b.Id).ToList();
+        var sumberList = await db.SumberPropertiBahan.AsNoTracking()
+            .Where(s => ids.Contains(s.BahanId))
+            .OrderBy(s => s.Properti)
+            .ToListAsync(ct)
+            .ConfigureAwait(false);
+
+        var sumberByBahan = sumberList
+            .GroupBy(s => s.BahanId)
+            .ToDictionary(g => g.Key, g => (IReadOnlyList<SumberPropertiBahan>)g.Select(Pemetaan.KeDomain).ToList());
+
+        return baris.Select(b =>
+        {
+            sumberByBahan.TryGetValue(b.Id, out var sumber);
+            return new Bahan(
+                b.Id,
+                b.Nama,
+                b.Jenis,
+                b.KonduktivitasTermal,
+                b.KetahananLembap,
+                b.KetahananKorosi,
+                b.UsiaPakaiNominalTahun,
+                b.FaktorEmisi,
+                b.SumberData,
+                b.SusunanKetebalan,
+                b.VersiData,
+                sumber ?? []);
+        }).ToList();
     }
 
     public async Task<Bahan?> GetByIdAsync(Guid id, CancellationToken ct = default)
@@ -37,6 +64,29 @@ public sealed class MaterialRepositoryEf : IMaterialRepository
             .FirstOrDefaultAsync(b => b.Id == id, ct)
             .ConfigureAwait(false);
 
-        return baris is null ? null : Pemetaan.KeDomain(baris);
+        if (baris is null)
+        {
+            return null;
+        }
+
+        var sumberList = await db.SumberPropertiBahan.AsNoTracking()
+            .Where(s => s.BahanId == id)
+            .OrderBy(s => s.Properti)
+            .ToListAsync(ct)
+            .ConfigureAwait(false);
+
+        return new Bahan(
+            baris.Id,
+            baris.Nama,
+            baris.Jenis,
+            baris.KonduktivitasTermal,
+            baris.KetahananLembap,
+            baris.KetahananKorosi,
+            baris.UsiaPakaiNominalTahun,
+            baris.FaktorEmisi,
+            baris.SumberData,
+            baris.SusunanKetebalan,
+            baris.VersiData,
+            sumberList.Select(Pemetaan.KeDomain).ToList());
     }
 }

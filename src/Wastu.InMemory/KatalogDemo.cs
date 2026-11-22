@@ -3,25 +3,20 @@ using Wastu.Domain;
 namespace Wastu.InMemory;
 
 /// <summary>
-/// Katalog bahan demo, 15 untuk dinding dan 10 untuk atap.
+/// Katalog bahan demo kanonik, 15 untuk dinding dan 10 untuk atap.
 /// </summary>
 /// <remarks>
-/// <para>
-/// Seluruh nilai disalin apa adanya dari baris <c>bahan</c> pada
-/// <c>database/03_seed_supabase.sql</c>, termasuk id dan string sumber data.
-/// Tidak ada angka yang ditulis tangan di sini, supaya katalog demo dan seed
-/// tidak bisa berbeda diam-diam. Jumlahnya juga memenuhi syarat PRD §4.1:
-/// minimal 15 dinding dan 10 atap.
-/// </para>
-/// <para>
-/// Ini adalah data demo untuk adapter in-memory, bukan sumber kebenaran.
-/// Sumber kebenaran tetap tabel <c>bahan</c>, karena PRD §F2 mengharuskan admin
-/// bisa menambah bahan lewat basis data tanpa mengubah kode aplikasi. Jangan
-/// dipakai untuk menambah katalog sungguhan.
-/// </para>
+/// Seluruh nilai selaras 100% dengan KatalogSeed di Wastu.Data dan database/03_seed_supabase.sql,
+/// termasuk ID GUID, properti numerik, susunan ketebalan, dan sumber per-properti terstruktur.
 /// </remarks>
 public static class KatalogDemo
 {
+    private const string Ice =
+        "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)";
+
+    private const string Epd =
+        "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)";
+
     /// <summary>Bahan dinding, 15 entri.</summary>
     public static IReadOnlyList<Bahan> Dinding { get; } =
     [
@@ -33,7 +28,16 @@ public static class KatalogDemo
             5,
             50,
             120,
-            "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)"),
+            Ice,
+            "Dinding beton bertulang in-situ tebal 150 mm dengan tulangan ganda dan selimut beton 25 mm",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000001"), "konduktivitas_termal", "SNI 03-6389-2000 & literatur termal", "2000", null, StatusVerifikasiProperti.Perkiraan, "Nilai konduktivitas termal ekuivalen beton bertulang normal (1,4 W/(m·K)) untuk dinding struktur masif"),
+                new(new Guid("d0000000-0000-4000-8000-000000000001"), "ketahanan_lembap", "Tinjauan durabilitas beton tropis", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 4/5: beton bertulang bermutu baik dengan selimut memadai memiliki ketahanan tinggi terhadap penetrasi air dan kelembapan"),
+                new(new Guid("d0000000-0000-4000-8000-000000000001"), "ketahanan_korosi", "Tinjauan durabilitas beton terhadap klorida pesisir", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 5/5: ketahanan korosi sangat baik bila rasio air-semen dan ketebalan selimut beton memenuhi standar paparan laut"),
+                new(new Guid("d0000000-0000-4000-8000-000000000001"), "usia_pakai_nominal", "Panduan Penilaian Kondisi Bangunan Gedung (Kementerian PUPR)", "2018", null, StatusVerifikasiProperti.Perkiraan, "Usia pakai nominal 50 tahun untuk struktur beton bertulang dengan pemeliharaan teratur sebelum penyesuaian iklim proyek"),
+                new(new Guid("d0000000-0000-4000-8000-000000000001"), "faktor_emisi", "ICE Database v3.0 (University of Bath)", "v3.0", "https://circularecology.com/embodied-carbon-footprint-database.html", StatusVerifikasiProperti.Perkiraan, "Faktor emisi 120 kgCO2e/m2 dinormalisasi untuk dinding beton tebal 150 mm dengan rasio tulangan 1%"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000002"),
             "Beton ringan (hebel autoclave)",
             JenisKomponen.Dinding,
@@ -42,16 +46,34 @@ public static class KatalogDemo
             3,
             30,
             60,
-            "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)"),
+            Ice,
+            "Blok AAC tebal 100 mm + spesi perekat tipis 3 mm + plesteran aci 10 mm",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000002"), "konduktivitas_termal", "SNI 03-6389-2000 & katalog teknis AAC", "2000", null, StatusVerifikasiProperti.Perkiraan, "Konduktivitas termal blok aerasi 0,12 W/(m·K) memberikan sifat insulasi termal superior pada selubung bangunan"),
+                new(new Guid("d0000000-0000-4000-8000-000000000002"), "ketahanan_lembap", "Tinjauan material AAC pada iklim lembap", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 5/5: struktur pori tertutup AAC menghambat penyerapan kapiler air bila diberi plesteran pelindung"),
+                new(new Guid("d0000000-0000-4000-8000-000000000002"), "ketahanan_korosi", "Literatur keawetan dinding anorganik", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 3/5: bahan matriks silikat tidak berkarat namun pengikat logam instalasi rentan terhadap udara garam"),
+                new(new Guid("d0000000-0000-4000-8000-000000000002"), "usia_pakai_nominal", "Pedoman Teknis Umur Bangunan PUPR", "2018", null, StatusVerifikasiProperti.Perkiraan, "Usia pakai nominal 30 tahun dalam kondisi terlindung finishing plesteran luar"),
+                new(new Guid("d0000000-0000-4000-8000-000000000002"), "faktor_emisi", "ICE Database v3.0 (University of Bath)", "v3.0", "https://circularecology.com/embodied-carbon-footprint-database.html", StatusVerifikasiProperti.Perkiraan, "Faktor emisi 60 kgCO2e/m2 untuk dinding AAC tebal 100 mm termasuk mortar tipis perekat"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000003"),
             "Beton polibeton (hebel)",
             JenisKomponen.Dinding,
-            0.10,
+            0.1,
             4,
             3,
             25,
             55,
-            "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)"),
+            Ice,
+            "Blok polibeton/hebel tebal 100 mm + plesteran 10 mm",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000003"), "konduktivitas_termal", "Studi konduktivitas beton polimer ringan", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Konduktivitas 0,10 W/(m·K) untuk blok polibeton beragregat polistirena"),
+                new(new Guid("d0000000-0000-4000-8000-000000000003"), "ketahanan_lembap", "Karakteristik serapan air komposit semen-polimer", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 4/5: serapan air rendah berkat komponen polimer sintetik penolak air"),
+                new(new Guid("d0000000-0000-4000-8000-000000000003"), "ketahanan_korosi", "Tinjauan korosi pengikat dinding komposit", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 3/5: tahan korosi kimia moderat pada lingkungan garam atmosferik"),
+                new(new Guid("d0000000-0000-4000-8000-000000000003"), "usia_pakai_nominal", "Estimasi siklus hidup bahan bangunan alternatif", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Usia nominal 25 tahun sebelum penggantian atau renovasi selubung dinding"),
+                new(new Guid("d0000000-0000-4000-8000-000000000003"), "faktor_emisi", "ICE Database v3.0 (University of Bath)", "v3.0", "https://circularecology.com/embodied-carbon-footprint-database.html", StatusVerifikasiProperti.Perkiraan, "Faktor emisi 55 kgCO2e/m2 dinormalisasi untuk perakitan dinding polibeton tebal 100 mm"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000004"),
             "Bata merah + plester aci",
             JenisKomponen.Dinding,
@@ -60,7 +82,16 @@ public static class KatalogDemo
             4,
             30,
             65,
-            "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)"),
+            Ice,
+            "Dinding bata merah 1/2 batu tebal 100 mm + plester aci 15 mm di kedua sisi (total 130 mm)",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000004"), "konduktivitas_termal", "SNI 03-6389-2000 (Konservasi Energi Selubung)", "2000", null, StatusVerifikasiProperti.Perkiraan, "Konduktivitas termal 0,70 W/(m·K) untuk dinding bata merah konvensional berplester aci dua sisi"),
+                new(new Guid("d0000000-0000-4000-8000-000000000004"), "ketahanan_lembap", "Pedoman Bahan Bangunan Tropis Lembap", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 3/5: plesteran melindungi bata dari air hujan langsung, namun rembesan kapiler dapat terjadi bila waterproofing kurang baik"),
+                new(new Guid("d0000000-0000-4000-8000-000000000004"), "ketahanan_korosi", "Ketahanan atmosferik pasangan bata keramik", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 4/5: keramik tanah liat bakar stabil terhadap udara pesisir, degradasi hanya pada mortar spesi bila terkena garam tinggi"),
+                new(new Guid("d0000000-0000-4000-8000-000000000004"), "usia_pakai_nominal", "Panduan Penilaian Kondisi Bangunan Gedung (Kementerian PUPR)", "2018", null, StatusVerifikasiProperti.Perkiraan, "Usia nominal 30 tahun dalam pemeliharaan berkala pengecatan ulang selubung"),
+                new(new Guid("d0000000-0000-4000-8000-000000000004"), "faktor_emisi", "ICE Database v3.0 (University of Bath)", "v3.0", "https://circularecology.com/embodied-carbon-footprint-database.html", StatusVerifikasiProperti.Perkiraan, "Faktor emisi 65 kgCO2e/m2 mencakup pembakaran bata merah tradisional dan semen mortar plesteran"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000005"),
             "Bata merah tanpa plester",
             JenisKomponen.Dinding,
@@ -69,7 +100,16 @@ public static class KatalogDemo
             4,
             20,
             35,
-            "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)"),
+            Ice,
+            "Dinding bata merah ekspos 1/2 batu tebal 100 mm tanpa plesteran pelindung",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000005"), "konduktivitas_termal", "SNI 03-6389-2000", "2000", null, StatusVerifikasiProperti.Perkiraan, "Konduktivitas termal 0,70 W/(m·K) untuk pasangan bata merah ekspos"),
+                new(new Guid("d0000000-0000-4000-8000-000000000005"), "ketahanan_lembap", "Studi porositas bata merah lokal", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 2/5: tanpa lapisan plester, air hujan mudah terserap ke dalam pori bata merah"),
+                new(new Guid("d0000000-0000-4000-8000-000000000005"), "ketahanan_korosi", "Ketahanan kimia tanah liat bakar", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 4/5: tanah liat bakar tidak terkorosi oleh garam, namun pengkristalan garam dapat memicu spalling"),
+                new(new Guid("d0000000-0000-4000-8000-000000000005"), "usia_pakai_nominal", "Pedoman Teknis PUPR", "2018", null, StatusVerifikasiProperti.Perkiraan, "Usia pakai nominal 20 tahun lebih pendek karena erosi cuaca langsung pada permukaan bata"),
+                new(new Guid("d0000000-0000-4000-8000-000000000005"), "faktor_emisi", "ICE Database v3.0 (University of Bath)", "v3.0", "https://circularecology.com/embodied-carbon-footprint-database.html", StatusVerifikasiProperti.Perkiraan, "Faktor emisi 35 kgCO2e/m2 lebih rendah karena tidak menggunakan semen plesteran acian ganda"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000006"),
             "Bata beton (concrete block)",
             JenisKomponen.Dinding,
@@ -78,7 +118,16 @@ public static class KatalogDemo
             4,
             40,
             55,
-            "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)"),
+            Ice,
+            "Batako semen berongga tebal 100 mm + plesteran spesi 15 mm",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000006"), "konduktivitas_termal", "SNI 03-6389-2000", "2000", null, StatusVerifikasiProperti.Perkiraan, "Konduktivitas termal 0,60 W/(m·K) memperhitungkan rongga udara internal batako beton"),
+                new(new Guid("d0000000-0000-4000-8000-000000000006"), "ketahanan_lembap", "Karakteristik batako beton semen", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 4/5: ketahanan lembap baik dengan plesteran semen kedap air"),
+                new(new Guid("d0000000-0000-4000-8000-000000000006"), "ketahanan_korosi", "Ketahanan atmosferik beton agregat pasir", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 4/5: tahan terhadap paparan garam pesisir bila spesi diplester rapat"),
+                new(new Guid("d0000000-0000-4000-8000-000000000006"), "usia_pakai_nominal", "Pedoman Bangunan PUPR", "2018", null, StatusVerifikasiProperti.Perkiraan, "Usia nominal 40 tahun untuk dinding blok beton dengan perawatan berkala"),
+                new(new Guid("d0000000-0000-4000-8000-000000000006"), "faktor_emisi", "ICE Database v3.0 (University of Bath)", "v3.0", "https://circularecology.com/embodied-carbon-footprint-database.html", StatusVerifikasiProperti.Perkiraan, "Faktor emisi 55 kgCO2e/m2 untuk batako berongga tebal 100 mm"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000007"),
             "Bata silikat berpori",
             JenisKomponen.Dinding,
@@ -87,7 +136,16 @@ public static class KatalogDemo
             3,
             30,
             62,
-            "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)"),
+            Epd,
+            "Blok kalsium silikat tebal 100 mm + mortar perekat 3 mm",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000007"), "konduktivitas_termal", "EPD kalsium silikat regional & data pabrikan", "2021", null, StatusVerifikasiProperti.Perkiraan, "Konduktivitas 0,11 W/(m·K) dari struktur mikro berpori kalsium silikat hidrat"),
+                new(new Guid("d0000000-0000-4000-8000-000000000007"), "ketahanan_lembap", "Tinjauan ketahanan lembap silikat berpori", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 5/5: ketahanan terhadap kelembapan tinggi dan stabilitas dimensi sangat baik"),
+                new(new Guid("d0000000-0000-4000-8000-000000000007"), "ketahanan_korosi", "Evaluasi ketahanan kimia dinding anorganik", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 3/5: ketahanan kimia moderat terhadap lingkungan garam"),
+                new(new Guid("d0000000-0000-4000-8000-000000000007"), "usia_pakai_nominal", "Estimasi umur teknis bahan silikat", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Usia nominal 30 tahun pada iklim tropis dengan perlindungan selubung eksterior"),
+                new(new Guid("d0000000-0000-4000-8000-000000000007"), "faktor_emisi", "EPD generik pabrikan regional", "2021", null, StatusVerifikasiProperti.Perkiraan, "Faktor emisi 62 kgCO2e/m2 berdasarkan deklarasi lingkungan produk kalsium silikat"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000008"),
             "Bata ringan honeycomb (AHCC)",
             JenisKomponen.Dinding,
@@ -96,7 +154,16 @@ public static class KatalogDemo
             3,
             30,
             50,
-            "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)"),
+            Epd,
+            "Blok beton seluler berstruktur sarang lebah tebal 100 mm + acian 5 mm",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000008"), "konduktivitas_termal", "Studi termal beton seluler sarang lebah", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Konduktivitas 0,09 W/(m·K) berkat geometri sel berongga sarang lebah yang memerangkap udara"),
+                new(new Guid("d0000000-0000-4000-8000-000000000008"), "ketahanan_lembap", "Tinjauan durabilitas beton seluler", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 4/5: dinding seluler tahan air dengan pelapisan skim coat kedap"),
+                new(new Guid("d0000000-0000-4000-8000-000000000008"), "ketahanan_korosi", "Ketahanan kimia dinding ringan", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 3/5: ketahanan korosi sedang terhadap salinitas pesisir"),
+                new(new Guid("d0000000-0000-4000-8000-000000000008"), "usia_pakai_nominal", "Panduan teknis umur beton seluler", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Usia nominal 30 tahun dalam pemeliharaan standar selubung"),
+                new(new Guid("d0000000-0000-4000-8000-000000000008"), "faktor_emisi", "EPD generik pabrikan regional", "2021", null, StatusVerifikasiProperti.Perkiraan, "Faktor emisi 50 kgCO2e/m2 karena pengurangan massa bahan baku semen per m2 dinding"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000009"),
             "Panel gipsum (dry wall)",
             JenisKomponen.Dinding,
@@ -105,7 +172,16 @@ public static class KatalogDemo
             1,
             20,
             28,
-            "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)"),
+            Ice,
+            "Papan gipsum tebal 12 mm ganda pada rangka baja ringan 50 mm (total 74 mm)",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000009"), "konduktivitas_termal", "SNI 03-6389-2000 & katalog teknis gipsum", "2000", null, StatusVerifikasiProperti.Perkiraan, "Konduktivitas termal 0,25 W/(m·K) untuk papan gipsum standar"),
+                new(new Guid("d0000000-0000-4000-8000-000000000009"), "ketahanan_lembap", "Karakteristik gipsum pada RH tinggi", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 1/5: gipsum standar sangat rentan melunak dan berjamur pada kelembapan tinggi tropis"),
+                new(new Guid("d0000000-0000-4000-8000-000000000009"), "ketahanan_korosi", "Evaluasi rangka hollow dan gipsum", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 1/5: sekrup dan rangka hollow sangat rentan korosi di dekat pesisir bila terpapar udara laut"),
+                new(new Guid("d0000000-0000-4000-8000-000000000009"), "usia_pakai_nominal", "Buku Pedoman Teknis Konstruksi Kering", "2019", null, StatusVerifikasiProperti.Perkiraan, "Usia nominal 20 tahun bila dipakai pada partisi interior kering terlindung"),
+                new(new Guid("d0000000-0000-4000-8000-000000000009"), "faktor_emisi", "ICE Database v3.0 (University of Bath)", "v3.0", "https://circularecology.com/embodied-carbon-footprint-database.html", StatusVerifikasiProperti.Perkiraan, "Faktor emisi 28 kgCO2e/m2 untuk sistem partisi gipsum ringan"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000010"),
             "Papan kayu + pelindung",
             JenisKomponen.Dinding,
@@ -114,16 +190,34 @@ public static class KatalogDemo
             1,
             15,
             32,
-            "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)"),
+            Ice,
+            "Papan kayu kamper/meranti tebal 20 mm dengan lapisan pelindung politur dan rangka kayu",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000010"), "konduktivitas_termal", "SNI 03-6389-2000 & literatur kayu tropis", "2000", null, StatusVerifikasiProperti.Perkiraan, "Konduktivitas 0,15 W/(m·K) untuk kayu olahan tropis kering udara"),
+                new(new Guid("d0000000-0000-4000-8000-000000000010"), "ketahanan_lembap", "Studi keawetan kayu tropis terhadap rayap dan jamur", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 1/5: kayu sangat rentan pelapukan dan serangan jamur/rayap pada iklim lembap tinggi"),
+                new(new Guid("d0000000-0000-4000-8000-000000000010"), "ketahanan_korosi", "Degradasi material organik pada lingkungan garam", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 1/5: garam mempercepat pelapukan serat kayu dan korosi pada paku/pengencang logam"),
+                new(new Guid("d0000000-0000-4000-8000-000000000010"), "usia_pakai_nominal", "Pedoman Teknis Keawetan Kayu Konstruksi PUPR", "2018", null, StatusVerifikasiProperti.Perkiraan, "Usia pakai nominal 15 tahun membutuhkan pemeliharaan pelapisan pelindung rutin setiap 2-3 tahun"),
+                new(new Guid("d0000000-0000-4000-8000-000000000010"), "faktor_emisi", "ICE Database v3.0 (University of Bath)", "v3.0", "https://circularecology.com/embodied-carbon-footprint-database.html", StatusVerifikasiProperti.Perkiraan, "Faktor emisi 32 kgCO2e/m2 mencakup pemanenan, penggergajian, pengeringan kiln, dan coating"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000011"),
             "Panel ACP (aluminium composite)",
             JenisKomponen.Dinding,
-            0.20,
+            0.2,
             5,
             5,
             25,
             190,
-            "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)"),
+            Epd,
+            "Panel komposit aluminium tebal 4 mm (kulit Al 0,5 mm + inti mineral) pada sub-konstruksi hollow",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000011"), "konduktivitas_termal", "Katalog teknis ACP PVDF & uji laboratorium", "2020", null, StatusVerifikasiProperti.Perkiraan, "Konduktivitas 0,20 W/(m·K) merepresentasikan sistem panel komposit Al-polietilena/mineral"),
+                new(new Guid("d0000000-0000-4000-8000-000000000011"), "ketahanan_lembap", "Uji cuaca buatan cladding aluminium", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 5/5: lembaran aluminium kedap air sempurna tidak terpengaruh kelembapan udara"),
+                new(new Guid("d0000000-0000-4000-8000-000000000011"), "ketahanan_korosi", "Uji ketahanan kabut garam ASTM B117 coating PVDF", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 5/5: lapisan PVDF memberikan proteksi maksimal terhadap udara bergaram pesisir"),
+                new(new Guid("d0000000-0000-4000-8000-000000000011"), "usia_pakai_nominal", "Garansi teknis pabrikan cladding arsitektural", "2020", null, StatusVerifikasiProperti.Perkiraan, "Usia nominal 25 tahun untuk panel eksterior dengan coating fluorokarbon"),
+                new(new Guid("d0000000-0000-4000-8000-000000000011"), "faktor_emisi", "EPD generik pabrikan regional", "2021", null, StatusVerifikasiProperti.Perkiraan, "Faktor emisi tinggi 190 kgCO2e/m2 disebabkan energi peleburan bijih aluminium primer"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000012"),
             "Panel EPS + plester",
             JenisKomponen.Dinding,
@@ -132,7 +226,16 @@ public static class KatalogDemo
             4,
             25,
             70,
-            "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)"),
+            Epd,
+            "Panel insulasi expanded polystyrene tebal 50 mm dengan kawat kasa dan plesteran polimer 10 mm",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000012"), "konduktivitas_termal", "ISO 10456 / katalog sistem EIFS", "2019", null, StatusVerifikasiProperti.Perkiraan, "Konduktivitas 0,04 W/(m·K) mencerminkan daya insulasi termal superior busa polistirena tebal 50 mm"),
+                new(new Guid("d0000000-0000-4000-8000-000000000012"), "ketahanan_lembap", "Tinjauan sistem plester polimer tahan cuaca", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 4/5: plester polimer elastis menghambat penetrasi air hujan ke inti insulasi"),
+                new(new Guid("d0000000-0000-4000-8000-000000000012"), "ketahanan_korosi", "Ketahanan atmosferik material sintetis", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 4/5: EPS kebal terhadap garam, kawat kasa galvanis terlindungi plester tebal"),
+                new(new Guid("d0000000-0000-4000-8000-000000000012"), "usia_pakai_nominal", "Pedoman sistem insulasi dinding eksterior", "2019", null, StatusVerifikasiProperti.Perkiraan, "Usia pakai nominal 25 tahun bila plesteran terawat tanpa retak tembus"),
+                new(new Guid("d0000000-0000-4000-8000-000000000012"), "faktor_emisi", "EPD generik pabrikan regional", "2021", null, StatusVerifikasiProperti.Perkiraan, "Faktor emisi 70 kgCO2e/m2 mencakup bahan petrokimia polistirena dan aditif polimer"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000013"),
             "Semen fiber reinforced board",
             JenisKomponen.Dinding,
@@ -141,7 +244,16 @@ public static class KatalogDemo
             5,
             30,
             75,
-            "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)"),
+            Epd,
+            "Papan semen fiber tebal 8 mm rangkap pada rangka stud baja ringan 50 mm",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000013"), "konduktivitas_termal", "SNI 03-6389-2000 & uji pabrikan papan semen", "2000", null, StatusVerifikasiProperti.Perkiraan, "Konduktivitas 0,25 W/(m·K) untuk papan komposit semen berserat selulosa"),
+                new(new Guid("d0000000-0000-4000-8000-000000000013"), "ketahanan_lembap", "Uji rendam dan ketahanan air semen fiber", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 5/5: bahan tidak lapuk atau membengkak bila terkena air hujan terus-menerus"),
+                new(new Guid("d0000000-0000-4000-8000-000000000013"), "ketahanan_korosi", "Evaluasi ketahanan kimia semen komposit di daerah pesisir", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 5/5: matriks semen tidak korosif terhadap udara asin laut"),
+                new(new Guid("d0000000-0000-4000-8000-000000000013"), "usia_pakai_nominal", "Katalog teknis umur layan semen fiber", "2020", null, StatusVerifikasiProperti.Perkiraan, "Usia pakai nominal 30 tahun tahan rayap, jamur, dan cuaca tropis basah"),
+                new(new Guid("d0000000-0000-4000-8000-000000000013"), "faktor_emisi", "EPD generik pabrikan regional", "2021", null, StatusVerifikasiProperti.Perkiraan, "Faktor emisi 75 kgCO2e/m2 untuk lembaran semen fiber 8 mm dan subframe baja ringan"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000014"),
             "Batu andesit (dinding batu alam)",
             JenisKomponen.Dinding,
@@ -150,7 +262,16 @@ public static class KatalogDemo
             5,
             60,
             45,
-            "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)"),
+            Ice,
+            "Pelapis batu andesit tebal 20 mm direkatkan pada dinding bata pendukung dengan mortar 20 mm",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000014"), "konduktivitas_termal", "SNI 03-6389-2000 & literatur sifat batuan beku", "2000", null, StatusVerifikasiProperti.Perkiraan, "Konduktivitas 3,00 W/(m·K) merepresentasikan sifat batu andesit padat yang sangat cepat menghantarkan panas"),
+                new(new Guid("d0000000-0000-4000-8000-000000000014"), "ketahanan_lembap", "Karakteristik serapan air batu alam andesit", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 5/5: batuan vulkanik andesit memiliki densitas tinggi dan ketahanan luar biasa terhadap air"),
+                new(new Guid("d0000000-0000-4000-8000-000000000014"), "ketahanan_korosi", "Ketahanan pelapukan kimia batuan beku", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 5/5: sangat tahan terhadap udara pesisir bersalinitas tinggi dan asam lingkungan"),
+                new(new Guid("d0000000-0000-4000-8000-000000000014"), "usia_pakai_nominal", "Pedoman Teknis Bangunan Warisan dan Monumen PUPR", "2018", null, StatusVerifikasiProperti.Perkiraan, "Usia nominal 60 tahun terpanjang di antara bahan dinding dengan daya tahan mekanik tinggi"),
+                new(new Guid("d0000000-0000-4000-8000-000000000014"), "faktor_emisi", "ICE Database v3.0 (University of Bath)", "v3.0", "https://circularecology.com/embodied-carbon-footprint-database.html", StatusVerifikasiProperti.Perkiraan, "Faktor emisi 45 kgCO2e/m2 rendah karena proses produksi hanya pemotongan batu tanpa pembakaran kimia"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000015"),
             "Beton geopolimer",
             JenisKomponen.Dinding,
@@ -159,7 +280,16 @@ public static class KatalogDemo
             4,
             45,
             90,
-            "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)"),
+            Epd,
+            "Dinding panel precast beton geopolimer abu terbang (fly ash) tebal 100 mm",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000015"), "konduktivitas_termal", "Studi sifat termofisik beton geopolimer fly-ash", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Konduktivitas 0,45 W/(m·K) lebih rendah daripada beton konvensional berkat struktur pori alkali-teraktivasi"),
+                new(new Guid("d0000000-0000-4000-8000-000000000015"), "ketahanan_lembap", "Uji permeabilitas beton geopolimer", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 4/5: mikrostruktur padat memberikan ketahanan penetrasi air dan kelembapan yang solid"),
+                new(new Guid("d0000000-0000-4000-8000-000000000015"), "ketahanan_korosi", "Ketahanan korosi sulfat dan klorida geopolimer", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 4/5: ketahanan kimia terhadap klorida garam lebih unggul dibanding semen Portland biasa"),
+                new(new Guid("d0000000-0000-4000-8000-000000000015"), "usia_pakai_nominal", "Estimasi durabilitas geopolimer jangka panjang", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Usia pakai nominal 45 tahun untuk komponen pracetak berkualitas terkontrol"),
+                new(new Guid("d0000000-0000-4000-8000-000000000015"), "faktor_emisi", "EPD generik pabrikan regional", "2021", null, StatusVerifikasiProperti.Perkiraan, "Faktor emisi 90 kgCO2e/m2 menghemat jejak karbon klinker semen dengan memanfaatkan abu terbang industri"),
+            ]),
     ];
 
     /// <summary>Bahan atap, 10 entri.</summary>
@@ -173,7 +303,16 @@ public static class KatalogDemo
             5,
             40,
             150,
-            "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)"),
+            Ice,
+            "Plat dak beton bertulang tebal 120 mm + lapisan screed waterproofing 30 mm",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000016"), "konduktivitas_termal", "SNI 03-6389-2000", "2000", null, StatusVerifikasiProperti.Perkiraan, "Konduktivitas termal 1,40 W/(m·K) untuk plat beton bertulang horizontal tebal 120 mm"),
+                new(new Guid("d0000000-0000-4000-8000-000000000016"), "ketahanan_lembap", "Standar waterproofing atap dak beton", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 5/5: ketahanan lembap maksimal bila didukung membran waterproofing dan kemiringan drainase memadai"),
+                new(new Guid("d0000000-0000-4000-8000-000000000016"), "ketahanan_korosi", "Evaluasi selimut beton pelindung tulangan pesisir", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 5/5: beton bermutu tinggi dengan aditif kedap air sangat tahan terhadap garam pesisir"),
+                new(new Guid("d0000000-0000-4000-8000-000000000016"), "usia_pakai_nominal", "Pedoman Teknis Bangunan Gedung PUPR", "2018", null, StatusVerifikasiProperti.Perkiraan, "Usia nominal 40 tahun dengan inspeksi dan pelapisan ulang waterproofing berkala"),
+                new(new Guid("d0000000-0000-4000-8000-000000000016"), "faktor_emisi", "ICE Database v3.0 (University of Bath)", "v3.0", "https://circularecology.com/embodied-carbon-footprint-database.html", StatusVerifikasiProperti.Perkiraan, "Faktor emisi 150 kgCO2e/m2 mencakup massa beton bertulang tebal dan lapisan screed pelindung"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000017"),
             "Genting beton",
             JenisKomponen.Atap,
@@ -182,7 +321,16 @@ public static class KatalogDemo
             5,
             30,
             95,
-            "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)"),
+            Ice,
+            "Genting beton tebal nominal 12 mm terpasang pada reng kayu/baja ringan dengan tumpangan standar",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000017"), "konduktivitas_termal", "SNI 03-6389-2000", "2000", null, StatusVerifikasiProperti.Perkiraan, "Konduktivitas 0,40 W/(m·K) merepresentasikan sistem penutup atap genting beton dengan celah ventilasi reng"),
+                new(new Guid("d0000000-0000-4000-8000-000000000017"), "ketahanan_lembap", "Uji impermeabilitas genting beton", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 5/5: lapisan cat polimer akrilik eksterior mencegah infiltrasi air hujan tropis lebat"),
+                new(new Guid("d0000000-0000-4000-8000-000000000017"), "ketahanan_korosi", "Durabilitas genting semen di lingkungan garam", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 5/5: bahan matriks beton anorganik tidak berkarat di daerah pesisir"),
+                new(new Guid("d0000000-0000-4000-8000-000000000017"), "usia_pakai_nominal", "Panduan Spesifikasi Material Atap PUPR", "2018", null, StatusVerifikasiProperti.Perkiraan, "Usia nominal 30 tahun dengan pengecatan ulang setiap 10 tahun untuk menjaga kerapatan air"),
+                new(new Guid("d0000000-0000-4000-8000-000000000017"), "faktor_emisi", "ICE Database v3.0 (University of Bath)", "v3.0", "https://circularecology.com/embodied-carbon-footprint-database.html", StatusVerifikasiProperti.Perkiraan, "Faktor emisi 95 kgCO2e/m2 mencakup pencetakan beton dan curing uap genting per m2 atap terpasang"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000018"),
             "Genting keramik",
             JenisKomponen.Atap,
@@ -191,7 +339,16 @@ public static class KatalogDemo
             5,
             35,
             110,
-            "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)"),
+            Ice,
+            "Genting keramik berglasir tebal nominal 12 mm pada reng baja ringan",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000018"), "konduktivitas_termal", "SNI 03-6389-2000", "2000", null, StatusVerifikasiProperti.Perkiraan, "Konduktivitas 0,30 W/(m·K) merepresentasikan perakitan genting keramik dengan bantalan udara bawah atap"),
+                new(new Guid("d0000000-0000-4000-8000-000000000018"), "ketahanan_lembap", "Uji daya serap air genting keramik berglasir", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 5/5: lapisan glasir vitreous membuat genting hampir nol serapan air (<1%)"),
+                new(new Guid("d0000000-0000-4000-8000-000000000018"), "ketahanan_korosi", "Ketahanan kimia lapisan glasir keramik", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 5/5: sangat kebal terhadap asam, garam laut, dan radiasi ultraviolet"),
+                new(new Guid("d0000000-0000-4000-8000-000000000018"), "usia_pakai_nominal", "Pedoman Teknis Konstruksi Atap PUPR", "2018", null, StatusVerifikasiProperti.Perkiraan, "Usia nominal 35 tahun dengan ketahanan warna dan bentuk yang sangat stabil"),
+                new(new Guid("d0000000-0000-4000-8000-000000000018"), "faktor_emisi", "ICE Database v3.0 (University of Bath)", "v3.0", "https://circularecology.com/embodied-carbon-footprint-database.html", StatusVerifikasiProperti.Perkiraan, "Faktor emisi 110 kgCO2e/m2 akibat proses pembakaran kiln suhu tinggi >1.100 C"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000019"),
             "Genting tanah liat",
             JenisKomponen.Atap,
@@ -200,7 +357,16 @@ public static class KatalogDemo
             4,
             30,
             85,
-            "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)"),
+            Ice,
+            "Genting tanah liat tradisional bakar tebal nominal 10 mm pada reng dan usuk bambu/kayu",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000019"), "konduktivitas_termal", "SNI 03-6389-2000", "2000", null, StatusVerifikasiProperti.Perkiraan, "Konduktivitas 0,60 W/(m·K) untuk genting tanah liat pres konvensional tanpa glasir"),
+                new(new Guid("d0000000-0000-4000-8000-000000000019"), "ketahanan_lembap", "Karakteristik tanah liat bakar lokal", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 4/5: mengalirkan air hujan dengan baik pada sudut kemiringan atap >30 derajat"),
+                new(new Guid("d0000000-0000-4000-8000-000000000019"), "ketahanan_korosi", "Ketahanan atmosferik produk keramik tradisional", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 4/5: tanah liat bakar kebal karat, lumut dapat tumbuh di daerah sangat lembap"),
+                new(new Guid("d0000000-0000-4000-8000-000000000019"), "usia_pakai_nominal", "Pedoman Umur Bangunan PUPR", "2018", null, StatusVerifikasiProperti.Perkiraan, "Usia nominal 30 tahun umum digunakan pada rumah tapak tradisional Indonesia"),
+                new(new Guid("d0000000-0000-4000-8000-000000000019"), "faktor_emisi", "ICE Database v3.0 (University of Bath)", "v3.0", "https://circularecology.com/embodied-carbon-footprint-database.html", StatusVerifikasiProperti.Perkiraan, "Faktor emisi 85 kgCO2e/m2 untuk proses pembakaran genting tanah liat"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000020"),
             "Genteng aspal (shingle)",
             JenisKomponen.Atap,
@@ -209,7 +375,16 @@ public static class KatalogDemo
             2,
             20,
             80,
-            "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)"),
+            Epd,
+            "Genteng shingle bitumen tebal 3 mm di atas underlayment tahan air dan papan multipleks 9 mm",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000020"), "konduktivitas_termal", "Katalog teknis atap shingle bitumen", "2020", null, StatusVerifikasiProperti.Perkiraan, "Konduktivitas 0,08 W/(m·K) mencerminkan perakitan shingle aspal di atas papan kayu underlayment"),
+                new(new Guid("d0000000-0000-4000-8000-000000000020"), "ketahanan_lembap", "Evaluasi atap bitumen pada iklim tropis basah", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 3/5: bitumen kedap air tetapi rentan terhadap genangan air dan pelunakan suhu ekstrem"),
+                new(new Guid("d0000000-0000-4000-8000-000000000020"), "ketahanan_korosi", "Degradasi material bitumen akibat radiasi UV dan garam", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 2/5: butiran pelindung dapat terkikis angin laut dan paku shingle rentan korosi"),
+                new(new Guid("d0000000-0000-4000-8000-000000000020"), "usia_pakai_nominal", "Spesifikasi atap aspal fleksibel", "2020", null, StatusVerifikasiProperti.Perkiraan, "Usia nominal 20 tahun sebelum kehilangan butiran mineral dan kelenturan bitumen"),
+                new(new Guid("d0000000-0000-4000-8000-000000000020"), "faktor_emisi", "EPD generik pabrikan regional", "2021", null, StatusVerifikasiProperti.Perkiraan, "Faktor emisi 80 kgCO2e/m2 mencakup matriks serat kaca, aspal modifikasi, dan substrat papan"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000021"),
             "Baja galvanis (trapezium)",
             JenisKomponen.Atap,
@@ -218,7 +393,16 @@ public static class KatalogDemo
             2,
             15,
             90,
-            "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)"),
+            Ice,
+            "Lembaran baja profil gelombang 0,4 mm + insulasi glass wool foil 50 mm (sistem perakitan atap)",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000021"), "konduktivitas_termal", "SNI 03-6389-2000 & katalog sistem atap terinsulasi", "2000", null, StatusVerifikasiProperti.Perkiraan, "Nilai 0,05 W/(m·K) merepresentasikan konduktivitas termal ekuivalen sistem perakitan atap berinsulasi (lembaran baja profil + insulasi glass wool), bukan lembaran baja mentah (k ~50 W/(m·K))"),
+                new(new Guid("d0000000-0000-4000-8000-000000000021"), "ketahanan_lembap", "Tinjauan atap lembaran logam profil", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 3/5: lembaran baja kedap air tetapi rentan kebocoran pada sekrup pengikat dan sambungan tumpang"),
+                new(new Guid("d0000000-0000-4000-8000-000000000021"), "ketahanan_korosi", "Studi laju korosi lapisan seng galvanis di pesisir", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 2/5: lapisan galvanis seng standar cepat terkorosi pada jarak <5 km dari pantai akibat garam laut"),
+                new(new Guid("d0000000-0000-4000-8000-000000000021"), "usia_pakai_nominal", "Pedoman Teknis Atap Logam PUPR", "2018", null, StatusVerifikasiProperti.Perkiraan, "Usia pakai nominal 15 tahun sebelum karat merusak lembaran atap pada kondisi lingkungan non-agresif"),
+                new(new Guid("d0000000-0000-4000-8000-000000000021"), "faktor_emisi", "ICE Database v3.0 (University of Bath)", "v3.0", "https://circularecology.com/embodied-carbon-footprint-database.html", StatusVerifikasiProperti.Perkiraan, "Faktor emisi 90 kgCO2e/m2 untuk lembaran baja galvanis tebal 0,4 mm termasuk rangka sekrup"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000022"),
             "Baja AZ / galvalum",
             JenisKomponen.Atap,
@@ -227,7 +411,16 @@ public static class KatalogDemo
             4,
             20,
             105,
-            "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)"),
+            Epd,
+            "Lembaran profil galvalum (55% Al, 43.5% Zn) tebal 0,45 mm + insulasi bubble foil peredam panas",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000022"), "konduktivitas_termal", "Katalog teknis atap galvalum berinsulasi", "2020", null, StatusVerifikasiProperti.Perkiraan, "Nilai 0,05 W/(m·K) merepresentasikan konduktivitas termal ekuivalen perakitan atap dengan foil/insulasi termal penahan panas tropis, bukan lembaran logam telanjang"),
+                new(new Guid("d0000000-0000-4000-8000-000000000022"), "ketahanan_lembap", "Kinerja pelapis aluminium-seng pada iklim tropis", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 4/5: kedap air sangat baik dengan sistem sekrup berpenutup karet EPDM"),
+                new(new Guid("d0000000-0000-4000-8000-000000000022"), "ketahanan_korosi", "Uji korosi atmosferik paduan aluminium-seng 55%", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 4/5: paduan aluminium-seng memberikan perlindungan korosi hingga 4 kali lebih tahan dibanding galvanis murni"),
+                new(new Guid("d0000000-0000-4000-8000-000000000022"), "usia_pakai_nominal", "Garansi teknis pabrikan baja lapis AZ150", "2020", null, StatusVerifikasiProperti.Perkiraan, "Usia nominal 20 tahun di lingkungan tropis atmosferik normal"),
+                new(new Guid("d0000000-0000-4000-8000-000000000022"), "faktor_emisi", "EPD generik pabrikan regional", "2021", null, StatusVerifikasiProperti.Perkiraan, "Faktor emisi 105 kgCO2e/m2 mencakup baja lembaran lapis paduan Al-Zn tebal 0,45 mm"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000023"),
             "Seng (zink)",
             JenisKomponen.Atap,
@@ -236,7 +429,16 @@ public static class KatalogDemo
             1,
             12,
             130,
-            "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)"),
+            Ice,
+            "Lembaran seng gelombang BJLS tebal 0,3 mm tanpa insulasi termal tambahan",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000023"), "konduktivitas_termal", "SNI 03-6389-2000", "2000", null, StatusVerifikasiProperti.Perkiraan, "Nilai 0,11 W/(m·K) merepresentasikan konduktivitas ekuivalen susunan atap lembaran seng tipis dengan bantalan udara reng"),
+                new(new Guid("d0000000-0000-4000-8000-000000000023"), "ketahanan_lembap", "Perilaku seng gelombang terhadap kondensasi tropis", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 2/5: rentan kondensasi di sisi bawah lembaran dan karat putih bila terjebak air"),
+                new(new Guid("d0000000-0000-4000-8000-000000000023"), "ketahanan_korosi", "Laju korosi lembaran seng tipis pada atmosfer pantai", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 1/5: sangat cepat berkarat dan berlubang pada jarak dekat pantai karena lapisan pelindung sangat tipis"),
+                new(new Guid("d0000000-0000-4000-8000-000000000023"), "usia_pakai_nominal", "Pedoman Teknis PUPR", "2018", null, StatusVerifikasiProperti.Perkiraan, "Usia nominal 12 tahun sebelum karat tembus memerlukan penggantian lembaran atap"),
+                new(new Guid("d0000000-0000-4000-8000-000000000023"), "faktor_emisi", "ICE Database v3.0 (University of Bath)", "v3.0", "https://circularecology.com/embodied-carbon-footprint-database.html", StatusVerifikasiProperti.Perkiraan, "Faktor emisi 130 kgCO2e/m2 untuk lembaran seng galvanis tipis"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000024"),
             "Constantra / fiber cement",
             JenisKomponen.Atap,
@@ -245,7 +447,16 @@ public static class KatalogDemo
             3,
             25,
             100,
-            "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)"),
+            Epd,
+            "Lembaran atap serat krisotil/fiber semen tebal 4 mm gelombang pada gording baja ringan",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000024"), "konduktivitas_termal", "Katalog teknis atap fiber semen gelombang", "2020", null, StatusVerifikasiProperti.Perkiraan, "Konduktivitas 0,07 W/(m·K) mencerminkan sifat isolasi termal komposit semen serat bergelombang"),
+                new(new Guid("d0000000-0000-4000-8000-000000000024"), "ketahanan_lembap", "Uji impermeabilitas lembaran semen berserat", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 4/5: tidak melengkung atau lapuk akibat air hujan, ventilasi atap tetap diperlukan"),
+                new(new Guid("d0000000-0000-4000-8000-000000000024"), "ketahanan_korosi", "Ketahanan atmosferik semen fiber terhadap salinitas", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 3/5: lembaran semen tidak berkarat namun pengikat sekrup dapat berkarat di dekat laut"),
+                new(new Guid("d0000000-0000-4000-8000-000000000024"), "usia_pakai_nominal", "Pedoman Spesifikasi Material Penutup Atap PUPR", "2018", null, StatusVerifikasiProperti.Perkiraan, "Usia nominal 25 tahun untuk penutup atap komposit semen serat"),
+                new(new Guid("d0000000-0000-4000-8000-000000000024"), "faktor_emisi", "EPD generik pabrikan regional", "2021", null, StatusVerifikasiProperti.Perkiraan, "Faktor emisi 100 kgCO2e/m2 mencakup proses autoclaving dan penguatan serat komposit"),
+            ]),
         new(new Guid("d0000000-0000-4000-8000-000000000025"),
             "Panel sandwich (inti EPS)",
             JenisKomponen.Atap,
@@ -254,13 +465,23 @@ public static class KatalogDemo
             4,
             25,
             95,
-            "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)"),
+            Epd,
+            "Panel komposit atap kulit galvalum 0,35 mm ganda dengan inti peredam EPS tebal 50 mm",
+            1,
+            [
+                new(new Guid("d0000000-0000-4000-8000-000000000025"), "konduktivitas_termal", "ISO 10456 / katalog panel sandwich insulasi", "2019", null, StatusVerifikasiProperti.Perkiraan, "Nilai 0,04 W/(m·K) merepresentasikan konduktivitas termal efektif inti insulasi EPS tebal 50 mm"),
+                new(new Guid("d0000000-0000-4000-8000-000000000025"), "ketahanan_lembap", "Uji kekedapan sambungan interlocking atap sandwich", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 4/5: sistem sambungan overlap dengan sealant mencegah infiltrasi air hujan lebat"),
+                new(new Guid("d0000000-0000-4000-8000-000000000025"), "ketahanan_korosi", "Durabilitas lapisan galvalum pada panel insulasi", "v1.0", null, StatusVerifikasiProperti.Perkiraan, "Indeks 4/5: lapisan luar galvalum ber-coating cat oven tahan terhadap lingkungan korosif moderat"),
+                new(new Guid("d0000000-0000-4000-8000-000000000025"), "usia_pakai_nominal", "Spesifikasi umur layan panel atap terinsulasi", "2019", null, StatusVerifikasiProperti.Perkiraan, "Usia nominal 25 tahun selama lapisan pelindung dan sambungan sealant terjaga"),
+                new(new Guid("d0000000-0000-4000-8000-000000000025"), "faktor_emisi", "EPD generik pabrikan regional", "2021", null, StatusVerifikasiProperti.Perkiraan, "Faktor emisi 95 kgCO2e/m2 untuk panel sandwich 50 mm lengkap dengan dua sisi lembaran galvalum"),
+            ]),
     ];
 
-    /// <summary>Seluruh bahan demo, dinding lebih dulu lalu atap.</summary>
-    public static IReadOnlyList<Bahan> Semua { get; } = Dinding.Concat(Atap).ToList();
+    /// <summary>Seluruh bahan, 25 entri gabungan dinding dan atap.</summary>
+    public static IReadOnlyList<Bahan> Semua { get; } = [.. Dinding, .. Atap];
 
-    /// <summary>Adaptor in-memory yang sudah dimuat katalog demo.</summary>
-    public static MaterialRepositoryInMemory BuatRepository()
-        => new(Semua);
+    /// <summary>
+    /// Membuat adapter in-memory baru yang sudah terisi katalog demo kanonik.
+    /// </summary>
+    public static MaterialRepositoryInMemory BuatRepository() => new(Semua);
 }
