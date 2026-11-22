@@ -327,4 +327,51 @@ public class KatalogKanonikTests
         Assert.Equal("LCA EPD Dinamis", sEmisi!.Referensi);
         Assert.Equal("Jejak karbon manufaktur 48 kgCO2e/m2", sEmisi.CatatanKonversi);
     }
+
+    [PerluPostgreSql]
+    public async Task MigrateAsync_Memiliki25BahanDenganSusunanKetebalanDan125SumberPropertiIdentikSql()
+    {
+        await using var testDb = await PostgreSqlTestDatabase.CreateAsync();
+
+        await using (var db = testDb.Factory.CreateDbContext())
+        {
+            await db.Database.MigrateAsync();
+
+            var bahanEf = await db.Bahan.ToListAsync();
+            Assert.Equal(25, bahanEf.Count);
+            Assert.All(bahanEf, b => Assert.False(string.IsNullOrWhiteSpace(b.SusunanKetebalan)));
+
+            var sumberEf = await db.SumberPropertiBahan.ToListAsync();
+            Assert.Equal(125, sumberEf.Count);
+
+            string root = TemukanRootRepositori();
+            string sqlPath = Path.Combine(root, "database", "03_seed_supabase.sql");
+            string sql = await File.ReadAllTextAsync(sqlPath);
+
+            var rowsBahan = ParseSqlValues(sql, "bahan");
+            Assert.Equal(25, rowsBahan.Count);
+            foreach (var r in rowsBahan)
+            {
+                var id = new Guid(r[0]);
+                var b = bahanEf.FirstOrDefault(x => x.Id == id);
+                Assert.NotNull(b);
+                Assert.Equal(r[1], b!.Nama);
+                Assert.Equal(r[9], b.SusunanKetebalan);
+            }
+
+            var rowsSumber = ParseSqlValues(sql, "sumber_properti_bahan");
+            Assert.Equal(125, rowsSumber.Count);
+            foreach (var r in rowsSumber)
+            {
+                var id = new Guid(r[0]);
+                var s = sumberEf.FirstOrDefault(x => x.Id == id);
+                Assert.NotNull(s);
+                Assert.Equal(new Guid(r[1]), s!.BahanId);
+                Assert.Equal(r[2], s.Properti);
+                Assert.Equal(r[3], s.Referensi);
+                Assert.Equal(r[6].ToLowerInvariant(), s.Status.ToLowerInvariant());
+                Assert.Equal(r[7], s.CatatanKonversi);
+            }
+        }
+    }
 }

@@ -166,6 +166,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 1.3999999999999999,
                             Nama = "Beton bertulang (in-situ)",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
+                            SusunanKetebalan = "Dinding beton bertulang in-situ tebal 150 mm dengan tulangan ganda dan selimut beton 25 mm",
                             UsiaPakaiNominalTahun = 50.0,
                             VersiData = 1
                         },
@@ -179,6 +180,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.12,
                             Nama = "Beton ringan (hebel autoclave)",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
+                            SusunanKetebalan = "Blok AAC tebal 100 mm + spesi perekat tipis 3 mm + plesteran aci 10 mm",
                             UsiaPakaiNominalTahun = 30.0,
                             VersiData = 1
                         },
@@ -192,6 +194,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.10000000000000001,
                             Nama = "Beton polibeton (hebel)",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
+                            SusunanKetebalan = "Blok polibeton/hebel tebal 100 mm + plesteran 10 mm",
                             UsiaPakaiNominalTahun = 25.0,
                             VersiData = 1
                         },
@@ -205,6 +208,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.69999999999999996,
                             Nama = "Bata merah + plester aci",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
+                            SusunanKetebalan = "Dinding bata merah 1/2 batu tebal 100 mm + plester aci 15 mm di kedua sisi (total 130 mm)",
                             UsiaPakaiNominalTahun = 30.0,
                             VersiData = 1
                         },
@@ -218,6 +222,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.69999999999999996,
                             Nama = "Bata merah tanpa plester",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
+                            SusunanKetebalan = "Dinding bata merah ekspos 1/2 batu tebal 100 mm tanpa plesteran pelindung",
                             UsiaPakaiNominalTahun = 20.0,
                             VersiData = 1
                         },
@@ -231,6 +236,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.59999999999999998,
                             Nama = "Bata beton (concrete block)",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
+                            SusunanKetebalan = "Batako semen berongga tebal 100 mm + plesteran spesi 15 mm",
                             UsiaPakaiNominalTahun = 40.0,
                             VersiData = 1
                         },
@@ -244,6 +250,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.11,
                             Nama = "Bata silikat berpori",
                             SumberData = "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)",
+                            SusunanKetebalan = "Blok kalsium silikat tebal 100 mm + mortar perekat 3 mm",
                             UsiaPakaiNominalTahun = 30.0,
                             VersiData = 1
                         },
@@ -257,6 +264,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.089999999999999997,
                             Nama = "Bata ringan honeycomb (AHCC)",
                             SumberData = "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)",
+                            SusunanKetebalan = "Blok beton seluler berstruktur sarang lebah tebal 100 mm + acian 5 mm",
                             UsiaPakaiNominalTahun = 30.0,
                             VersiData = 1
                         },
@@ -270,6 +278,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.25,
                             Nama = "Panel gipsum (dry wall)",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
+                            SusunanKetebalan = "Papan gipsum tebal 12 mm ganda pada rangka baja ringan 50 mm (total 74 mm)",
                             UsiaPakaiNominalTahun = 20.0,
                             VersiData = 1
                         },
@@ -283,6 +292,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.14999999999999999,
                             Nama = "Papan kayu + pelindung",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
+                            SusunanKetebalan = "Papan kayu kamper/meranti tebal 20 mm dengan lapisan pelindung politur dan rangka kayu",
                             UsiaPakaiNominalTahun = 15.0,
                             VersiData = 1
                         },
@@ -296,6 +306,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.20000000000000001,
                             Nama = "Panel ACP (aluminium composite)",
                             SumberData = "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)",
+                            SusunanKetebalan = "Panel komposit aluminium tebal 4 mm (kulit Al 0,5 mm + inti mineral) pada sub-konstruksi hollow",
                             UsiaPakaiNominalTahun = 25.0,
                             VersiData = 1
                         },
@@ -309,6 +320,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.040000000000000001,
                             Nama = "Panel EPS + plester",
                             SumberData = "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)",
+                            SusunanKetebalan = "Panel insulasi expanded polystyrene tebal 50 mm dengan kawat kasa dan plesteran polimer 10 mm",
                             UsiaPakaiNominalTahun = 25.0,
                             VersiData = 1
                         },
@@ -322,6 +334,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.25,
                             Nama = "Semen fiber reinforced board",
                             SumberData = "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)",
+                            SusunanKetebalan = "Papan semen fiber tebal 8 mm rangkap pada rangka stud baja ringan 50 mm",
                             UsiaPakaiNominalTahun = 30.0,
                             VersiData = 1
                         },
@@ -335,6 +348,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 3.0,
                             Nama = "Batu andesit (dinding batu alam)",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
+                            SusunanKetebalan = "Pelapis batu andesit tebal 20 mm direkatkan pada dinding bata pendukung dengan mortar 20 mm",
                             UsiaPakaiNominalTahun = 60.0,
                             VersiData = 1
                         },
@@ -348,6 +362,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.45000000000000001,
                             Nama = "Beton geopolimer",
                             SumberData = "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)",
+                            SusunanKetebalan = "Dinding panel precast beton geopolimer abu terbang (fly ash) tebal 100 mm",
                             UsiaPakaiNominalTahun = 45.0,
                             VersiData = 1
                         },
@@ -361,6 +376,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 1.3999999999999999,
                             Nama = "Dak beton bertulang",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
+                            SusunanKetebalan = "Plat dak beton bertulang tebal 120 mm + lapisan screed waterproofing 30 mm",
                             UsiaPakaiNominalTahun = 40.0,
                             VersiData = 1
                         },
@@ -374,6 +390,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.40000000000000002,
                             Nama = "Genting beton",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
+                            SusunanKetebalan = "Genting beton tebal nominal 12 mm terpasang pada reng kayu/baja ringan dengan tumpangan standar",
                             UsiaPakaiNominalTahun = 30.0,
                             VersiData = 1
                         },
@@ -387,6 +404,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.29999999999999999,
                             Nama = "Genting keramik",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
+                            SusunanKetebalan = "Genting keramik berglasir tebal nominal 12 mm pada reng baja ringan",
                             UsiaPakaiNominalTahun = 35.0,
                             VersiData = 1
                         },
@@ -400,6 +418,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.59999999999999998,
                             Nama = "Genting tanah liat",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
+                            SusunanKetebalan = "Genting tanah liat tradisional bakar tebal nominal 10 mm pada reng dan usuk bambu/kayu",
                             UsiaPakaiNominalTahun = 30.0,
                             VersiData = 1
                         },
@@ -413,6 +432,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.080000000000000002,
                             Nama = "Genteng aspal (shingle)",
                             SumberData = "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)",
+                            SusunanKetebalan = "Genteng shingle bitumen tebal 3 mm di atas underlayment tahan air dan papan multipleks 9 mm",
                             UsiaPakaiNominalTahun = 20.0,
                             VersiData = 1
                         },
@@ -426,6 +446,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.050000000000000003,
                             Nama = "Baja galvanis (trapezium)",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
+                            SusunanKetebalan = "Lembaran baja profil gelombang 0,4 mm + insulasi glass wool foil 50 mm (sistem perakitan atap)",
                             UsiaPakaiNominalTahun = 15.0,
                             VersiData = 1
                         },
@@ -439,6 +460,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.050000000000000003,
                             Nama = "Baja AZ / galvalum",
                             SumberData = "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)",
+                            SusunanKetebalan = "Lembaran profil galvalum (55% Al, 43.5% Zn) tebal 0,45 mm + insulasi bubble foil peredam panas",
                             UsiaPakaiNominalTahun = 20.0,
                             VersiData = 1
                         },
@@ -452,6 +474,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.11,
                             Nama = "Seng (zink)",
                             SumberData = "ICE Database v3 (Bath) — perkiraan literatur, belum dikalibrasi untuk pasar Indonesia (PRD §11.4)",
+                            SusunanKetebalan = "Lembaran seng gelombang BJLS tebal 0,3 mm tanpa insulasi termal tambahan",
                             UsiaPakaiNominalTahun = 12.0,
                             VersiData = 1
                         },
@@ -465,6 +488,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.070000000000000007,
                             Nama = "Constantra / fiber cement",
                             SumberData = "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)",
+                            SusunanKetebalan = "Lembaran atap serat krisotil/fiber semen tebal 4 mm gelombang pada gording baja ringan",
                             UsiaPakaiNominalTahun = 25.0,
                             VersiData = 1
                         },
@@ -478,6 +502,7 @@ namespace Wastu.Data.Migrations
                             KonduktivitasTermal = 0.040000000000000001,
                             Nama = "Panel sandwich (inti EPS)",
                             SumberData = "EPD generik pabrikan regional — perkiraan literatur (PRD §11.4)",
+                            SusunanKetebalan = "Panel komposit atap kulit galvalum 0,35 mm ganda dengan inti peredam EPS tebal 50 mm",
                             UsiaPakaiNominalTahun = 25.0,
                             VersiData = 1
                         });
@@ -1347,6 +1372,1273 @@ namespace Wastu.Data.Migrations
                     b.ToTable("sumber_properti_bahan", null, t =>
                         {
                             t.HasCheckConstraint("sumber_properti_bahan_status_enum", "status IN ('perkiraan', 'terverifikasi', 'manual')");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000001"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000001"),
+                            CatatanKonversi = "Nilai konduktivitas termal ekuivalen beton bertulang normal (1,4 W/(m·K)) untuk dinding struktur masif",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "SNI 03-6389-2000 & literatur termal",
+                            Status = "perkiraan",
+                            Versi = "2000"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000001"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000001"),
+                            CatatanKonversi = "Indeks 4/5: beton bertulang bermutu baik dengan selimut memadai memiliki ketahanan tinggi terhadap penetrasi air dan kelembapan",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Tinjauan durabilitas beton tropis",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000001"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000001"),
+                            CatatanKonversi = "Indeks 5/5: ketahanan korosi sangat baik bila rasio air-semen dan ketebalan selimut beton memenuhi standar paparan laut",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Tinjauan durabilitas beton terhadap klorida pesisir",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000001"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000001"),
+                            CatatanKonversi = "Usia pakai nominal 50 tahun untuk struktur beton bertulang dengan pemeliharaan teratur sebelum penyesuaian iklim proyek",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Panduan Penilaian Kondisi Bangunan Gedung (Kementerian PUPR)",
+                            Status = "perkiraan",
+                            Versi = "2018"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000001"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000001"),
+                            CatatanKonversi = "Faktor emisi 120 kgCO2e/m2 dinormalisasi untuk dinding beton tebal 150 mm dengan rasio tulangan 1%",
+                            Properti = "faktor_emisi",
+                            Referensi = "ICE Database v3.0 (University of Bath)",
+                            Status = "perkiraan",
+                            Tautan = "https://circularecology.com/embodied-carbon-footprint-database.html",
+                            Versi = "v3.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000002"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000002"),
+                            CatatanKonversi = "Konduktivitas termal blok aerasi 0,12 W/(m·K) memberikan sifat insulasi termal superior pada selubung bangunan",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "SNI 03-6389-2000 & katalog teknis AAC",
+                            Status = "perkiraan",
+                            Versi = "2000"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000002"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000002"),
+                            CatatanKonversi = "Indeks 5/5: struktur pori tertutup AAC menghambat penyerapan kapiler air bila diberi plesteran pelindung",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Tinjauan material AAC pada iklim lembap",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000002"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000002"),
+                            CatatanKonversi = "Indeks 3/5: bahan matriks silikat tidak berkarat namun pengikat logam instalasi rentan terhadap udara garam",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Literatur keawetan dinding anorganik",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000002"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000002"),
+                            CatatanKonversi = "Usia pakai nominal 30 tahun dalam kondisi terlindung finishing plesteran luar",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Pedoman Teknis Umur Bangunan PUPR",
+                            Status = "perkiraan",
+                            Versi = "2018"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000002"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000002"),
+                            CatatanKonversi = "Faktor emisi 60 kgCO2e/m2 untuk dinding AAC tebal 100 mm termasuk mortar tipis perekat",
+                            Properti = "faktor_emisi",
+                            Referensi = "ICE Database v3.0 (University of Bath)",
+                            Status = "perkiraan",
+                            Tautan = "https://circularecology.com/embodied-carbon-footprint-database.html",
+                            Versi = "v3.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000003"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000003"),
+                            CatatanKonversi = "Konduktivitas 0,10 W/(m·K) untuk blok polibeton beragregat polistirena",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "Studi konduktivitas beton polimer ringan",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000003"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000003"),
+                            CatatanKonversi = "Indeks 4/5: serapan air rendah berkat komponen polimer sintetik penolak air",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Karakteristik serapan air komposit semen-polimer",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000003"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000003"),
+                            CatatanKonversi = "Indeks 3/5: tahan korosi kimia moderat pada lingkungan garam atmosferik",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Tinjauan korosi pengikat dinding komposit",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000003"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000003"),
+                            CatatanKonversi = "Usia nominal 25 tahun sebelum penggantian atau renovasi selubung dinding",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Estimasi siklus hidup bahan bangunan alternatif",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000003"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000003"),
+                            CatatanKonversi = "Faktor emisi 55 kgCO2e/m2 dinormalisasi untuk perakitan dinding polibeton tebal 100 mm",
+                            Properti = "faktor_emisi",
+                            Referensi = "ICE Database v3.0 (University of Bath)",
+                            Status = "perkiraan",
+                            Tautan = "https://circularecology.com/embodied-carbon-footprint-database.html",
+                            Versi = "v3.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000004"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000004"),
+                            CatatanKonversi = "Konduktivitas termal 0,70 W/(m·K) untuk dinding bata merah konvensional berplester aci dua sisi",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "SNI 03-6389-2000 (Konservasi Energi Selubung)",
+                            Status = "perkiraan",
+                            Versi = "2000"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000004"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000004"),
+                            CatatanKonversi = "Indeks 3/5: plesteran melindungi bata dari air hujan langsung, namun rembesan kapiler dapat terjadi bila waterproofing kurang baik",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Pedoman Bahan Bangunan Tropis Lembap",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000004"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000004"),
+                            CatatanKonversi = "Indeks 4/5: keramik tanah liat bakar stabil terhadap udara pesisir, degradasi hanya pada mortar spesi bila terkena garam tinggi",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Ketahanan atmosferik pasangan bata keramik",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000004"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000004"),
+                            CatatanKonversi = "Usia nominal 30 tahun dalam pemeliharaan berkala pengecatan ulang selubung",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Panduan Penilaian Kondisi Bangunan Gedung (Kementerian PUPR)",
+                            Status = "perkiraan",
+                            Versi = "2018"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000004"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000004"),
+                            CatatanKonversi = "Faktor emisi 65 kgCO2e/m2 mencakup pembakaran bata merah tradisional dan semen mortar plesteran",
+                            Properti = "faktor_emisi",
+                            Referensi = "ICE Database v3.0 (University of Bath)",
+                            Status = "perkiraan",
+                            Tautan = "https://circularecology.com/embodied-carbon-footprint-database.html",
+                            Versi = "v3.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000005"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000005"),
+                            CatatanKonversi = "Konduktivitas termal 0,70 W/(m·K) untuk pasangan bata merah ekspos",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "SNI 03-6389-2000",
+                            Status = "perkiraan",
+                            Versi = "2000"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000005"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000005"),
+                            CatatanKonversi = "Indeks 2/5: tanpa lapisan plester, air hujan mudah terserap ke dalam pori bata merah",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Studi porositas bata merah lokal",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000005"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000005"),
+                            CatatanKonversi = "Indeks 4/5: tanah liat bakar tidak terkorosi oleh garam, namun pengkristalan garam dapat memicu spalling",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Ketahanan kimia tanah liat bakar",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000005"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000005"),
+                            CatatanKonversi = "Usia pakai nominal 20 tahun lebih pendek karena erosi cuaca langsung pada permukaan bata",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Pedoman Teknis PUPR",
+                            Status = "perkiraan",
+                            Versi = "2018"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000005"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000005"),
+                            CatatanKonversi = "Faktor emisi 35 kgCO2e/m2 lebih rendah karena tidak menggunakan semen plesteran acian ganda",
+                            Properti = "faktor_emisi",
+                            Referensi = "ICE Database v3.0 (University of Bath)",
+                            Status = "perkiraan",
+                            Tautan = "https://circularecology.com/embodied-carbon-footprint-database.html",
+                            Versi = "v3.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000006"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000006"),
+                            CatatanKonversi = "Konduktivitas termal 0,60 W/(m·K) memperhitungkan rongga udara internal batako beton",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "SNI 03-6389-2000",
+                            Status = "perkiraan",
+                            Versi = "2000"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000006"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000006"),
+                            CatatanKonversi = "Indeks 4/5: ketahanan lembap baik dengan plesteran semen kedap air",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Karakteristik batako beton semen",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000006"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000006"),
+                            CatatanKonversi = "Indeks 4/5: tahan terhadap paparan garam pesisir bila spesi diplester rapat",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Ketahanan atmosferik beton agregat pasir",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000006"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000006"),
+                            CatatanKonversi = "Usia nominal 40 tahun untuk dinding blok beton dengan perawatan berkala",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Pedoman Bangunan PUPR",
+                            Status = "perkiraan",
+                            Versi = "2018"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000006"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000006"),
+                            CatatanKonversi = "Faktor emisi 55 kgCO2e/m2 untuk batako berongga tebal 100 mm",
+                            Properti = "faktor_emisi",
+                            Referensi = "ICE Database v3.0 (University of Bath)",
+                            Status = "perkiraan",
+                            Tautan = "https://circularecology.com/embodied-carbon-footprint-database.html",
+                            Versi = "v3.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000007"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000007"),
+                            CatatanKonversi = "Konduktivitas 0,11 W/(m·K) dari struktur mikro berpori kalsium silikat hidrat",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "EPD kalsium silikat regional & data pabrikan",
+                            Status = "perkiraan",
+                            Versi = "2021"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000007"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000007"),
+                            CatatanKonversi = "Indeks 5/5: ketahanan terhadap kelembapan tinggi dan stabilitas dimensi sangat baik",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Tinjauan ketahanan lembap silikat berpori",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000007"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000007"),
+                            CatatanKonversi = "Indeks 3/5: ketahanan kimia moderat terhadap lingkungan garam",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Evaluasi ketahanan kimia dinding anorganik",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000007"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000007"),
+                            CatatanKonversi = "Usia nominal 30 tahun pada iklim tropis dengan perlindungan selubung eksterior",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Estimasi umur teknis bahan silikat",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000007"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000007"),
+                            CatatanKonversi = "Faktor emisi 62 kgCO2e/m2 berdasarkan deklarasi lingkungan produk kalsium silikat",
+                            Properti = "faktor_emisi",
+                            Referensi = "EPD generik pabrikan regional",
+                            Status = "perkiraan",
+                            Versi = "2021"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000008"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000008"),
+                            CatatanKonversi = "Konduktivitas 0,09 W/(m·K) berkat geometri sel berongga sarang lebah yang memerangkap udara",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "Studi termal beton seluler sarang lebah",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000008"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000008"),
+                            CatatanKonversi = "Indeks 4/5: dinding seluler tahan air dengan pelapisan skim coat kedap",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Tinjauan durabilitas beton seluler",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000008"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000008"),
+                            CatatanKonversi = "Indeks 3/5: ketahanan korosi sedang terhadap salinitas pesisir",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Ketahanan kimia dinding ringan",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000008"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000008"),
+                            CatatanKonversi = "Usia nominal 30 tahun dalam pemeliharaan standar selubung",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Panduan teknis umur beton seluler",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000008"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000008"),
+                            CatatanKonversi = "Faktor emisi 50 kgCO2e/m2 karena pengurangan massa bahan baku semen per m2 dinding",
+                            Properti = "faktor_emisi",
+                            Referensi = "EPD generik pabrikan regional",
+                            Status = "perkiraan",
+                            Versi = "2021"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000009"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000009"),
+                            CatatanKonversi = "Konduktivitas termal 0,25 W/(m·K) untuk papan gipsum standar",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "SNI 03-6389-2000 & katalog teknis gipsum",
+                            Status = "perkiraan",
+                            Versi = "2000"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000009"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000009"),
+                            CatatanKonversi = "Indeks 1/5: gipsum standar sangat rentan melunak dan berjamur pada kelembapan tinggi tropis",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Karakteristik gipsum pada RH tinggi",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000009"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000009"),
+                            CatatanKonversi = "Indeks 1/5: sekrup dan rangka hollow sangat rentan korosi di dekat pesisir bila terpapar udara laut",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Evaluasi rangka hollow dan gipsum",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000009"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000009"),
+                            CatatanKonversi = "Usia nominal 20 tahun bila dipakai pada partisi interior kering terlindung",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Buku Pedoman Teknis Konstruksi Kering",
+                            Status = "perkiraan",
+                            Versi = "2019"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000009"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000009"),
+                            CatatanKonversi = "Faktor emisi 28 kgCO2e/m2 untuk sistem partisi gipsum ringan",
+                            Properti = "faktor_emisi",
+                            Referensi = "ICE Database v3.0 (University of Bath)",
+                            Status = "perkiraan",
+                            Tautan = "https://circularecology.com/embodied-carbon-footprint-database.html",
+                            Versi = "v3.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000010"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000010"),
+                            CatatanKonversi = "Konduktivitas 0,15 W/(m·K) untuk kayu olahan tropis kering udara",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "SNI 03-6389-2000 & literatur kayu tropis",
+                            Status = "perkiraan",
+                            Versi = "2000"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000010"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000010"),
+                            CatatanKonversi = "Indeks 1/5: kayu sangat rentan pelapukan dan serangan jamur/rayap pada iklim lembap tinggi",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Studi keawetan kayu tropis terhadap rayap dan jamur",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000010"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000010"),
+                            CatatanKonversi = "Indeks 1/5: garam mempercepat pelapukan serat kayu dan korosi pada paku/pengencang logam",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Degradasi material organik pada lingkungan garam",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000010"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000010"),
+                            CatatanKonversi = "Usia pakai nominal 15 tahun membutuhkan pemeliharaan pelapisan pelindung rutin setiap 2-3 tahun",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Pedoman Teknis Keawetan Kayu Konstruksi PUPR",
+                            Status = "perkiraan",
+                            Versi = "2018"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000010"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000010"),
+                            CatatanKonversi = "Faktor emisi 32 kgCO2e/m2 mencakup pemanenan, penggergajian, pengeringan kiln, dan coating",
+                            Properti = "faktor_emisi",
+                            Referensi = "ICE Database v3.0 (University of Bath)",
+                            Status = "perkiraan",
+                            Tautan = "https://circularecology.com/embodied-carbon-footprint-database.html",
+                            Versi = "v3.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000011"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000011"),
+                            CatatanKonversi = "Konduktivitas 0,20 W/(m·K) merepresentasikan sistem panel komposit Al-polietilena/mineral",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "Katalog teknis ACP PVDF & uji laboratorium",
+                            Status = "perkiraan",
+                            Versi = "2020"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000011"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000011"),
+                            CatatanKonversi = "Indeks 5/5: lembaran aluminium kedap air sempurna tidak terpengaruh kelembapan udara",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Uji cuaca buatan cladding aluminium",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000011"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000011"),
+                            CatatanKonversi = "Indeks 5/5: lapisan PVDF memberikan proteksi maksimal terhadap udara bergaram pesisir",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Uji ketahanan kabut garam ASTM B117 coating PVDF",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000011"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000011"),
+                            CatatanKonversi = "Usia nominal 25 tahun untuk panel eksterior dengan coating fluorokarbon",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Garansi teknis pabrikan cladding arsitektural",
+                            Status = "perkiraan",
+                            Versi = "2020"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000011"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000011"),
+                            CatatanKonversi = "Faktor emisi tinggi 190 kgCO2e/m2 disebabkan energi peleburan bijih aluminium primer",
+                            Properti = "faktor_emisi",
+                            Referensi = "EPD generik pabrikan regional",
+                            Status = "perkiraan",
+                            Versi = "2021"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000012"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000012"),
+                            CatatanKonversi = "Konduktivitas 0,04 W/(m·K) mencerminkan daya insulasi termal superior busa polistirena tebal 50 mm",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "ISO 10456 / katalog sistem EIFS",
+                            Status = "perkiraan",
+                            Versi = "2019"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000012"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000012"),
+                            CatatanKonversi = "Indeks 4/5: plester polimer elastis menghambat penetrasi air hujan ke inti insulasi",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Tinjauan sistem plester polimer tahan cuaca",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000012"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000012"),
+                            CatatanKonversi = "Indeks 4/5: EPS kebal terhadap garam, kawat kasa galvanis terlindungi plester tebal",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Ketahanan atmosferik material sintetis",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000012"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000012"),
+                            CatatanKonversi = "Usia pakai nominal 25 tahun bila plesteran terawat tanpa retak tembus",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Pedoman sistem insulasi dinding eksterior",
+                            Status = "perkiraan",
+                            Versi = "2019"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000012"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000012"),
+                            CatatanKonversi = "Faktor emisi 70 kgCO2e/m2 mencakup bahan petrokimia polistirena dan aditif polimer",
+                            Properti = "faktor_emisi",
+                            Referensi = "EPD generik pabrikan regional",
+                            Status = "perkiraan",
+                            Versi = "2021"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000013"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000013"),
+                            CatatanKonversi = "Konduktivitas 0,25 W/(m·K) untuk papan komposit semen berserat selulosa",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "SNI 03-6389-2000 & uji pabrikan papan semen",
+                            Status = "perkiraan",
+                            Versi = "2000"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000013"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000013"),
+                            CatatanKonversi = "Indeks 5/5: bahan tidak lapuk atau membengkak bila terkena air hujan terus-menerus",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Uji rendam dan ketahanan air semen fiber",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000013"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000013"),
+                            CatatanKonversi = "Indeks 5/5: matriks semen tidak korosif terhadap udara asin laut",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Evaluasi ketahanan kimia semen komposit di daerah pesisir",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000013"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000013"),
+                            CatatanKonversi = "Usia pakai nominal 30 tahun tahan rayap, jamur, dan cuaca tropis basah",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Katalog teknis umur layan semen fiber",
+                            Status = "perkiraan",
+                            Versi = "2020"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000013"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000013"),
+                            CatatanKonversi = "Faktor emisi 75 kgCO2e/m2 untuk lembaran semen fiber 8 mm dan subframe baja ringan",
+                            Properti = "faktor_emisi",
+                            Referensi = "EPD generik pabrikan regional",
+                            Status = "perkiraan",
+                            Versi = "2021"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000014"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000014"),
+                            CatatanKonversi = "Konduktivitas 3,00 W/(m·K) merepresentasikan sifat batu andesit padat yang sangat cepat menghantarkan panas",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "SNI 03-6389-2000 & literatur sifat batuan beku",
+                            Status = "perkiraan",
+                            Versi = "2000"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000014"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000014"),
+                            CatatanKonversi = "Indeks 5/5: batuan vulkanik andesit memiliki densitas tinggi dan ketahanan luar biasa terhadap air",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Karakteristik serapan air batu alam andesit",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000014"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000014"),
+                            CatatanKonversi = "Indeks 5/5: sangat tahan terhadap udara pesisir bersalinitas tinggi dan asam lingkungan",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Ketahanan pelapukan kimia batuan beku",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000014"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000014"),
+                            CatatanKonversi = "Usia nominal 60 tahun terpanjang di antara bahan dinding dengan daya tahan mekanik tinggi",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Pedoman Teknis Bangunan Warisan dan Monumen PUPR",
+                            Status = "perkiraan",
+                            Versi = "2018"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000014"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000014"),
+                            CatatanKonversi = "Faktor emisi 45 kgCO2e/m2 rendah karena proses produksi hanya pemotongan batu tanpa pembakaran kimia",
+                            Properti = "faktor_emisi",
+                            Referensi = "ICE Database v3.0 (University of Bath)",
+                            Status = "perkiraan",
+                            Tautan = "https://circularecology.com/embodied-carbon-footprint-database.html",
+                            Versi = "v3.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000015"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000015"),
+                            CatatanKonversi = "Konduktivitas 0,45 W/(m·K) lebih rendah daripada beton konvensional berkat struktur pori alkali-teraktivasi",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "Studi sifat termofisik beton geopolimer fly-ash",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000015"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000015"),
+                            CatatanKonversi = "Indeks 4/5: mikrostruktur padat memberikan ketahanan penetrasi air dan kelembapan yang solid",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Uji permeabilitas beton geopolimer",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000015"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000015"),
+                            CatatanKonversi = "Indeks 4/5: ketahanan kimia terhadap klorida garam lebih unggul dibanding semen Portland biasa",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Ketahanan korosi sulfat dan klorida geopolimer",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000015"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000015"),
+                            CatatanKonversi = "Usia pakai nominal 45 tahun untuk komponen pracetak berkualitas terkontrol",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Estimasi durabilitas geopolimer jangka panjang",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000015"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000015"),
+                            CatatanKonversi = "Faktor emisi 90 kgCO2e/m2 menghemat jejak karbon klinker semen dengan memanfaatkan abu terbang industri",
+                            Properti = "faktor_emisi",
+                            Referensi = "EPD generik pabrikan regional",
+                            Status = "perkiraan",
+                            Versi = "2021"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000016"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000016"),
+                            CatatanKonversi = "Konduktivitas termal 1,40 W/(m·K) untuk plat beton bertulang horizontal tebal 120 mm",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "SNI 03-6389-2000",
+                            Status = "perkiraan",
+                            Versi = "2000"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000016"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000016"),
+                            CatatanKonversi = "Indeks 5/5: ketahanan lembap maksimal bila didukung membran waterproofing dan kemiringan drainase memadai",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Standar waterproofing atap dak beton",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000016"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000016"),
+                            CatatanKonversi = "Indeks 5/5: beton bermutu tinggi dengan aditif kedap air sangat tahan terhadap garam pesisir",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Evaluasi selimut beton pelindung tulangan pesisir",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000016"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000016"),
+                            CatatanKonversi = "Usia nominal 40 tahun dengan inspeksi dan pelapisan ulang waterproofing berkala",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Pedoman Teknis Bangunan Gedung PUPR",
+                            Status = "perkiraan",
+                            Versi = "2018"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000016"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000016"),
+                            CatatanKonversi = "Faktor emisi 150 kgCO2e/m2 mencakup massa beton bertulang tebal dan lapisan screed pelindung",
+                            Properti = "faktor_emisi",
+                            Referensi = "ICE Database v3.0 (University of Bath)",
+                            Status = "perkiraan",
+                            Tautan = "https://circularecology.com/embodied-carbon-footprint-database.html",
+                            Versi = "v3.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000017"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000017"),
+                            CatatanKonversi = "Konduktivitas 0,40 W/(m·K) merepresentasikan sistem penutup atap genting beton dengan celah ventilasi reng",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "SNI 03-6389-2000",
+                            Status = "perkiraan",
+                            Versi = "2000"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000017"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000017"),
+                            CatatanKonversi = "Indeks 5/5: lapisan cat polimer akrilik eksterior mencegah infiltrasi air hujan tropis lebat",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Uji impermeabilitas genting beton",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000017"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000017"),
+                            CatatanKonversi = "Indeks 5/5: bahan matriks beton anorganik tidak berkarat di daerah pesisir",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Durabilitas genting semen di lingkungan garam",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000017"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000017"),
+                            CatatanKonversi = "Usia nominal 30 tahun dengan pengecatan ulang setiap 10 tahun untuk menjaga kerapatan air",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Panduan Spesifikasi Material Atap PUPR",
+                            Status = "perkiraan",
+                            Versi = "2018"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000017"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000017"),
+                            CatatanKonversi = "Faktor emisi 95 kgCO2e/m2 mencakup pencetakan beton dan curing uap genting per m2 atap terpasang",
+                            Properti = "faktor_emisi",
+                            Referensi = "ICE Database v3.0 (University of Bath)",
+                            Status = "perkiraan",
+                            Tautan = "https://circularecology.com/embodied-carbon-footprint-database.html",
+                            Versi = "v3.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000018"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000018"),
+                            CatatanKonversi = "Konduktivitas 0,30 W/(m·K) merepresentasikan perakitan genting keramik dengan bantalan udara bawah atap",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "SNI 03-6389-2000",
+                            Status = "perkiraan",
+                            Versi = "2000"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000018"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000018"),
+                            CatatanKonversi = "Indeks 5/5: lapisan glasir vitreous membuat genting hampir nol serapan air (<1%)",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Uji daya serap air genting keramik berglasir",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000018"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000018"),
+                            CatatanKonversi = "Indeks 5/5: sangat kebal terhadap asam, garam laut, dan radiasi ultraviolet",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Ketahanan kimia lapisan glasir keramik",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000018"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000018"),
+                            CatatanKonversi = "Usia nominal 35 tahun dengan ketahanan warna dan bentuk yang sangat stabil",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Pedoman Teknis Konstruksi Atap PUPR",
+                            Status = "perkiraan",
+                            Versi = "2018"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000018"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000018"),
+                            CatatanKonversi = "Faktor emisi 110 kgCO2e/m2 akibat proses pembakaran kiln suhu tinggi >1.100 C",
+                            Properti = "faktor_emisi",
+                            Referensi = "ICE Database v3.0 (University of Bath)",
+                            Status = "perkiraan",
+                            Tautan = "https://circularecology.com/embodied-carbon-footprint-database.html",
+                            Versi = "v3.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000019"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000019"),
+                            CatatanKonversi = "Konduktivitas 0,60 W/(m·K) untuk genting tanah liat pres konvensional tanpa glasir",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "SNI 03-6389-2000",
+                            Status = "perkiraan",
+                            Versi = "2000"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000019"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000019"),
+                            CatatanKonversi = "Indeks 4/5: mengalirkan air hujan dengan baik pada sudut kemiringan atap >30 derajat",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Karakteristik tanah liat bakar lokal",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000019"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000019"),
+                            CatatanKonversi = "Indeks 4/5: tanah liat bakar kebal karat, lumut dapat tumbuh di daerah sangat lembap",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Ketahanan atmosferik produk keramik tradisional",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000019"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000019"),
+                            CatatanKonversi = "Usia nominal 30 tahun umum digunakan pada rumah tapak tradisional Indonesia",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Pedoman Umur Bangunan PUPR",
+                            Status = "perkiraan",
+                            Versi = "2018"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000019"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000019"),
+                            CatatanKonversi = "Faktor emisi 85 kgCO2e/m2 untuk proses pembakaran genting tanah liat",
+                            Properti = "faktor_emisi",
+                            Referensi = "ICE Database v3.0 (University of Bath)",
+                            Status = "perkiraan",
+                            Tautan = "https://circularecology.com/embodied-carbon-footprint-database.html",
+                            Versi = "v3.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000020"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000020"),
+                            CatatanKonversi = "Konduktivitas 0,08 W/(m·K) mencerminkan perakitan shingle aspal di atas papan kayu underlayment",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "Katalog teknis atap shingle bitumen",
+                            Status = "perkiraan",
+                            Versi = "2020"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000020"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000020"),
+                            CatatanKonversi = "Indeks 3/5: bitumen kedap air tetapi rentan terhadap genangan air dan pelunakan suhu ekstrem",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Evaluasi atap bitumen pada iklim tropis basah",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000020"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000020"),
+                            CatatanKonversi = "Indeks 2/5: butiran pelindung dapat terkikis angin laut dan paku shingle rentan korosi",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Degradasi material bitumen akibat radiasi UV dan garam",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000020"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000020"),
+                            CatatanKonversi = "Usia nominal 20 tahun sebelum kehilangan butiran mineral dan kelenturan bitumen",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Spesifikasi atap aspal fleksibel",
+                            Status = "perkiraan",
+                            Versi = "2020"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000020"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000020"),
+                            CatatanKonversi = "Faktor emisi 80 kgCO2e/m2 mencakup matriks serat kaca, aspal modifikasi, dan substrat papan",
+                            Properti = "faktor_emisi",
+                            Referensi = "EPD generik pabrikan regional",
+                            Status = "perkiraan",
+                            Versi = "2021"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000021"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000021"),
+                            CatatanKonversi = "Nilai 0,05 W/(m·K) merepresentasikan konduktivitas termal ekuivalen sistem perakitan atap berinsulasi (lembaran baja profil + insulasi glass wool), bukan lembaran baja mentah (k ~50 W/(m·K))",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "SNI 03-6389-2000 & katalog sistem atap terinsulasi",
+                            Status = "perkiraan",
+                            Versi = "2000"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000021"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000021"),
+                            CatatanKonversi = "Indeks 3/5: lembaran baja kedap air tetapi rentan kebocoran pada sekrup pengikat dan sambungan tumpang",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Tinjauan atap lembaran logam profil",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000021"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000021"),
+                            CatatanKonversi = "Indeks 2/5: lapisan galvanis seng standar cepat terkorosi pada jarak <5 km dari pantai akibat garam laut",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Studi laju korosi lapisan seng galvanis di pesisir",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000021"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000021"),
+                            CatatanKonversi = "Usia pakai nominal 15 tahun sebelum karat merusak lembaran atap pada kondisi lingkungan non-agresif",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Pedoman Teknis Atap Logam PUPR",
+                            Status = "perkiraan",
+                            Versi = "2018"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000021"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000021"),
+                            CatatanKonversi = "Faktor emisi 90 kgCO2e/m2 untuk lembaran baja galvanis tebal 0,4 mm termasuk rangka sekrup",
+                            Properti = "faktor_emisi",
+                            Referensi = "ICE Database v3.0 (University of Bath)",
+                            Status = "perkiraan",
+                            Tautan = "https://circularecology.com/embodied-carbon-footprint-database.html",
+                            Versi = "v3.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000022"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000022"),
+                            CatatanKonversi = "Nilai 0,05 W/(m·K) merepresentasikan konduktivitas termal ekuivalen perakitan atap dengan foil/insulasi termal penahan panas tropis, bukan lembaran logam telanjang",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "Katalog teknis atap galvalum berinsulasi",
+                            Status = "perkiraan",
+                            Versi = "2020"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000022"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000022"),
+                            CatatanKonversi = "Indeks 4/5: kedap air sangat baik dengan sistem sekrup berpenutup karet EPDM",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Kinerja pelapis aluminium-seng pada iklim tropis",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000022"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000022"),
+                            CatatanKonversi = "Indeks 4/5: paduan aluminium-seng memberikan perlindungan korosi hingga 4 kali lebih tahan dibanding galvanis murni",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Uji korosi atmosferik paduan aluminium-seng 55%",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000022"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000022"),
+                            CatatanKonversi = "Usia nominal 20 tahun di lingkungan tropis atmosferik normal",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Garansi teknis pabrikan baja lapis AZ150",
+                            Status = "perkiraan",
+                            Versi = "2020"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000022"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000022"),
+                            CatatanKonversi = "Faktor emisi 105 kgCO2e/m2 mencakup baja lembaran lapis paduan Al-Zn tebal 0,45 mm",
+                            Properti = "faktor_emisi",
+                            Referensi = "EPD generik pabrikan regional",
+                            Status = "perkiraan",
+                            Versi = "2021"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000023"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000023"),
+                            CatatanKonversi = "Nilai 0,11 W/(m·K) merepresentasikan konduktivitas ekuivalen susunan atap lembaran seng tipis dengan bantalan udara reng",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "SNI 03-6389-2000",
+                            Status = "perkiraan",
+                            Versi = "2000"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000023"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000023"),
+                            CatatanKonversi = "Indeks 2/5: rentan kondensasi di sisi bawah lembaran dan karat putih bila terjebak air",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Perilaku seng gelombang terhadap kondensasi tropis",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000023"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000023"),
+                            CatatanKonversi = "Indeks 1/5: sangat cepat berkarat dan berlubang pada jarak dekat pantai karena lapisan pelindung sangat tipis",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Laju korosi lembaran seng tipis pada atmosfer pantai",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000023"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000023"),
+                            CatatanKonversi = "Usia nominal 12 tahun sebelum karat tembus memerlukan penggantian lembaran atap",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Pedoman Teknis PUPR",
+                            Status = "perkiraan",
+                            Versi = "2018"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000023"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000023"),
+                            CatatanKonversi = "Faktor emisi 130 kgCO2e/m2 untuk lembaran seng galvanis tipis",
+                            Properti = "faktor_emisi",
+                            Referensi = "ICE Database v3.0 (University of Bath)",
+                            Status = "perkiraan",
+                            Tautan = "https://circularecology.com/embodied-carbon-footprint-database.html",
+                            Versi = "v3.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000024"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000024"),
+                            CatatanKonversi = "Konduktivitas 0,07 W/(m·K) mencerminkan sifat isolasi termal komposit semen serat bergelombang",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "Katalog teknis atap fiber semen gelombang",
+                            Status = "perkiraan",
+                            Versi = "2020"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000024"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000024"),
+                            CatatanKonversi = "Indeks 4/5: tidak melengkung atau lapuk akibat air hujan, ventilasi atap tetap diperlukan",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Uji impermeabilitas lembaran semen berserat",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000024"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000024"),
+                            CatatanKonversi = "Indeks 3/5: lembaran semen tidak berkarat namun pengikat sekrup dapat berkarat di dekat laut",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Ketahanan atmosferik semen fiber terhadap salinitas",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000024"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000024"),
+                            CatatanKonversi = "Usia nominal 25 tahun untuk penutup atap komposit semen serat",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Pedoman Spesifikasi Material Penutup Atap PUPR",
+                            Status = "perkiraan",
+                            Versi = "2018"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000024"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000024"),
+                            CatatanKonversi = "Faktor emisi 100 kgCO2e/m2 mencakup proses autoclaving dan penguatan serat komposit",
+                            Properti = "faktor_emisi",
+                            Referensi = "EPD generik pabrikan regional",
+                            Status = "perkiraan",
+                            Versi = "2021"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0001-4000-8000-000000000025"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000025"),
+                            CatatanKonversi = "Nilai 0,04 W/(m·K) merepresentasikan konduktivitas termal efektif inti insulasi EPS tebal 50 mm",
+                            Properti = "konduktivitas_termal",
+                            Referensi = "ISO 10456 / katalog panel sandwich insulasi",
+                            Status = "perkiraan",
+                            Versi = "2019"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0002-4000-8000-000000000025"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000025"),
+                            CatatanKonversi = "Indeks 4/5: sistem sambungan overlap dengan sealant mencegah infiltrasi air hujan lebat",
+                            Properti = "ketahanan_lembap",
+                            Referensi = "Uji kekedapan sambungan interlocking atap sandwich",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0003-4000-8000-000000000025"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000025"),
+                            CatatanKonversi = "Indeks 4/5: lapisan luar galvalum ber-coating cat oven tahan terhadap lingkungan korosif moderat",
+                            Properti = "ketahanan_korosi",
+                            Referensi = "Durabilitas lapisan galvalum pada panel insulasi",
+                            Status = "perkiraan",
+                            Versi = "v1.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0004-4000-8000-000000000025"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000025"),
+                            CatatanKonversi = "Usia nominal 25 tahun selama lapisan pelindung dan sambungan sealant terjaga",
+                            Properti = "usia_pakai_nominal",
+                            Referensi = "Spesifikasi umur layan panel atap terinsulasi",
+                            Status = "perkiraan",
+                            Versi = "2019"
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0005-4000-8000-000000000025"),
+                            BahanId = new Guid("d0000000-0000-4000-8000-000000000025"),
+                            CatatanKonversi = "Faktor emisi 95 kgCO2e/m2 untuk panel sandwich 50 mm lengkap dengan dua sisi lembaran galvalum",
+                            Properti = "faktor_emisi",
+                            Referensi = "EPD generik pabrikan regional",
+                            Status = "perkiraan",
+                            Versi = "2021"
                         });
                 });
 
