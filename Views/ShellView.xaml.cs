@@ -104,7 +104,71 @@ public partial class ShellView : UserControl
         Context.Text = project.Nama;
         LocationText.Text = project.Kota;
         _window.Title = Titles[CurrentPage] + " | Wastu";
+
+        // Indikator mode penyimpanan & banner luring
+        StorageModeText.Text = state.LabelModePenyimpanan;
+        if (state.ModeBacaSaja)
+        {
+            OfflineBanner.Visibility = Visibility.Visible;
+            var waktuStr = state.SnapshotDiambilPadaUtc is { } dt
+                ? Format.WaktuLokal(dt.LocalDateTime) + " WIB"
+                : "-";
+            var cadanganStr = state.DipulihkanDariCadangan ? " (Dipulihkan dari cadangan)" : "";
+            OfflineBannerDescription.Text =
+                $"Perubahan tidak disimpan ke database. Menampilkan snapshot per {waktuStr}.{cadanganStr}";
+            StorageModeBorder.Background = (System.Windows.Media.Brush)FindResource("WarnBg");
+            StorageModeText.Foreground = (System.Windows.Media.Brush)FindResource("Red");
+        }
+        else
+        {
+            OfflineBanner.Visibility = Visibility.Collapsed;
+            if (state.PostgreSql)
+            {
+                StorageModeBorder.Background = (System.Windows.Media.Brush)FindResource("TagBg");
+                StorageModeText.Foreground = (System.Windows.Media.Brush)FindResource("TagFg");
+            }
+            else
+            {
+                StorageModeBorder.Background = (System.Windows.Media.Brush)FindResource("TagPaleBg");
+                StorageModeText.Foreground = (System.Windows.Media.Brush)FindResource("TagPaleFg");
+            }
+        }
+
         _page?.Show(force);
+    }
+
+    private async void Reconnect_Click(object sender, RoutedEventArgs e)
+    {
+        if (!ReconnectButton.IsEnabled) return;
+        ReconnectButton.IsEnabled = false;
+        ReconnectButtonText.Text = "Menghubungkan...";
+        Toast("Mencoba menyambung ulang ke database PostgreSQL...");
+
+        try
+        {
+            var newState = await Task.Run(() => AppState.MuatAsync());
+            App.State = newState;
+
+            if (newState.ModeBacaSaja)
+            {
+                Toast("Database masih belum dapat dihubungi. Mode luring tetap aktif.");
+            }
+            else
+            {
+                Toast("Berhasil terhubung kembali ke PostgreSQL.");
+            }
+            Show(force: true);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+            Toast("Gagal menyambung ulang ke database.");
+        }
+        finally
+        {
+            ReconnectButton.IsEnabled = true;
+            ReconnectButtonText.Text = "Coba Sambung Ulang";
+        }
     }
 
     public void Toast(string message) => _window.Toast(message);
@@ -146,6 +210,11 @@ public partial class ShellView : UserControl
 
     public async Task RunProjectChangeAsync(Func<Task> action)
     {
+        if (App.State.ModeBacaSaja)
+        {
+            Toast("Mode luring baca-saja: perubahan proyek tidak dapat disimpan karena database sedang tidak tersedia.");
+            return;
+        }
         if (!IsEnabled) return;
         IsEnabled = false;
         try
@@ -165,7 +234,15 @@ public partial class ShellView : UserControl
 
     public void ProjectsEmptied() => _window.ShowWelcome();
 
-    public void NewProject() => _window.ShowCreate();
+    public void NewProject()
+    {
+        if (App.State.ModeBacaSaja)
+        {
+            Toast("Mode luring baca-saja: tidak dapat membuat proyek baru saat database tidak tersedia.");
+            return;
+        }
+        _window.ShowCreate();
+    }
 
     private void ApplyViewport()
     {

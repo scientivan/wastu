@@ -1,6 +1,8 @@
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Npgsql;
+using Wastu.Data.Snapshots;
 using Wastu.Models;
 
 namespace Wastu.Services;
@@ -74,32 +76,90 @@ public static class StateStore
         ? custom
         : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Wastu");
 
-    private static string FilePath(bool postgreSql) => Path.Combine(Folder, postgreSql ? "state-postgres.json" : "state.json");
+    private static readonly string SnapshotFolder = Path.Combine(Folder, "snapshots");
 
     public static string ProfileFolder => Folder;
 
-    public static StateDto? Load(bool postgreSql)
+    /// <summary>Berkas JSON legacy tanpa versi yang diimpor sekali ke snapshot berversi.</summary>
+    public static string BerkasLegacyJson => Path.Combine(Folder, "state.json");
+
+    /// <summary>Cache era sebelum snapshot berversi; hanya dibaca sebagai draf awal, tidak pernah ditimpa.</summary>
+    private static string BerkasLegacyPostgres => Path.Combine(Folder, "state-postgres.json");
+
+    /// <summary>
+    /// Toko snapshot per profil koneksi. Profil hanya memakai host, port, database, dan pengguna —
+    /// tidak pernah password atau string koneksi. Mengembalikan null bila koneksi tidak valid,
+    /// tanpa pernah meneruskan detail konfigurasi.
+    /// </summary>
+    public static SnapshotStore<StateDto>? TokoPostgreSql(string koneksi)
     {
         try
         {
-            var path = FilePath(postgreSql);
-            if (!File.Exists(path)) return null;
-            using var stream = File.OpenRead(path);
-            return JsonSerializer.Deserialize(stream, StateJson.Default.StateDto);
+            var profil = SnapshotProfile.FromPostgreSql(new NpgsqlConnectionStringBuilder(koneksi));
+            return new SnapshotStore<StateDto>(SnapshotFolder, profil);
         }
-        catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException)
+        catch (Exception e) when (e is ArgumentException or FormatException or InvalidOperationException or NotSupportedException)
         {
             return null;
         }
     }
 
-    public static void Save(StateDto state, bool postgreSql)
+    /// <summary>Toko mode kompatibilitas JSON lokal (bukan PostgreSQL).</summary>
+    public static SnapshotStore<StateDto> TokoJsonLokal() => new(SnapshotFolder, SnapshotProfile.LocalJson("default"));
+
+    /// <summary>Pembaca isi state.json legacy; null bila rusak, tanpa pernah melempar.</summary>
+    public static StateDto? BacaLegacyPayload(string isi)
     {
-        Directory.CreateDirectory(Folder);
-        var path = FilePath(postgreSql);
-        var temp = path + ".tmp";
-        using (var stream = File.Create(temp))
-            JsonSerializer.Serialize(stream, state, StateJson.Default.StateDto);
-        File.Move(temp, path, overwrite: true);
+        try
+        {
+            return JsonSerializer.Deserialize(isi, StateJson.Default.StateDto);
+        }
+        catch (Exception e) when (e is JsonException or InvalidOperationException or NotSupportedException)
+        {
+            return null;
+        }
     }
+
+    /// <summary>Draf snapshot yang ada untuk seed loader. Baca-saja: tidak mengubah satu pun berkas.</summary>
+    public static async Task<StateDto?> BacaDrafAsync(SnapshotStore<StateDto> toko,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var hasil = await toko.LoadAsync(cancellationToken);
+            return hasil.Status is SnapshotStatus.ValidPrimary or SnapshotStatus.RecoveredBackup
+                ? hasil.Snapshot!.Payload
+                : null;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Cache state-postgres.json era lama sebagai draf awal; gagal baca diabaikan.</summary>
+    public static StateDto? BacaLegacyPostgres()
+    {
+        try
+        {
+            return File.Exists(BerkasLegacyPostgres)
+                ? JsonSerializer.Deserialize(File.ReadAllText(BerkasLegacyPostgres), StateJson.Default.StateDto)
+                : null;
+        }
+        catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException or NotSupportedException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Penulisan sinkron atomik lewat <see cref="SnapshotStore{T}"/> (temporary lalu replace);
+    /// tidak pernah memakai File.Move mentah dan tidak pernah menyentuh berkas profil lain.
+    /// </summary>
+    public static void Simpan(StateDto state, SnapshotStore<StateDto> toko)
+        => toko.SaveAsync(state, DateTimeOffset.UtcNow).GetAwaiter().GetResult();
 }

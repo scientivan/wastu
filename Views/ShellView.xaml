@@ -36,6 +36,12 @@
                         <c:CssText x:Name="StatusName" FontSize="13" FontWeight="600" Leading="1.5"
                                    TextWrapping="Wrap" Margin="0,8,0,0" />
                         <c:CssText x:Name="StatusCity" FontSize="12" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                        <!-- .storage-mode-indicator -->
+                        <Border x:Name="StorageModeBorder" Margin="0,10,0,0" Padding="8,4" CornerRadius="4"
+                                Background="{StaticResource TagPaleBg}" HorizontalAlignment="Left">
+                            <c:CssText x:Name="StorageModeText" FontSize="11" FontWeight="550"
+                                       Foreground="{StaticResource TagPaleFg}" />
+                        </Border>
                         <Button Style="{StaticResource BareButton}" Tag="project" Click="Go_Click" Margin="0,14,0,0">
                             <c:CssText Text="Kelola proyek" FontSize="12" FontWeight="600" Foreground="{StaticResource Green}" />
                         </Button>
@@ -61,6 +67,23 @@
                             </StackPanel>
                         </Button>
                     </Grid>
+                </Border>
+                <!-- .offline-banner -->
+                <Border x:Name="OfflineBanner" Visibility="Collapsed" Background="{StaticResource WarnBg}"
+                        BorderBrush="{StaticResource WarnBorder}" BorderThickness="0,0,0,1" Padding="36,12">
+                    <DockPanel LastChildFill="True">
+                        <Button x:Name="ReconnectButton" DockPanel.Dock="Right" Style="{StaticResource BtnLight}"
+                                MinHeight="32" Padding="14,6" FontSize="12" Click="Reconnect_Click"
+                                VerticalAlignment="Center" Margin="16,0,0,0">
+                            <c:CssText x:Name="ReconnectButtonText" Text="Coba Sambung Ulang" FontSize="12" FontWeight="600" Foreground="{StaticResource Ink}" />
+                        </Button>
+                        <StackPanel VerticalAlignment="Center">
+                            <c:TrackedText Text="MODE LURING (BACA-SAJA)" FontSize="11" FontWeight="700"
+                                           Tracking="0.8" Foreground="{StaticResource Red}" Margin="0,0,0,3" />
+                            <c:CssText x:Name="OfflineBannerDescription" FontSize="12" Leading="1.5" Foreground="{StaticResource Ink}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </DockPanel>
                 </Border>
                 <!-- .content -->
                 <Border x:Name="ContentArea" MaxWidth="1640" Padding="43,30,43,48">

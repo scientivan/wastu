@@ -54,6 +54,11 @@ public partial class SchedulePage : PageBase
 
     private void Add_Click(object sender, RoutedEventArgs e)
     {
+        if (S.ModeBacaSaja)
+        {
+            Shell.Toast("Mode luring baca-saja: jadwal pekerjaan tidak dapat ditambah.");
+            return;
+        }
         if (JobName.Text.Length == 0 || JobStart.SelectedDate is not { } start || JobEnd.SelectedDate is not { } end)
         {
             Shell.Toast("Harap isi bidang ini.");
@@ -79,6 +84,11 @@ public partial class SchedulePage : PageBase
 
     private void Lock_Click(object sender, RoutedEventArgs e)
     {
+        if (S.ModeBacaSaja)
+        {
+            Shell.Toast("Mode luring baca-saja: penguncian jadwal tidak dapat diubah.");
+            return;
+        }
         var job = S.Aktif.Pekerjaan[(int)((FrameworkElement)sender).Tag];
         if (SelectedDay() is not { } day) return;
         if (day.Tanggal < job.TanggalMulaiRencana || day.Tanggal > job.TanggalSelesaiRencana)
@@ -96,6 +106,11 @@ public partial class SchedulePage : PageBase
 
     private void Remove_Click(object sender, RoutedEventArgs e)
     {
+        if (S.ModeBacaSaja)
+        {
+            Shell.Toast("Mode luring baca-saja: pekerjaan tidak dapat dihapus.");
+            return;
+        }
         if (!Confirm("Hapus pekerjaan ini?")) return;
         S.Aktif.HapusPekerjaan(S.Aktif.Pekerjaan[(int)((FrameworkElement)sender).Tag]);
         Shell.Render();
