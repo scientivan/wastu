@@ -9,6 +9,30 @@ namespace Wastu.Data.Tests;
 public sealed class SchedulingSnapshotIntegrationTests
 {
     [PerluPostgreSql]
+    public async Task CacheSeparatesNearbyCoordinatesAndReplacesAResponseAsAUnit()
+    {
+        await using var database = await PostgreSqlTestDatabase.CreateAsync();
+        await using (var db = database.Factory.CreateDbContext()) await db.Database.MigrateAsync();
+        var cache = new PrakiraanCacheRepositoryEf(database.Factory);
+        var date = new DateOnly(2026, 11, 22);
+        var now = new DateTimeOffset(2026, 11, 22, 0, 0, 0, TimeSpan.Zero);
+        var original = new DailyForecast(date, 20, 0, 20, 30, 70);
+        await cache.SimpanCacheAsync(-6.2, 106.8,
+            new([original, original with { Tanggal = date.AddDays(1) }], "Asia/Jakarta", now, "Fixture A"));
+        await cache.SimpanCacheAsync(-6.2001, 106.8,
+            new([original with { ProbabilitasHujanPct = 90 }], "Asia/Jakarta", now, "Fixture B"));
+        Assert.Equal(20, (await cache.GetCacheAsync(-6.2, 106.8))!.Hari.First().ProbabilitasHujanPct);
+        var missing = original with { ProbabilitasHujanPct = double.NaN, DataLengkap = false };
+        await cache.SimpanCacheAsync(-6.2, 106.8,
+            new([missing], "Asia/Jakarta", now.AddHours(1), "Fixture A2", DataParsial: true));
+        var refreshed = (await cache.GetCacheAsync(-6.2, 106.8))!;
+        Assert.True(refreshed.DataParsial);
+        Assert.Equal(now.AddHours(1), refreshed.DiambilPadaUtc);
+        Assert.Equal(missing, Assert.Single(refreshed.Hari));
+        Assert.Equal(90, Assert.Single((await cache.GetCacheAsync(-6.2001, 106.8))!.Hari).ProbabilitasHujanPct);
+    }
+
+    [PerluPostgreSql]
     public async Task RiskDecisionWeatherThresholdAndLocationSurviveReloadAndReviewWithoutDuplication()
     {
         await using var database = await PostgreSqlTestDatabase.CreateAsync();

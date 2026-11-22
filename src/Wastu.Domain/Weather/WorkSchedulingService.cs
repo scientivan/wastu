@@ -97,6 +97,7 @@ public sealed class WorkSchedulingService : IWorkSchedulingService
                 umurCache: umurCache);
 
             daftarHasil.Add(evaluasi with { Cuaca = daily, DiambilPadaUtc = hasil?.DiambilPadaUtc, ZonaWaktu = hasil?.ZonaWaktu });
+            if (tgl == pekerjaan.TanggalSelesai) break;
         }
 
         return daftarHasil;

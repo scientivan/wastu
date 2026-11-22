@@ -417,9 +417,9 @@ public sealed class WastuDbContext : DbContext
         b.ToTable("prakiraan_cache", t =>
         {
             t.HasCheckConstraint("prakiraan_cache_revisi_positif", "revisi_lokasi >= 1");
-            t.HasCheckConstraint("prakiraan_cache_probabilitas_rentang", "probabilitas_hujan_pct BETWEEN 0 AND 100");
-            t.HasCheckConstraint("prakiraan_cache_curah_hujan_nonnegatif", "curah_hujan_mm >= 0");
-            t.HasCheckConstraint("prakiraan_cache_kelembapan_rentang", "kelembapan_maks_pct BETWEEN 0 AND 100");
+            t.HasCheckConstraint("prakiraan_cache_probabilitas_rentang", "probabilitas_hujan_pct BETWEEN 0 AND 100 OR (NOT data_lengkap AND probabilitas_hujan_pct = 'NaN'::double precision)");
+            t.HasCheckConstraint("prakiraan_cache_curah_hujan_nonnegatif", "(curah_hujan_mm >= 0 AND curah_hujan_mm < 'Infinity'::double precision) OR (NOT data_lengkap AND curah_hujan_mm = 'NaN'::double precision)");
+            t.HasCheckConstraint("prakiraan_cache_kelembapan_rentang", "kelembapan_maks_pct BETWEEN 0 AND 100 OR (NOT data_lengkap AND kelembapan_maks_pct = 'NaN'::double precision)");
         });
 
         b.HasKey(x => x.Id);
