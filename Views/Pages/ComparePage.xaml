@@ -23,6 +23,120 @@
             </Border>
         </c:PageHeading>
 
+        <!-- Panel Pengaturan Bobot Kriteria (F4-04, F4-05, T16, T17) -->
+        <Border Style="{StaticResource Panel}" Margin="0,0,0,22" Padding="20">
+            <StackPanel>
+                <StackPanel Margin="0,0,0,14">
+                    <StackPanel>
+                        <c:TrackedText Style="{StaticResource PanelTitle}" Text="Bobot Kriteria Kesesuaian" Margin="0,0,0,4" />
+                        <c:CssText Text="Atur tingkat kepentingan relatif untuk keempat kriteria penilaian iklim." FontSize="12" Foreground="{StaticResource Muted}" Leading="1.4" />
+                    </StackPanel>
+                    <Border Style="{StaticResource Seg}" HorizontalAlignment="Left" Margin="0,12,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton x:Name="MvpWeightRadio" Style="{StaticResource SegItem}" Content="Mode MVP (Bobot sama 25%)" Click="WeightMode_Click" Tag="mvp" Margin="0,0,4,0" />
+                            <RadioButton x:Name="V2WeightRadio" Style="{StaticResource SegItem}" Content="Mode V2 (Bobot kustom per proyek)" Click="WeightMode_Click" Tag="v2" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Panel Tampilan Mode MVP -->
+                <Border x:Name="MvpWeightInfoPanel" Background="{StaticResource ChipBg}" CornerRadius="8" Padding="14">
+                    <StackPanel Orientation="Horizontal">
+                        <c:CssText Text="Mode MVP aktif:" FontWeight="650" FontSize="13" Foreground="{StaticResource Ink}" Margin="0,0,8,0" />
+                        <c:CssText Text="Bobot sama untuk empat aspek (25% Termal, 25% Lembap, 25% Korosi, 25% Usia)." FontSize="13" Foreground="{StaticResource Muted}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Panel Input Mode V2 -->
+                <StackPanel x:Name="V2WeightControlPanel" Margin="0,4,0,0">
+                    <c:FlowGrid Columns="4" ColumnGap="14" Margin="0,0,0,12">
+                        <StackPanel>
+                            <c:CssText Style="{StaticResource FormLabel}" Text="Termal %" />
+                            <TextBox x:Name="ThermalWeightBox" AutomationProperties.Name="Bobot termal dalam persen" Style="{StaticResource Input}" MinHeight="38" TextChanged="WeightInput_TextChanged" />
+                        </StackPanel>
+                        <StackPanel>
+                            <c:CssText Style="{StaticResource FormLabel}" Text="Lembap %" />
+                            <TextBox x:Name="MoistureWeightBox" AutomationProperties.Name="Bobot lembap dalam persen" Style="{StaticResource Input}" MinHeight="38" TextChanged="WeightInput_TextChanged" />
+                        </StackPanel>
+                        <StackPanel>
+                            <c:CssText Style="{StaticResource FormLabel}" Text="Korosi %" />
+                            <TextBox x:Name="CorrosionWeightBox" AutomationProperties.Name="Bobot korosi dalam persen" Style="{StaticResource Input}" MinHeight="38" TextChanged="WeightInput_TextChanged" />
+                        </StackPanel>
+                        <StackPanel>
+                            <c:CssText Style="{StaticResource FormLabel}" Text="Usia %" />
+                            <TextBox x:Name="LifespanWeightBox" AutomationProperties.Name="Bobot usia pakai dalam persen" Style="{StaticResource Input}" MinHeight="38" TextChanged="WeightInput_TextChanged" />
+                        </StackPanel>
+                    </c:FlowGrid>
+
+                    <Grid Margin="0,0,0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock x:Name="WeightTotalIndicator" FontSize="13" FontWeight="650" Foreground="{StaticResource Green}" Margin="0,0,12,0" VerticalAlignment="Center" />
+                            <TextBlock x:Name="WeightValidationMessage" FontSize="12" Foreground="{StaticResource Red}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button x:Name="ResetWeightsBtn" Style="{StaticResource BtnLightSm}" Content="Kembalikan bobot awal" Click="ResetWeights_Click" Margin="0,0,8,0" />
+                            <Button x:Name="ApplyWeightsBtn" Style="{StaticResource Btn}" Content="Terapkan Bobot" Click="ApplyWeights_Click" Padding="16,8" MinHeight="34" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+
+                <!-- Pesan Read-only luring jika ModeBacaSaja -->
+                <Border x:Name="WeightReadOnlyBanner" Visibility="Collapsed" Background="{StaticResource TagRedBg}" CornerRadius="6" Padding="10,8" Margin="0,10,0,0">
+                    <c:CssText Text="Mode luring baca-saja: pengaturan bobot dinonaktifkan." FontSize="12" Foreground="{StaticResource TagRedFg}" FontWeight="600" />
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- Panel Transparansi Asumsi Perhitungan (F4-06, §9.1–9.2, X11) -->
+        <Border Style="{StaticResource Panel}" Margin="0,0,0,22" Padding="20">
+            <Expander Header="Asumsi Perhitungan (v2.0)" IsExpanded="False" Foreground="{StaticResource Ink}" FontSize="15" FontWeight="650">
+                <StackPanel Margin="0,14,0,0">
+                    <Border BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="0,14,0,0">
+                        <StackPanel>
+                            <!-- Beban Lembap -->
+                            <StackPanel Margin="0,0,0,14">
+                                <c:TrackedText Text="1. Sensitivitas &amp; Beban Lembap" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
+                                <c:CssText Text="Perhitungan beban menggunakan formula komposit terbobot: beban = α · r + (1-α) · h, dengan parameter default α = 0,5 dan acuan curah hujan 3.000 mm/tahun. Nilai α adalah proporsi sensitivitas curah hujan terhadap kelembapan relatif lokasi dan sepenuhnya terpisah dari 4 bobot kriteria penilaian. Model ini adalah model awal pengganti (bukan hasil kalibrasi ilmiah)."
+                                           FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" />
+                            </StackPanel>
+
+                            <!-- Konduktivitas Termal -->
+                            <StackPanel Margin="0,0,0,14">
+                                <c:TrackedText Text="2. Pita Konduktivitas Termal" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
+                                <c:CssText Text="Pita konduktivitas termal ideal default adalah 0,10 hingga 0,60 W/(m·K) pada suhu rata-rata ≤26°C, dan bergeser secara linear hingga batas atas 0,30 W/(m·K) pada suhu ≥32°C. Bahan dengan konduktivitas di bawah batas atau di dalam pita memperoleh skor penuh 100."
+                                           FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" />
+                            </StackPanel>
+
+                            <!-- Korosi Pesisir -->
+                            <StackPanel Margin="0,0,0,14">
+                                <c:TrackedText Text="3. Risiko Korosi Pesisir" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
+                                <c:CssText Text="Risiko korosi dihitung sebagai proksi jarak geometris garis pantai kontinu terhadap lokasi proyek dengan batas acuan 50 km (bukan hasil pengukuran salinitas udara langsung di lapangan)."
+                                           FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" />
+                            </StackPanel>
+
+                            <!-- Normalisasi Usia Pakai -->
+                            <StackPanel Margin="0,0,0,14">
+                                <c:TrackedText Text="4. Normalisasi Usia Pakai" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
+                                <c:CssText Text="Normalisasi usia pakai dihitung secara min–maks terhadap seluruh bahan valid dalam kategori komponen (dinding/atap), bukan hanya bahan hasil penapisan pencarian atau dua bahan yang sedang dibandingkan."
+                                           FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" />
+                            </StackPanel>
+
+                            <!-- Ambang Label -->
+                            <StackPanel>
+                                <c:TrackedText Text="5. Ambang Kategori Kesesuaian &amp; Versi Model" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
+                                <c:CssText Text="Ambang label kesesuaian konsisten: Cocok (skor ≥ 75), Perlu Pertimbangan (skor 55 hingga 74,99), dan Tidak Disarankan (skor &lt; 55). Seluruh perhitungan berbasis konfigurasi model v2.0."
+                                           FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Expander>
+        </Border>
+
         <!-- .compare-controls -->
         <c:FlowGrid Columns="2" ColumnGap="18" Margin="0,0,0,22">
             <StackPanel>
@@ -104,12 +218,18 @@
                                         <ColumnDefinition Width="232*" />
                                         <ColumnDefinition Width="179*" />
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel Orientation="Horizontal" Margin="12,14" VerticalAlignment="Center">
-                                        <Border Width="48" Height="40" CornerRadius="5" Background="{Binding Thumb}" />
-                                        <c:CssText Text="{Binding Name}" Leading="1.5" FontWeight="700" Margin="10,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                    <StackPanel Margin="12,14" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Width="48" Height="40" CornerRadius="5" Background="{Binding Thumb}" />
+                                            <c:CssText Text="{Binding Name}" Leading="1.5" FontWeight="700" Margin="10,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <c:CssText Text="{Binding Reason}" FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" Margin="58,6,0,0" TextWrapping="Wrap" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Margin="12,14" VerticalAlignment="Center">
-                                        <c:CssText Text="{Binding Score}" Leading="1.5" FontWeight="650" Foreground="{Binding ScoreBrush}" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <c:CssText Text="{Binding Score}" Leading="1.5" FontWeight="650" Foreground="{Binding ScoreBrush}" />
+                                            <c:CssText Text=" / 100" Leading="1.5" Foreground="{StaticResource Muted}" FontSize="11" VerticalAlignment="Center" />
+                                        </StackPanel>
                                         <Border Width="65" Height="4" CornerRadius="3" Background="{StaticResource ScoreTrack}" HorizontalAlignment="Left" Margin="0,6,0,0">
                                             <Border Width="{Binding BarWidth}" CornerRadius="3" Background="{StaticResource ScoreFill}" HorizontalAlignment="Left" />
                                         </Border>
