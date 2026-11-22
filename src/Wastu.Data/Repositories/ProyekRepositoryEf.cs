@@ -109,6 +109,15 @@ public sealed class ProyekRepositoryEf : IProyekRepository
             var tersimpan = await db.Komponen.Where(k => k.BangunanId == proyek.Id)
                 .ToDictionaryAsync(k => k.Id, ct).ConfigureAwait(false);
 
+            var keepIds = komponen.Select(k => k.Id).ToHashSet();
+            foreach (var lamaKomp in tersimpan.Values)
+            {
+                if (!keepIds.Contains(lamaKomp.Id))
+                {
+                    db.Komponen.Remove(lamaKomp);
+                }
+            }
+
             foreach (var item in komponen)
             {
                 if (tersimpan.TryGetValue(item.Id, out var lama))

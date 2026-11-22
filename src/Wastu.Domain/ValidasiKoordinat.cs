@@ -22,30 +22,47 @@ public static class ValidasiKoordinat
         latitude is >= LintangMin and <= LintangMaks &&
         longitude is >= BujurMin and <= BujurMaks;
 
-    public static void Validasi(double latitude, double longitude)
+    public static bool CobaValidasi(double latitude, double longitude, out string? pesanKesalahan)
     {
         if (!double.IsFinite(latitude))
         {
-            throw new ArgumentException("Lintang harus berupa angka finite.", nameof(latitude));
+            pesanKesalahan = "Lintang harus berupa angka finite.";
+            return false;
         }
 
         if (latitude is < LintangMin or > LintangMaks)
         {
-            throw new ArgumentOutOfRangeException(
-                nameof(latitude), latitude,
-                $"Lintang harus {LintangMin} sampai {LintangMaks}° agar berada di wilayah Indonesia. {CatatanBatasKasar}");
+            pesanKesalahan = $"Lintang harus {LintangMin} sampai {LintangMaks}° agar berada di wilayah Indonesia. {CatatanBatasKasar}";
+            return false;
         }
 
         if (!double.IsFinite(longitude))
         {
-            throw new ArgumentException("Bujur harus berupa angka finite.", nameof(longitude));
+            pesanKesalahan = "Bujur harus berupa angka finite.";
+            return false;
         }
 
         if (longitude is < BujurMin or > BujurMaks)
         {
-            throw new ArgumentOutOfRangeException(
-                nameof(longitude), longitude,
-                $"Bujur harus {BujurMin} sampai {BujurMaks}° agar berada di wilayah Indonesia. {CatatanBatasKasar}");
+            pesanKesalahan = $"Bujur harus {BujurMin} sampai {BujurMaks}° agar berada di wilayah Indonesia. {CatatanBatasKasar}";
+            return false;
+        }
+
+        pesanKesalahan = null;
+        return true;
+    }
+
+    public static void Validasi(double latitude, double longitude)
+    {
+        if (!CobaValidasi(latitude, longitude, out var pesan))
+        {
+            if (!double.IsFinite(latitude))
+                throw new ArgumentException(pesan!, nameof(latitude));
+            if (latitude is < LintangMin or > LintangMaks)
+                throw new ArgumentOutOfRangeException(nameof(latitude), latitude, pesan);
+            if (!double.IsFinite(longitude))
+                throw new ArgumentException(pesan!, nameof(longitude));
+            throw new ArgumentOutOfRangeException(nameof(longitude), longitude, pesan);
         }
     }
 }

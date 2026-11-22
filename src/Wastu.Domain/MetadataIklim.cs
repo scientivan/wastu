@@ -12,7 +12,10 @@ public sealed record MetadataIklim(
     string? ZonaWaktu,
     string? MetodePesisir,
     ProvenanceIklim Provenance = ProvenanceIklim.LegacyUnknown,
-    StatusPengambilanIklim StatusPengambilan = StatusPengambilanIklim.BelumTersedia)
+    StatusPengambilanIklim StatusPengambilan = StatusPengambilanIklim.BelumTersedia,
+    int? RevisiLokasi = null,
+    KualitasCacheIklim KualitasCache = KualitasCacheIklim.CocokLokasi,
+    string? VersiAlgoritmePesisir = null)
 {
     public MetadataIklim() : this(
         PeriodeAwal: null,
@@ -23,7 +26,14 @@ public sealed record MetadataIklim(
         ZonaWaktu: "Asia/Jakarta",
         MetodePesisir: "Haversine Proximity",
         Provenance: ProvenanceIklim.LegacyUnknown,
-        StatusPengambilan: StatusPengambilanIklim.BelumTersedia)
+        StatusPengambilan: StatusPengambilanIklim.BelumTersedia,
+        RevisiLokasi: null,
+        KualitasCache: KualitasCacheIklim.CocokLokasi,
+        VersiAlgoritmePesisir: null)
     {
     }
+
+    public DateOnly? PeriodeMulai => PeriodeAwal;
+    public DateOnly? PeriodeSelesai => PeriodeAkhir;
+    public string Provider => Penyedia;
 }
