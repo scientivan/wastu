@@ -289,20 +289,8 @@ public partial class ReportPage : PageBase
             var item = S.Item(e.Bahan);
             if (_selectedMaterialCodes.Contains(item.Kode))
             {
-                var label = TagData.Kesesuaian(e.SkorKesesuaian).Text;
-                selectedBahan.Add(new SnapshotBahan
-                {
-                    BahanId = item.DataDomain.Id,
-                    KomponenId = p.Komponen.Single(k => k.Jenis == _selectedJenis).Id,
-                    Jenis = _selectedJenis == JenisKomponen.Dinding ? Wastu.Domain.JenisKomponen.Dinding : Wastu.Domain.JenisKomponen.Atap,
-                    Peringkat = i + 1,
-                    Nama = e.Bahan.Nama,
-                    SkorKesesuaian = e.SkorKesesuaian,
-                    LabelKesesuaian = label,
-                    EmisiAwalKg = e.EmisiAwal,
-                    Alasan = e.Alasan,
-                    SumberProperti = [new SnapshotSumberProperti("Faktor Emisi", $"{e.Bahan.FaktorEmisi} kgCO₂e/m²", e.Bahan.DataSource)]
-                });
+                selectedBahan.Add(SnapshotBahanMapper.Buat(item, e,
+                    p.Komponen.Single(k => k.Jenis == _selectedJenis).Id, i + 1));
             }
         }
 

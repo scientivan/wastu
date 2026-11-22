@@ -187,9 +187,9 @@ public sealed class AppState
         {
             bobotBaru = KriteriaBobot.DariPersentase(termalPct, lembapPct, korosiPct, usiaPct);
         }
-        catch (ArgumentOutOfRangeException ex)
+        catch (ArgumentOutOfRangeException)
         {
-            return ex.Message;
+            return "Isi keempat bobot dengan angka tidak negatif dan total tepat 100%.";
         }
         Aktif.Bobot = bobotBaru;
         Aktif.GunakanBobotKustom = true;

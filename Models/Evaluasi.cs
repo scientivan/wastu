@@ -14,11 +14,13 @@ public class Evaluasi
         SkorKesesuaian = hasil.SkorKesesuaian;
         EmisiAwal = hasil.EmisiAwalKg;
         Alasan = hasil.Alasan;
+        SubSkor = hasil.SubSkor;
     }
 
     public double SkorKesesuaian { get => _skorKesesuaian; private set => _skorKesesuaian = value; }
     public double EmisiAwal { get => _emisiAwal; set => _emisiAwal = value; }
     public string Alasan { get => _alasan; set => _alasan = value; }
+    public Domain.SubSkorKesesuaian SubSkor { get; private set; } = new(0, 0, 0, 0);
     public double FaktorPenuaanA { get => _faktorPenuaanA; set => _faktorPenuaanA = value; }
     public Bahan Bahan { get; }
     public SimulasiEmisi? SimulasiEmisi { get; private set; }
@@ -37,6 +39,7 @@ public class Evaluasi
         var profil = iklim.KeDomain();
         var skor = Domain.Scoring.PerhitunganSkor.HitungSubSkor(bahan, profil, usiaMinKelompok, usiaMaksKelompok);
         SkorKesesuaian = Domain.Scoring.PerhitunganSkor.SkorKesesuaian(skor, bobotEfektif);
+        SubSkor = skor;
         Alasan = Domain.Scoring.PerhitunganSkor.SusunAlasan(bahan, profil, skor);
         return SkorKesesuaian;
     }
