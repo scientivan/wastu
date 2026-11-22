@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Wastu.Data.Entities;
 using Wastu.Domain;
 using Wastu.Domain.Abstractions;
+using Wastu.Domain.Weather;
 
 namespace Wastu.Data.Repositories;
 
@@ -17,10 +18,15 @@ public sealed class ProyekRepositoryEf : IProyekRepository
 
     public async Task<IReadOnlyList<Proyek>> ListAsync(CancellationToken ct = default)
     {
-        await using var db = await _pabrik.CreateDbContextAsync(ct).ConfigureAwait(false);
-        var proyek = await db.Bangunan.AsNoTracking().OrderBy(p => p.Nama).ThenBy(p => p.Id)
-            .ToListAsync(ct).ConfigureAwait(false);
-        return proyek.Select(Pemetaan.KeDomain).ToArray();
+        await using WastuDbContext db = await _pabrik.CreateDbContextAsync(ct).ConfigureAwait(false);
+
+        List<ProyekEntity> baris = await db.Bangunan.AsNoTracking()
+            .OrderBy(p => p.Nama)
+            .ThenBy(p => p.Id)
+            .ToListAsync(ct)
+            .ConfigureAwait(false);
+
+        return baris.Select(Pemetaan.KeDomain).ToList();
     }
 
     public async Task<Proyek?> GetByIdAsync(Guid id, CancellationToken ct = default)
@@ -37,6 +43,7 @@ public sealed class ProyekRepositoryEf : IProyekRepository
     public async Task AddAsync(Proyek proyek, CancellationToken ct = default, IReadOnlyList<Komponen>? komponen = null)
     {
         await using WastuDbContext db = await _pabrik.CreateDbContextAsync(ct).ConfigureAwait(false);
+        await using var transaksi = await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
 
         db.Bangunan.Add(new ProyekEntity
         {
@@ -45,46 +52,76 @@ public sealed class ProyekRepositoryEf : IProyekRepository
             Kota = proyek.Kota,
             Latitude = proyek.Latitude,
             Longitude = proyek.Longitude,
-            DibuatPada = DateTimeOffset.UtcNow
+            DibuatPada = DateTimeOffset.UtcNow,
+            RevisiLokasi = proyek.RevisiLokasi,
+            ZonaWaktu = proyek.ZonaWaktu
         });
 
         if (komponen is not null)
+        {
             db.Komponen.AddRange(komponen.Select(KomponenBaru));
+        }
+
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await transaksi.CommitAsync(ct).ConfigureAwait(false);
     }
 
     public async Task UpdateAsync(Proyek proyek, CancellationToken ct = default, IReadOnlyList<Komponen>? komponen = null)
     {
         await using WastuDbContext db = await _pabrik.CreateDbContextAsync(ct).ConfigureAwait(false);
-
         await using var transaksi = await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
+
         ProyekEntity baris = await KunciProyekAsync(db, proyek.Id, ct).ConfigureAwait(false)
             ?? throw new KeyNotFoundException($"Proyek {proyek.Id} tidak ditemukan.");
 
-        if (baris.Latitude != proyek.Latitude || baris.Longitude != proyek.Longitude)
+        bool koordinatBerubah = (baris.Latitude != proyek.Latitude || baris.Longitude != proyek.Longitude);
+
+        if (koordinatBerubah)
         {
             var profil = await db.ProfilIklim.FindAsync([proyek.Id], ct).ConfigureAwait(false);
             if (profil is not null)
+            {
                 db.ProfilIklim.Remove(profil);
+            }
+
+            // Tandai pekerjaan yang terkunci menjadi PerluDitinjau tanpa menghapus TanggalDikunci (PRD §6.3, §12)
+            var terkunci = await db.Pekerjaan
+                .Where(p => p.BangunanId == proyek.Id && p.Status == StatusPekerjaan.Terkunci)
+                .ToListAsync(ct)
+                .ConfigureAwait(false);
+
+            foreach (var pekerjaan in terkunci)
+            {
+                pekerjaan.Status = StatusPekerjaan.PerluDitinjau;
+                pekerjaan.TerakhirDiperbaruiUtc = DateTimeOffset.UtcNow;
+            }
         }
 
         baris.Nama = proyek.Nama;
         baris.Kota = proyek.Kota;
         baris.Latitude = proyek.Latitude;
         baris.Longitude = proyek.Longitude;
+        baris.RevisiLokasi = proyek.RevisiLokasi;
+        baris.ZonaWaktu = proyek.ZonaWaktu;
 
         if (komponen is not null)
         {
             var tersimpan = await db.Komponen.Where(k => k.BangunanId == proyek.Id)
                 .ToDictionaryAsync(k => k.Id, ct).ConfigureAwait(false);
+
             foreach (var item in komponen)
             {
                 if (tersimpan.TryGetValue(item.Id, out var lama))
+                {
                     lama.LuasM2 = item.LuasM2;
+                }
                 else
+                {
                     db.Komponen.Add(KomponenBaru(item));
+                }
             }
         }
+
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
         await transaksi.CommitAsync(ct).ConfigureAwait(false);
     }
@@ -154,28 +191,26 @@ public sealed class ProyekRepositoryEf : IProyekRepository
 
         await using WastuDbContext db = await _pabrik.CreateDbContextAsync(ct).ConfigureAwait(false);
         await using var transaksi = await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
+
         var proyek = await KunciProyekAsync(db, proyekId, ct).ConfigureAwait(false)
             ?? throw new KeyNotFoundException($"Proyek {proyekId} tidak ditemukan.");
+
         if (lokasi is not null && (proyek.Latitude != lokasi.Latitude || proyek.Longitude != lokasi.Longitude))
+        {
             throw new InvalidOperationException("Lokasi proyek berubah saat data iklim diambil.");
+        }
 
         ProfilIklimEntity baris = await db.ProfilIklim
             .FirstOrDefaultAsync(x => x.BangunanId == proyekId, ct)
             .ConfigureAwait(false)
             ?? TambahProfil(db, proyekId);
 
-        baris.CurahHujanTahunanMm = profil.CurahHujanTahunanMm;
-        baris.KelembapanRataPct = profil.KelembapanRataPct;
-        baris.SuhuRataC = profil.SuhuRataC;
-        baris.JarakPesisirKm = profil.JarakPesisirKm;
-        baris.TingkatKorosi = profil.TingkatKorosi;
-        baris.DiambilPada = profil.DiambilPada ?? DateTimeOffset.UtcNow;
+        Pemetaan.SalinKe(profil, baris);
 
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
         await transaksi.CommitAsync(ct).ConfigureAwait(false);
     }
 
-    // Satu kunci untuk perubahan koordinat dan penulisan profil iklimnya.
     private static Task<ProyekEntity?> KunciProyekAsync(WastuDbContext db, Guid id, CancellationToken ct) =>
         db.Bangunan.FromSqlInterpolated($"SELECT * FROM bangunan WHERE id = {id} FOR UPDATE").SingleOrDefaultAsync(ct);
 

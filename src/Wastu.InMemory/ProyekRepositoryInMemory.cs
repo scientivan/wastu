@@ -1,21 +1,29 @@
 using System.Collections.Concurrent;
 using Wastu.Domain;
 using Wastu.Domain.Abstractions;
+using Wastu.Domain.Weather;
 
 namespace Wastu.InMemory;
 
 /// <summary>
 /// Sumber proyek, komponen, dan profil iklim di dalam memori proses.
 /// </summary>
-/// <remarks>
-/// Lihat <see cref="MaterialRepositoryInMemory"/> untuk penjelasan kenapa adapter
-/// in-memory ada dan apa batasannya.
-/// </remarks>
 public sealed class ProyekRepositoryInMemory : IProyekRepository
 {
     private readonly ConcurrentDictionary<Guid, Proyek> _proyek = new();
     private readonly ConcurrentDictionary<Guid, Komponen> _komponen = new();
     private readonly ConcurrentDictionary<Guid, ProfilIklim> _profilIklim = new();
+    private IPekerjaanRepository? _pekerjaanRepo;
+
+    public ProyekRepositoryInMemory(IPekerjaanRepository? pekerjaanRepo = null)
+    {
+        _pekerjaanRepo = pekerjaanRepo;
+    }
+
+    public void SetPekerjaanRepository(IPekerjaanRepository pekerjaanRepo)
+    {
+        _pekerjaanRepo = pekerjaanRepo;
+    }
 
     public Task<IReadOnlyList<Proyek>> ListAsync(CancellationToken ct = default)
         => Task.FromResult<IReadOnlyList<Proyek>>(_proyek.Values.OrderBy(p => p.Nama).ThenBy(p => p.Id).ToArray());
@@ -29,19 +37,53 @@ public sealed class ProyekRepositoryInMemory : IProyekRepository
     {
         _proyek[proyek.Id] = proyek;
         foreach (var item in komponen ?? [])
+        {
             _komponen[item.Id] = item;
+        }
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public Task UpdateAsync(Proyek proyek, CancellationToken ct = default, IReadOnlyList<Komponen>? komponen = null)
+    public async Task UpdateAsync(Proyek proyek, CancellationToken ct = default, IReadOnlyList<Komponen>? komponen = null)
     {
+        bool koordinatBerubah = false;
         lock (_proyek)
         {
             if (_proyek.TryGetValue(proyek.Id, out var lama) &&
                 (lama.Latitude != proyek.Latitude || lama.Longitude != proyek.Longitude))
+            {
+                koordinatBerubah = true;
                 _profilIklim.TryRemove(proyek.Id, out _);
-            return AddAsync(proyek, ct, komponen);
+            }
+            _proyek[proyek.Id] = proyek;
+            foreach (var item in komponen ?? [])
+            {
+                _komponen[item.Id] = item;
+            }
+        }
+
+        if (koordinatBerubah && _pekerjaanRepo is not null)
+        {
+            var jobs = await _pekerjaanRepo.ListByProyekAsync(proyek.Id, ct).ConfigureAwait(false);
+            foreach (var job in jobs.Where(j => j.Status == StatusPekerjaan.Terkunci))
+            {
+                var ditinjau = new Pekerjaan(
+                    job.Id,
+                    job.ProyekId,
+                    job.Nama,
+                    job.Jenis,
+                    job.TanggalMulai,
+                    job.TanggalSelesai,
+                    StatusPekerjaan.PerluDitinjau,
+                    job.TanggalDikunci,
+                    job.KomponenId,
+                    job.BahanId,
+                    job.OverrideAmbang,
+                    job.Konfirmasi,
+                    DateTimeOffset.UtcNow);
+
+                await _pekerjaanRepo.UpdateAsync(ditinjau, ct).ConfigureAwait(false);
+            }
         }
     }
 
@@ -52,7 +94,9 @@ public sealed class ProyekRepositoryInMemory : IProyekRepository
             _proyek.TryRemove(id, out _);
             _profilIklim.TryRemove(id, out _);
             foreach (var item in _komponen.Values.Where(item => item.ProyekId == id))
+            {
                 _komponen.TryRemove(item.Id, out _);
+            }
         }
         return Task.CompletedTask;
     }
@@ -91,7 +135,9 @@ public sealed class ProyekRepositoryInMemory : IProyekRepository
             if (lokasi is not null &&
                 (!_proyek.TryGetValue(proyekId, out var proyek) || proyek.Latitude != lokasi.Latitude ||
                     proyek.Longitude != lokasi.Longitude))
+            {
                 throw new InvalidOperationException("Lokasi proyek berubah saat data iklim diambil.");
+            }
 
             _profilIklim[proyekId] = profil;
         }

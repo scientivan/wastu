@@ -6,15 +6,12 @@ namespace Wastu.InMemory;
 
 /// <summary>
 /// Penyimpanan hasil penilaian dan simulasi di dalam memori proses.
+/// Mendukung multi-horizon simulasi berversi (PRD §11.3, T20).
 /// </summary>
-/// <remarks>
-/// Lihat <see cref="MaterialRepositoryInMemory"/> untuk penjelasan kenapa adapter
-/// in-memory ada dan apa batasannya.
-/// </remarks>
 public sealed class EvaluasiRepositoryInMemory : IEvaluasiRepository
 {
     private readonly ConcurrentDictionary<Guid, Evaluasi> _evaluasi = new();
-    private readonly ConcurrentDictionary<Guid, SimulasiEmisi> _simulasi = new();
+    private readonly ConcurrentDictionary<(Guid EvaluasiId, int HorizonTahun, string VersiModel), SimulasiEmisi> _simulasi = new();
 
     /// <inheritdoc />
     public Task<IReadOnlyList<Evaluasi>> ListByKomponenAsync(Guid komponenId, CancellationToken ct = default)
@@ -47,16 +44,22 @@ public sealed class EvaluasiRepositoryInMemory : IEvaluasiRepository
     /// <inheritdoc />
     public Task SimpanAsync(SimulasiEmisi simulasi, CancellationToken ct = default)
     {
-        _simulasi[simulasi.EvaluasiId] = simulasi;
+        ArgumentNullException.ThrowIfNull(simulasi);
+        string versi = simulasi.VersiModel ?? "v2.0";
+        _simulasi[(simulasi.EvaluasiId, simulasi.HorizonTahun, versi)] = simulasi;
         return Task.CompletedTask;
     }
 
     /// <summary>
-    /// Hasil simulasi yang tersimpan untuk sebuah evaluasi.
+    /// Hasil simulasi yang tersimpan untuk sebuah evaluasi dan horizon tahun.
     /// </summary>
-    /// <remarks>
-    /// Bukan bagian dari port karena tidak ada alur produksi yang membacanya; ini
-    /// hanya supaya pengujian bisa memeriksa bahwa service benar-benar menyimpan.
-    /// </remarks>
-    public SimulasiEmisi? AmbilSimulasi(Guid evaluasiId) => _simulasi.GetValueOrDefault(evaluasiId);
+    public SimulasiEmisi? AmbilSimulasi(Guid evaluasiId, int horizonTahun = 30, string versiModel = "v2.0")
+        => _simulasi.GetValueOrDefault((evaluasiId, horizonTahun, versiModel))
+           ?? _simulasi.Values.FirstOrDefault(s => s.EvaluasiId == evaluasiId && s.HorizonTahun == horizonTahun);
+
+    /// <summary>
+    /// Mengambil semua simulasi yang tersimpan untuk sebuah evaluasi.
+    /// </summary>
+    public IReadOnlyList<SimulasiEmisi> ListSimulasiByEvaluasi(Guid evaluasiId)
+        => _simulasi.Values.Where(s => s.EvaluasiId == evaluasiId).OrderBy(s => s.HorizonTahun).ToList();
 }
