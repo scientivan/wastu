@@ -102,6 +102,9 @@ public class AmbangPekerjaanTests
     public void SkorMinimumDisarankan_AdaUntukMenandaiBahanTidakDisarankan()
     {
         // PRD §F4: bahan di bawah ambang ditandai "tidak disarankan", bukan disembunyikan.
+        // PRD-R10: angkanya terpusat di KonfigurasiModel, bukan konstanta 50 yang terpisah.
+        Assert.Equal(55, AmbangLayakKerja.SkorMinimumDisarankan);
+        Assert.Equal(KonfigurasiModel.Bawaan.AmbangTidakDisarankan, AmbangLayakKerja.SkorMinimumDisarankan);
         Assert.InRange(AmbangLayakKerja.SkorMinimumDisarankan, 0, 100);
     }
 
