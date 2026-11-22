@@ -91,11 +91,19 @@ public sealed class SnapshotStore<T> where T : notnull
                     }, cancellationToken: cancellationToken).ConfigureAwait(false);
                     await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
                 }
+                // A serializable DTO may still lack a usable deserialization constructor or
+                // fail caller validation after roundtrip. Reject it before touching good files.
+                var written = await ReadFileAsync(temporary, cancellationToken).ConfigureAwait(false);
+                if (written.Status != SnapshotStatus.ValidPrimary)
+                    throw new IOException("Isi snapshot tidak dapat dibaca kembali.");
                 cancellationToken.ThrowIfCancellationRequested();
                 if (primary.Status == SnapshotStatus.ValidPrimary)
                     File.Replace(temporary, SnapshotPath, BackupPath);
+                else if (primary.Status == SnapshotStatus.Corrupt)
+                    // Archive the original bytes atomically, without replacing a good backup.
+                    File.Replace(temporary, SnapshotPath, SnapshotPath + "." + Guid.NewGuid().ToString("N") + ".corrupt");
                 else
-                    File.Move(temporary, SnapshotPath, overwrite: true);
+                    File.Move(temporary, SnapshotPath);
             }
             catch (OperationCanceledException)
             {
@@ -131,8 +139,11 @@ public sealed class SnapshotStore<T> where T : notnull
             if (!root.TryGetProperty(nameof(SnapshotEnvelope<T>.SchemaVersion), out var schema))
                 return new(SnapshotStatus.UnsupportedVersion,
                     "Snapshot belum memiliki versi skema. Diperlukan impor legacy secara eksplisit.");
-            if (schema.ValueKind != JsonValueKind.Number || !schema.TryGetInt32(out var version))
+            if (schema.ValueKind != JsonValueKind.Number)
                 return Corrupt();
+            if (!schema.TryGetInt32(out var version))
+                return new(SnapshotStatus.UnsupportedVersion,
+                    "Versi skema snapshot belum didukung. Berkas tetap dipertahankan.");
             if (version != CurrentSchemaVersion)
                 return new(SnapshotStatus.UnsupportedVersion,
                     $"Versi skema snapshot {version} belum didukung. Berkas tetap dipertahankan.", foundSchemaVersion: version);
@@ -152,8 +163,13 @@ public sealed class SnapshotStore<T> where T : notnull
         {
             return new(SnapshotStatus.Missing, "Snapshot belum tersedia untuk profil penyimpanan ini.");
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException or NotSupportedException)
+        catch (OperationCanceledException)
         {
+            throw new OperationCanceledException(cancellationToken);
+        }
+        catch (Exception)
+        {
+            // DTO constructors/converters can throw arbitrary exceptions with payload values.
             return Corrupt();
         }
     }
