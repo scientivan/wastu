@@ -24,7 +24,7 @@ public sealed class ReportExportService : IReportExportService
     private readonly PdfReportBuilder _pdfBuilder;
 
     public ReportExportService(
-        ILaporanRepository laporanRepository,
+        ILaporanRepository? laporanRepository = null,
         IProyekRepository? proyekRepository = null,
         IEvaluasiRepository? evaluasiRepository = null,
         IMaterialRepository? materialRepository = null,
@@ -33,8 +33,7 @@ public sealed class ReportExportService : IReportExportService
         IKonfigurasiModelRepository? konfigurasiModelRepository = null,
         string? pendingMetadataDirectory = null)
     {
-        ArgumentNullException.ThrowIfNull(laporanRepository);
-        _laporanRepository = laporanRepository;
+        _laporanRepository = laporanRepository ?? new LocalMemoryLaporanRepository();
         _proyekRepository = proyekRepository;
         _evaluasiRepository = evaluasiRepository;
         _materialRepository = materialRepository;
@@ -471,5 +470,31 @@ public sealed class ReportExportService : IReportExportService
             DibuatPadaWib = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7)),
             VersiModel = config.VersiModel
         };
+    }
+
+    private sealed class LocalMemoryLaporanRepository : ILaporanRepository
+    {
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<Guid, Laporan> _dict = new();
+
+        public Task<IReadOnlyList<Laporan>> ListByProyekAsync(Guid proyekId, CancellationToken ct = default)
+        {
+            IReadOnlyList<Laporan> list = _dict.Values.Where(l => l.ProyekId == proyekId).OrderByDescending(l => l.DibuatPada).ToList();
+            return Task.FromResult(list);
+        }
+
+        public Task<Laporan?> GetByIdAsync(Guid id, CancellationToken ct = default)
+            => Task.FromResult(_dict.GetValueOrDefault(id));
+
+        public Task SimpanAsync(Laporan laporan, CancellationToken ct = default)
+        {
+            _dict[laporan.Id] = laporan;
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteAsync(Guid id, CancellationToken ct = default)
+        {
+            _dict.TryRemove(id, out _);
+            return Task.CompletedTask;
+        }
     }
 }
