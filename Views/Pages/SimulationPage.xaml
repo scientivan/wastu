@@ -8,7 +8,19 @@
             <Button Style="{StaticResource BtnLight}" Content="Lihat laporan" Tag="report" Click="Go_Click" />
         </c:PageHeading>
 
-        <c:FlowGrid Columns="2" ColumnGap="20" Stretch="False">
+        <!-- Keadaan komponen kosong (WP05 kriteria 8) -->
+        <Border x:Name="EmptyPanel" Style="{StaticResource Panel}" Visibility="Collapsed" Margin="0,0,0,18">
+            <StackPanel>
+                <c:TrackedText Style="{StaticResource PanelTitle}" Text="Komponen belum siap disimulasikan" Margin="0,0,0,8" />
+                <c:CssText x:Name="EmptyMessageText" Text="Luas bidang komponen ini belum diisi pada profil proyek atau belum ada material yang dipilih." FontSize="13" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,16" />
+                <StackPanel Orientation="Horizontal">
+                    <Button Style="{StaticResource Btn}" Content="Atur profil proyek" Tag="project" Click="Go_Click" Margin="0,0,12,0" />
+                    <Button Style="{StaticResource BtnLight}" Content="Pilih material di komparasi" Tag="compare" Click="Go_Click" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <c:FlowGrid x:Name="ContentGrid" Columns="2" ColumnGap="20" Stretch="False">
             <Border Style="{StaticResource Panel}">
                 <StackPanel>
                     <c:TrackedText Style="{StaticResource PanelTitle}" Text="Proyeksi emisi kumulatif" Margin="0,0,0,18" />
@@ -43,18 +55,23 @@
                                         <c:CssText Text="{Binding Name}" Strut="14" FontSize="12" Foreground="{StaticResource Muted}" />
                                         <c:TrackedText Text="{Binding Total}" Suffix="kgCO₂e" FontSize="23" FontWeight="650" Tracking="-0.805" Margin="0,8,0,0"
                                                        SuffixFontSize="12" SuffixFontWeight="650" SuffixTracking="-0.805" SuffixForeground="{StaticResource Muted}" />
-                                        <c:CssText Style="{StaticResource MutedLine}" Text="{Binding Detail}" TextWrapping="Wrap" />
+                                        <c:CssText Style="{StaticResource MutedLine}" Text="{Binding Detail}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                                        <c:CssText Style="{StaticResource MutedLine}" Text="{Binding Breakdown}" TextWrapping="Wrap" Margin="0,4,0,0" />
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+                    <!-- Catatan konvensi pemasangan awal -->
+                    <Border Background="{StaticResource ChipBg}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,14,0,0">
+                        <c:CssText Text="* Pemasangan awal pada t=0 termasuk dalam emisi total tetapi tidak dihitung sebagai penggantian material." FontSize="12" Foreground="{StaticResource Muted}" TextWrapping="Wrap" />
+                    </Border>
                 </StackPanel>
             </Border>
 
             <Border Style="{StaticResource Panel}">
                 <StackPanel>
-                    <c:TrackedText Style="{StaticResource PanelTitle}" Text="Parameter simulasi" Margin="0,0,0,36" />
+                    <c:TrackedText Style="{StaticResource PanelTitle}" Text="Parameter simulasi" Margin="0,0,0,24" />
                     <c:CssText Style="{StaticResource FormLabel}" Text="Jenis komponen" />
                     <ComboBox x:Name="KindBox" Style="{StaticResource Select}" SelectionChanged="Kind_Changed">
                         <ComboBoxItem Content="Dinding" Tag="Dinding" />
@@ -72,6 +89,32 @@
                         <c:CssText Text="{Binding AreaChip}" FontSize="13" Foreground="{StaticResource ChipFg}" />
                     </Border>
                     <Button Style="{StaticResource Btn}" Content="Ubah pilihan material" Tag="compare" Click="Go_Click" HorizontalAlignment="Stretch" Margin="0,18,0,0" />
+
+                    <!-- Panel Asumsi Perhitungan (PRD §11.3, §11.4, F5-05, PRD-R11) -->
+                    <Border BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Margin="0,24,0,0" Padding="0,20,0,0">
+                        <StackPanel>
+                            <c:TrackedText Style="{StaticResource SectionTitle}" Text="Asumsi Perhitungan" Margin="0,0,0,10" />
+                            <c:CssText Text="Versi model: v2.0" FontSize="12" Foreground="{StaticResource Muted}" Margin="0,0,0,10" />
+
+                            <c:CssText Style="{StaticResource FormLabel}" Text="Faktor penuaan dasar (a):" />
+                            <c:CssText Text="Rentang nilai valid: 0 &lt; a ≤ 1 (default 0,5)" FontSize="11" Foreground="{StaticResource Muted}" Margin="0,2,0,6" />
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="90" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="FaktorABox" Grid.Column="0" Style="{StaticResource Input}" Text="0,5" LostFocus="FaktorA_LostFocus" KeyDown="FaktorA_KeyDown" />
+                                <Button x:Name="BtnResetA" Grid.Column="2" Style="{StaticResource BtnLightSm}" Content="Kembalikan ke Default (0,5)" Click="ResetA_Click" VerticalAlignment="Center" />
+                            </Grid>
+                            <c:CssText x:Name="TxtFaktorAError" Text="" Foreground="{StaticResource Red}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,8" Visibility="Collapsed" />
+
+                            <!-- Disclaimer F5-05 -->
+                            <Border Background="{StaticResource ChipBg}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,8,0,0">
+                                <c:CssText Text="Perkiraan berdasarkan model sederhana dan data literatur. Usia pakai aktual dapat berbeda; hasil ini bukan jaminan ketahanan bahan." FontSize="12" Foreground="{StaticResource Muted}" TextWrapping="Wrap" />
+                            </Border>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </Border>
         </c:FlowGrid>

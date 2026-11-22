@@ -5,6 +5,7 @@ public class Evaluasi
     private double _skorKesesuaian;
     private double _emisiAwal;
     private string _alasan = string.Empty;
+    private double _faktorPenuaanA = 0.5;
 
     public Evaluasi(Bahan bahan) => Bahan = bahan ?? throw new ArgumentNullException(nameof(bahan));
 
@@ -18,6 +19,7 @@ public class Evaluasi
     public double SkorKesesuaian { get => _skorKesesuaian; private set => _skorKesesuaian = value; }
     public double EmisiAwal { get => _emisiAwal; set => _emisiAwal = value; }
     public string Alasan { get => _alasan; set => _alasan = value; }
+    public double FaktorPenuaanA { get => _faktorPenuaanA; set => _faktorPenuaanA = value; }
     public Bahan Bahan { get; }
     public SimulasiEmisi? SimulasiEmisi { get; private set; }
 
@@ -37,15 +39,21 @@ public class Evaluasi
         return SkorKesesuaian;
     }
 
-    public void ProyeksikanEmisi(int horizonTahun)
+    public void ProyeksikanEmisi(int horizonTahun) => ProyeksikanEmisi(horizonTahun, null);
+
+    public void ProyeksikanEmisi(int horizonTahun, double? faktorPenuaanA)
     {
-        // Bahan yang kurang cocok dengan iklim bertahan lebih singkat (PRD §11.3).
+        double a = faktorPenuaanA ?? FaktorPenuaanA;
+        FaktorPenuaanA = a;
+        double usiaEfektif = Domain.Emissions.PerhitunganSimulasi.UsiaPakaiEfektif(Bahan.UsiaPakaiTahun, SkorKesesuaian, a);
         SimulasiEmisi = new SimulasiEmisi
         {
             HorizonTahun = horizonTahun,
-            UsiaPakaiEfektif = Domain.Emissions.PerhitunganSimulasi.UsiaPakaiEfektif(Bahan.UsiaPakaiTahun, SkorKesesuaian)
+            UsiaPakaiNominal = Bahan.UsiaPakaiTahun,
+            SkorKesesuaian = SkorKesesuaian,
+            FaktorPenuaanA = a,
+            UsiaPakaiEfektif = usiaEfektif
         };
         SimulasiEmisi.Proyeksikan(EmisiAwal);
     }
-
 }

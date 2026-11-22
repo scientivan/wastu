@@ -5,8 +5,8 @@ using Wastu.Services;
 
 namespace Wastu.Controls;
 
-// Grafik emisi kumulatif. Digambar dalam koordinat viewBox 720×280 lalu diskalakan seragam,
-// sama seperti <svg class="chart"> pada referensi (max-height 340 px).
+// Grafik emisi kumulatif (step chart). Digambar dalam koordinat viewBox 720×280 lalu diskalakan seragam,
+// sama seperti <svg class="chart"> pada referensi (max-height 340 px) (PRD §F5-04, T19).
 public sealed class EmissionChart : FrameworkElement
 {
     private const double W = 720, H = 280, Left = 54, Right = 18, Top = 20, Bottom = 38;
@@ -17,16 +17,44 @@ public sealed class EmissionChart : FrameworkElement
     private static readonly Pen[] SeriesPens = SeriesBrushes.Select(b => Freeze(new Pen(b, 3) { LineJoin = PenLineJoin.Round })).ToArray();
     private static readonly Typeface AxisFace = new(GlyphFamily(), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
 
-    private IReadOnlyList<double[]> _curves = [];
+    private IReadOnlyList<IReadOnlyList<(double Year, double Value)>> _curves = [];
+    private IReadOnlyList<IReadOnlyList<(double Year, double Value)>> _keyPoints = [];
     private int _horizon = 30;
     private DrawingGroup? _drawing;
 
-    public void SetData(IReadOnlyList<double[]> curves, int horizon)
+    public void SetData(
+        IReadOnlyList<IReadOnlyList<(double Year, double Value)>> stepCurves,
+        int horizon,
+        IReadOnlyList<IReadOnlyList<(double Year, double Value)>>? keyPoints = null)
     {
-        _curves = curves;
-        _horizon = horizon;
+        _curves = stepCurves ?? [];
+        _keyPoints = keyPoints ?? [];
+        _horizon = horizon <= 0 ? 30 : horizon;
         _drawing = null;
         InvalidateVisual();
+    }
+
+    public void SetData(IReadOnlyList<double[]> curves, int horizon)
+    {
+        var adapted = new List<IReadOnlyList<(double Year, double Value)>>();
+        foreach (var curve in curves)
+        {
+            var pts = new List<(double Year, double Value)>();
+            if (curve.Length > 0)
+            {
+                pts.Add((0.0, curve[0]));
+                for (int y = 1; y < curve.Length; y++)
+                {
+                    if (Math.Abs(curve[y] - curve[y - 1]) > 1e-6)
+                    {
+                        pts.Add((y, curve[y - 1]));
+                    }
+                    pts.Add((y, curve[y]));
+                }
+            }
+            adapted.Add(pts);
+        }
+        SetData(adapted, horizon);
     }
 
     protected override Size MeasureOverride(Size available)
@@ -56,7 +84,12 @@ public sealed class EmissionChart : FrameworkElement
         {
             var ymax = 1.0;
             foreach (var curve in _curves)
-                foreach (var v in curve) ymax = Math.Max(ymax, v);
+            {
+                foreach (var pt in curve)
+                {
+                    ymax = Math.Max(ymax, pt.Value);
+                }
+            }
             ymax *= 1.14;
             double Px(double year) => Left + year / _horizon * (W - Left - Right);
             double Py(double value) => H - Bottom - value / ymax * (H - Top - Bottom);
@@ -74,19 +107,47 @@ public sealed class EmissionChart : FrameworkElement
                 var label = Text(Math.Round(_horizon * z, MidpointRounding.AwayFromZero) + " th", pixelsPerDip);
                 dc.DrawText(label, new Point(Px(_horizon * z) - label.WidthIncludingTrailingWhitespace / 2, H - 12 - label.Baseline));
             }
+
             for (var i = 0; i < _curves.Count; i++)
             {
                 var curve = _curves[i];
-                if (curve.Length < 2) continue;
+                if (curve.Count < 2) continue;
+
+                var pen = SeriesPens[Math.Min(i, SeriesPens.Length - 1)];
+                var brush = SeriesBrushes[Math.Min(i, SeriesBrushes.Length - 1)];
+
                 var geometry = new StreamGeometry();
                 using (var g = geometry.Open())
                 {
-                    g.BeginFigure(new Point(Px(0), Py(curve[0])), false, false);
-                    for (var year = 1; year < curve.Length; year++)
-                        g.LineTo(new Point(Px(year), Py(curve[year])), true, true);
+                    g.BeginFigure(new Point(Px(curve[0].Year), Py(curve[0].Value)), false, false);
+                    for (var j = 1; j < curve.Count; j++)
+                    {
+                        g.LineTo(new Point(Px(curve[j].Year), Py(curve[j].Value)), true, true);
+                    }
                 }
                 geometry.Freeze();
-                dc.DrawGeometry(null, SeriesPens[Math.Min(i, 1)], geometry);
+                dc.DrawGeometry(null, pen, geometry);
+
+                // Render key event markers (t=0, interior replacement steps, and endpoint t=H)
+                if (i < _keyPoints.Count && _keyPoints[i].Count > 0)
+                {
+                    foreach (var kp in _keyPoints[i])
+                    {
+                        dc.DrawEllipse(brush, null, new Point(Px(kp.Year), Py(kp.Value)), 3.5, 3.5);
+                    }
+                }
+                else
+                {
+                    dc.DrawEllipse(brush, null, new Point(Px(curve[0].Year), Py(curve[0].Value)), 3.5, 3.5);
+                    for (int j = 1; j < curve.Count; j++)
+                    {
+                        if (Math.Abs(curve[j].Year - curve[j - 1].Year) < 1e-6 && curve[j].Value > curve[j - 1].Value)
+                        {
+                            dc.DrawEllipse(brush, null, new Point(Px(curve[j].Year), Py(curve[j].Value)), 3.5, 3.5);
+                        }
+                    }
+                    dc.DrawEllipse(brush, null, new Point(Px(curve[^1].Year), Py(curve[^1].Value)), 3.5, 3.5);
+                }
             }
         }
         group.Freeze();
