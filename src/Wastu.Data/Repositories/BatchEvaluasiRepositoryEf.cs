@@ -23,6 +23,11 @@ public sealed class BatchEvaluasiRepositoryEf : IBatchEvaluasiRepository
         await using WastuDbContext db = await _pabrik.CreateDbContextAsync(ct).ConfigureAwait(false);
         await using var transaksi = await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
 
+        // Serialize writers for one component across connections before the hash lookup.
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(hashtextextended({batch.KomponenId.ToString()}, 0))", ct)
+            .ConfigureAwait(false);
+
         var existingBatch = await db.BatchEvaluasi
             .FirstOrDefaultAsync(b => b.Id == batch.Id
                 || (b.KomponenId == batch.KomponenId && b.HashInput == batch.HashInput && b.VersiModel == batch.VersiModel), ct)
@@ -37,29 +42,19 @@ public sealed class BatchEvaluasiRepositoryEf : IBatchEvaluasiRepository
         else
         {
             batchId = existingBatch.Id;
-            existingBatch.BobotTermal = batch.Bobot.Termal;
-            existingBatch.BobotLembap = batch.Bobot.Lembap;
-            existingBatch.BobotKorosi = batch.Bobot.Korosi;
-            existingBatch.BobotUsia = batch.Bobot.Usia;
-            existingBatch.LuasM2 = batch.LuasM2;
-            existingBatch.RevisiLokasi = batch.RevisiLokasi;
-            existingBatch.DihitungPadaUtc = batch.DihitungPadaUtc;
         }
 
         foreach (var item in evaluasi)
         {
             var evaluasiDenganBatch = item with { BatchId = batchId };
             var existingEvaluasi = await db.Evaluasi
-                .FirstOrDefaultAsync(e => e.Id == item.Id, ct)
+                .FirstOrDefaultAsync(e => e.Id == item.Id
+                    || (e.BatchId == batchId && e.BahanId == item.BahanId), ct)
                 .ConfigureAwait(false);
 
             if (existingEvaluasi is null)
             {
                 db.Evaluasi.Add(Pemetaan.KeEntity(evaluasiDenganBatch));
-            }
-            else
-            {
-                Pemetaan.SalinKe(evaluasiDenganBatch, existingEvaluasi);
             }
         }
 
@@ -75,6 +70,16 @@ public sealed class BatchEvaluasiRepositoryEf : IBatchEvaluasiRepository
             .FirstOrDefaultAsync(x => x.Id == id, ct)
             .ConfigureAwait(false);
 
+        return baris is null ? null : Pemetaan.KeDomain(baris);
+    }
+
+    public async Task<BatchEvaluasi?> GetByHashAsync(Guid komponenId, string hashInput, string versiModel,
+        CancellationToken ct = default)
+    {
+        await using WastuDbContext db = await _pabrik.CreateDbContextAsync(ct).ConfigureAwait(false);
+        var baris = await db.BatchEvaluasi.AsNoTracking().FirstOrDefaultAsync(x =>
+            x.KomponenId == komponenId && x.HashInput == hashInput && x.VersiModel == versiModel, ct)
+            .ConfigureAwait(false);
         return baris is null ? null : Pemetaan.KeDomain(baris);
     }
 

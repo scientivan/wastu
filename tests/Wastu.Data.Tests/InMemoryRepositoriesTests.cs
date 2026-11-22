@@ -73,7 +73,14 @@ public class InMemoryRepositoriesTests
             luasM2: 120,
             dihitungPadaUtc: DateTimeOffset.UtcNow.AddMinutes(5));
 
-        await repo.SimpanBatchAsync(batch2, [evaluasi1]);
+        var evaluasi2 = evaluasi1 with
+        {
+            Id = Guid.NewGuid(),
+            SkorKesesuaian = 5,
+            Alasan = "Perubahan tidak boleh menimpa riwayat.",
+            DihitungPadaUtc = batch2.DihitungPadaUtc
+        };
+        await repo.SimpanBatchAsync(batch2, [evaluasi2]);
 
         var daftarBatch = await repo.ListBatchesByProyekAsync(proyekId);
         Assert.Single(daftarBatch);
@@ -81,6 +88,108 @@ public class InMemoryRepositoriesTests
         var latest = await repo.GetLatestBatchByKomponenAsync(komponenId);
         Assert.NotNull(latest);
         Assert.Equal(batchId, latest!.Id);
+        Assert.Equal(batch1, latest);
+        var evaluasiTersimpan = Assert.Single(await evaluasiRepo.ListByKomponenAsync(komponenId));
+        Assert.Equal(evaluasi1.Id, evaluasiTersimpan.Id);
+        Assert.Equal(evaluasi1.SkorKesesuaian, evaluasiTersimpan.SkorKesesuaian);
+        Assert.Equal(evaluasi1.Alasan, evaluasiTersimpan.Alasan);
+    }
+
+    [Fact]
+    public async Task BatchInMemory_ConcurrentWrites_PreserveOriginalBatchAndMaterialEvaluation()
+    {
+        var evaluations = new BlockingEvaluationRepository();
+        var repository = new BatchEvaluasiRepositoryInMemory(evaluations);
+        var original = TestBatch();
+        var firstEvaluation = TestEvaluation(original);
+        var first = repository.SimpanBatchAsync(original, [firstEvaluation]);
+        await evaluations.WriteStarted.Task;
+        var duplicate = original with { Id = Guid.NewGuid(), DihitungPadaUtc = original.DihitungPadaUtc.AddHours(1) };
+        var second = repository.SimpanBatchAsync(duplicate,
+            [firstEvaluation with { Id = Guid.NewGuid(), SkorKesesuaian = 1 }]);
+        try
+        {
+            Assert.Equal(1, evaluations.WriteCount);
+        }
+        finally
+        {
+            evaluations.ReleaseWrites.TrySetResult();
+        }
+
+        await Task.WhenAll(first, second);
+
+        Assert.Equal(original, Assert.Single(await repository.ListBatchesByProyekAsync(original.ProyekId)));
+        Assert.Equal(firstEvaluation.Id, Assert.Single(await evaluations.ListByKomponenAsync(original.KomponenId)).Id);
+        Assert.Equal(1, evaluations.WriteCount);
+    }
+
+    [Fact]
+    public async Task BatchInMemory_RepairMissingMaterial_KeepsOriginalEvaluationAndBatch()
+    {
+        var evaluations = new EvaluasiRepositoryInMemory();
+        var repository = new BatchEvaluasiRepositoryInMemory(evaluations);
+        var original = TestBatch();
+        var first = TestEvaluation(original);
+        await repository.SimpanBatchAsync(original, [first]);
+        var duplicate = original with { Id = Guid.NewGuid(), DihitungPadaUtc = original.DihitungPadaUtc.AddHours(1) };
+        var missing = TestEvaluation(duplicate);
+
+        await repository.SimpanBatchAsync(duplicate, [first with { Id = Guid.NewGuid() }, missing]);
+
+        Assert.Equal(original, await repository.GetBatchAsync(original.Id));
+        var stored = await evaluations.ListByKomponenAsync(original.KomponenId);
+        Assert.Equal(2, stored.Count);
+        Assert.Equal(first, stored.Single(e => e.BahanId == first.BahanId));
+        Assert.Equal(missing.Id, stored.Single(e => e.BahanId == missing.BahanId).Id);
+        Assert.All(stored, e => Assert.Equal(original.Id, e.BatchId));
+        Assert.All(stored, e => Assert.Equal(original.DihitungPadaUtc, e.DihitungPadaUtc));
+    }
+
+    [Fact]
+    public async Task BatchInMemory_CancelledWrite_AllowsRetryWithoutChangingOriginalBatch()
+    {
+        var evaluations = new BlockingEvaluationRepository();
+        var repository = new BatchEvaluasiRepositoryInMemory(evaluations);
+        var original = TestBatch();
+        var evaluation = TestEvaluation(original);
+        using var cancellation = new CancellationTokenSource();
+        var first = repository.SimpanBatchAsync(original, [evaluation], cancellation.Token);
+        await evaluations.WriteStarted.Task;
+        cancellation.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
+        evaluations.ReleaseWrites.TrySetResult();
+
+        await repository.SimpanBatchAsync(original, [evaluation]);
+
+        Assert.Equal(original, Assert.Single(await repository.ListBatchesByProyekAsync(original.ProyekId)));
+        Assert.Equal(evaluation.Id, Assert.Single(await evaluations.ListByKomponenAsync(original.KomponenId)).Id);
+    }
+
+    private static BatchEvaluasi TestBatch() => new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1,
+        "snapshot-test", "v2.0", KriteriaBobot.Default, 120, DateTimeOffset.UnixEpoch);
+
+    private static Evaluasi TestEvaluation(BatchEvaluasi batch) => new Evaluasi(Guid.NewGuid(), Guid.NewGuid(), batch.KomponenId,
+        80, 1200, new SubSkorKesesuaian(80, 80, 80, 80), "Memadai")
+        { BatchId = batch.Id, HashInput = batch.HashInput, VersiModel = batch.VersiModel, DihitungPadaUtc = batch.DihitungPadaUtc };
+
+    private sealed class BlockingEvaluationRepository : IEvaluasiRepository
+    {
+        private readonly EvaluasiRepositoryInMemory _inner = new();
+        public TaskCompletionSource WriteStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource ReleaseWrites { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public int WriteCount { get; private set; }
+
+        public async Task SimpanAsync(IReadOnlyList<Evaluasi> evaluasi, CancellationToken ct = default)
+        {
+            WriteCount++;
+            WriteStarted.TrySetResult();
+            await ReleaseWrites.Task.WaitAsync(ct);
+            await _inner.SimpanAsync(evaluasi, ct);
+        }
+
+        public Task<IReadOnlyList<Evaluasi>> ListByKomponenAsync(Guid id, CancellationToken ct = default) => _inner.ListByKomponenAsync(id, ct);
+        public Task<Evaluasi?> GetByIdAsync(Guid id, CancellationToken ct = default) => _inner.GetByIdAsync(id, ct);
+        public Task SimpanAsync(SimulasiEmisi simulasi, CancellationToken ct = default) => _inner.SimpanAsync(simulasi, ct);
     }
 
     [Fact]
