@@ -3,6 +3,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
+using Wastu.Domain.Scoring;
 using Wastu.Models;
 using Wastu.Reporting;
 using Wastu.Services;
@@ -277,7 +278,7 @@ public sealed class SelectableMaterialItem : ViewData
         Name = name;
         Score = score;
         Emission = emission;
-        Reason = reason;
+        ReasonPreview = FormatAlasanMaterial.KeBaris(reason).FirstOrDefault() ?? "";
         IsSelected = isSelected;
     }
 
@@ -289,8 +290,7 @@ public sealed class SelectableMaterialItem : ViewData
     public string ScoreText => $"{Format.Angka(Score)}/100";
     public double Emission { get; }
     public string EmissionText => $"{Format.Angka(Emission)} kg";
-    public string Reason { get; }
-    public string ReasonPreview => Reason.Length > 65 ? Reason[..62] + "..." : Reason;
+    public string ReasonPreview { get; }
     public bool IsSelected { get; set; }
 }
 
@@ -401,7 +401,7 @@ public sealed class ReportRow(Evaluasi e, bool last) : ViewData
     public string Name { get; } = e.Bahan.Nama;
     public string Score { get; } = Format.Angka(e.SkorKesesuaian) + "/100";
     public string Emission { get; } = Format.Angka(e.EmisiAwal);
-    public string Reason { get; } = e.Alasan;
+    public string[] Reason { get; } = FormatAlasanMaterial.KeBaris(e.Alasan);
     public Thickness RowBorder { get; } = new(0, 0, 0, last ? 0 : 1);
 }
 

@@ -79,7 +79,7 @@
                     </StackPanel>
                 </c:FlowGrid>
 
-                <c:CssText Text="Pilih Material untuk Laporan (Dapat memilih material apa pun termasuk peringkat 10):" FontWeight="700" Margin="0,0,0,8" />
+                <c:CssText Text="Pilih material untuk laporan" FontWeight="700" Margin="0,0,0,8" />
                 <ItemsControl x:Name="MaterialCheckList" ItemsSource="{Binding SelectableMaterials}" Focusable="False">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
@@ -88,14 +88,14 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="50" />
-                                        <ColumnDefinition Width="180" />
+                                        <ColumnDefinition Width="2*" />
                                         <ColumnDefinition Width="90" />
                                         <ColumnDefinition Width="90" />
-                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="3*" />
                                     </Grid.ColumnDefinitions>
                                     <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" Click="MaterialCheck_Click" VerticalAlignment="Center" Margin="0,0,8,0" />
                                     <c:CssText Grid.Column="1" Text="{Binding RankText}" FontWeight="600" VerticalAlignment="Center" />
-                                    <c:CssText Grid.Column="2" Text="{Binding Name}" FontWeight="600" VerticalAlignment="Center" />
+                                    <c:CssText Grid.Column="2" Text="{Binding Name}" FontWeight="600" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0" />
                                     <c:CssText Grid.Column="3" Text="{Binding ScoreText}" VerticalAlignment="Center" />
                                     <c:CssText Grid.Column="4" Text="{Binding EmissionText}" VerticalAlignment="Center" />
                                     <c:CssText Grid.Column="5" Text="{Binding ReasonPreview}" TextWrapping="Wrap" VerticalAlignment="Center" Style="{StaticResource Small}" />
@@ -162,7 +162,7 @@
                                     <c:CssText Style="{StaticResource Td}" Text="{Binding Name}" />
                                     <c:CssText Style="{StaticResource Td}" Grid.Column="1" Text="{Binding Score}" />
                                     <c:CssText Style="{StaticResource Td}" Grid.Column="2" Text="{Binding Emission}" />
-                                    <c:CssText Style="{StaticResource Td}" Grid.Column="3" Text="{Binding Reason}" />
+                                    <ContentPresenter Grid.Column="3" Content="{Binding Reason}" ContentTemplate="{StaticResource MaterialReasonTemplate}" Margin="12,14,12,9" />
                                 </Grid>
                             </Border>
                         </DataTemplate>
