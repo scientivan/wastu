@@ -66,9 +66,9 @@ Verifikasi mencakup domain, repository PostgreSQL terisolasi, snapshot/pemulihan
 
 ## Alur Penggunaan
 
-Untuk paket tugas Modul 10, ekstrak ZIP ke folder yang bisa ditulis dan biarkan `.env` dan file pendukung berada bersama **Wastu.exe**. Paket Windows x64 sudah membawa runtime .NET 8.
+Untuk paket pengumpulan Modul 10, ekstrak **Wastu.exe** dan `.env` dari **Wastu-Windows-x64.zip** ke satu folder. Klik dua kali **Wastu.exe**. Executable Windows x64 sudah menyertakan runtime .NET 8.
 
-Konfigurasi paket memilih Supabase melalui `WASTU_STORAGE_MODE=postgres`. Isi `WASTU_CONNECTION_STRING` pada `.env` dengan koneksi Npgsql untuk database Supabase yang sudah menerapkan migrasi di bagian berikut. Setelah itu, klik dua kali **Wastu.exe**. Label **PostgreSQL** pada aplikasi menunjukkan penyimpanan aktif. Peluncuran mode PostgreSQL dengan konfigurasi kosong menampilkan petunjuk koneksi. Gunakan internet untuk Supabase, iklim historis dan prakiraan Open-Meteo, serta peta.
+Berkas `.env` pada paket pengumpulan privat sudah berisi konfigurasi Supabase. Label **PostgreSQL** pada aplikasi menunjukkan penyimpanan aktif. Sambungan internet diperlukan untuk Supabase, iklim historis dan prakiraan Open-Meteo, serta peta. Bagikan paket ini hanya melalui kanal pengumpulan privat karena `.env` berisi kredensial.
 
 1. **Buat Proyek Baru:** Beri nama, tentukan lokasi (pilih kota atau koordinat), lalu pilih satu atau kedua komponen dan isi luas bidangnya.
 2. **Tinjau Profil Iklim:** Buka Profil Proyek untuk melihat sumber dan ringkasan iklim. Klik **Perbarui iklim** bila pengambilan awal gagal.
@@ -86,8 +86,6 @@ Aplikasi desktop Windows berbasis WPF (.NET 8, C#) dengan data cuaca dan iklim d
 1. Buat database lokal dengan `database/01_create_database.sql` atau gunakan database PostgreSQL yang sudah tersedia.
 2. Siapkan skema dengan migrasi EF pada database kosong atau database dengan riwayat migrasi EF yang sudah cocok. SQL instalasi/seed di `database/` dipakai untuk pemeriksaan kesetaraan; jangan menjalankan SQL lalu langsung mengulang seluruh migrasi EF pada tabel yang sama.
 3. Isi `.env` sesuai `.env.example` dengan `host`, `port`, `database`, `user`, dan `password` dari Supabase. Aplikasi menyusun connection string Npgsql otomatis dengan SSL. Gunakan session pooler port 5432. Alternatifnya, isi `WASTU_CONNECTION_STRING` lengkap untuk mengesampingkan variabel terpisah.
-
-   `.env` pada paket tugas sudah berisi `WASTU_STORAGE_MODE=postgres` dan kolom koneksi kosong. Isi dengan kredensial di perangkat pelaksana.
 
 4. Jalankan `dotnet run --project Wastu.csproj` di Windows dengan .NET 8 SDK. Jalankan tes dengan perintah pada bagian Pengujian di bawah.
 
@@ -124,7 +122,7 @@ Tes data memakai `WASTU_TEST_CONNECTION_STRING` menuju PostgreSQL uji terisolasi
 dotnet publish Wastu.csproj -c Release -r win-x64 --self-contained true -o artifacts/win-x64
 ```
 
-Salin seluruh folder hasil publish ke Windows dan jalankan `Wastu.exe`. Build/publish lintas platform memverifikasi kompilasi dan paket; jalankan pengujian interaktif, luring, resize, dialog ekspor, serta buka ulang PDF pada Windows sebelum menyatakan rilis siap digunakan. Aset garis pantai dan font PDF disertakan sebagai embedded resource. Berkas `.env` harus disediakan secara lokal dan tidak disertakan dalam paket.
+Salin seluruh folder hasil publish ke Windows dan jalankan `Wastu.exe`. Build/publish lintas platform memverifikasi kompilasi dan paket. Jalankan pengujian interaktif, luring, resize, dialog ekspor, serta buka ulang PDF pada Windows sebelum menyatakan rilis siap digunakan. Aset garis pantai dan font PDF disertakan sebagai embedded resource. Untuk hasil publish sendiri, tambahkan `.env` secara lokal sebelum membuka aplikasi dengan PostgreSQL.
 
 
 Untuk mengulang pemeriksaan WPF, bangun dengan `dotnet build Wastu.csproj -c Release -p:Snapshot=true`. Jalankan salinan output dari folder uji di luar pohon `.env`, atur `WASTU_DATA_DIR` ke direktori uji kosong, dan set `WASTU_SNAPSHOT=acceptance;<folder-hasil>;1440;900`. Mode `acceptance-restart` memakai data hasil proses pertama. Harness merender kontrol WPF dan menulis hasil/binding trace; ini otomasi Windows, bukan studi pemahaman manusia. Mode diagnostik tidak disertakan dalam build Release biasa.
