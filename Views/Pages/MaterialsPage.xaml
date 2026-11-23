@@ -189,7 +189,7 @@
                             </Border>
 
                             <StackPanel x:Name="DetailReasonSection" Margin="0,0,0,14">
-                                <c:TrackedText Style="{StaticResource PanelTitle}" Text="Alasan kesesuaian iklim" Margin="0,0,0,8" />
+                                <c:CssText FontSize="15" FontWeight="650" Foreground="{StaticResource Ink}" AutomationProperties.HeadingLevel="Level2" Text="Alasan kesesuaian iklim" Margin="0,0,0,8" />
                                 <ContentPresenter x:Name="DetailReasons" ContentTemplate="{StaticResource MaterialReasonTemplate}" />
                             </StackPanel>
 

@@ -101,37 +101,37 @@
                         Margin="0,10,0,0" Padding="0,14,0,0"
                         Visibility="{Binding IsChecked, ElementName=AssumptionsToggle, Converter={StaticResource AssumptionsVisibility}}">
                     <StackPanel>
-                        <c:TrackedText Style="{StaticResource PanelTitle}" Text="Asumsi Perhitungan (v2.0)" Margin="0,0,0,12" />
+                        <c:CssText FontSize="15" FontWeight="650" Foreground="{StaticResource Ink}" AutomationProperties.HeadingLevel="Level2" Text="Asumsi Perhitungan (v2.0)" Margin="0,0,0,12" />
                         <StackPanel Margin="0,0,0,14">
-                            <c:TrackedText Text="Sensitivitas &amp; Beban Lembap" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
+                            <c:CssText AutomationProperties.HeadingLevel="Level3" Text="Sensitivitas &amp; Beban Lembap" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
                             <c:CssText Text="Beban lembap = α × r + (1 − α) × h. Nilai r berasal dari curah hujan tahunan dengan acuan 3.000 mm/tahun, dan h dari kelembapan relatif. Nilai awal α = 0,5 memberi keduanya pengaruh yang sama. Parameter ini terpisah dari empat bobot kriteria dan belum dikalibrasi secara ilmiah."
                                        FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" />
                         </StackPanel>
 
                         <!-- Konduktivitas Termal -->
                         <StackPanel Margin="0,0,0,14">
-                            <c:TrackedText Text="Pita Konduktivitas Termal" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
+                            <c:CssText AutomationProperties.HeadingLevel="Level3" Text="Pita Konduktivitas Termal" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
                             <c:CssText Text="Pita konduktivitas termal ideal default adalah 0,10 hingga 0,60 W/(m·K) pada suhu rata-rata ≤ 26 °C, dan bergeser secara linear hingga batas atas 0,30 W/(m·K) pada suhu ≥ 32 °C. Bahan dengan konduktivitas di bawah batas atau di dalam pita memperoleh skor penuh 100."
                                        FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" />
                         </StackPanel>
 
                         <!-- Korosi Pesisir -->
                         <StackPanel Margin="0,0,0,14">
-                            <c:TrackedText Text="Risiko Korosi Pesisir" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
+                            <c:CssText AutomationProperties.HeadingLevel="Level3" Text="Risiko Korosi Pesisir" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
                             <c:CssText Text="Jarak lokasi ke garis pantai menjadi perkiraan paparan udara bergaram, dengan acuan 50 km."
                                        FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" />
                         </StackPanel>
 
                         <!-- Normalisasi Usia Pakai -->
                         <StackPanel Margin="0,0,0,14">
-                            <c:TrackedText Text="Normalisasi Usia Pakai" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
+                            <c:CssText AutomationProperties.HeadingLevel="Level3" Text="Normalisasi Usia Pakai" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
                             <c:CssText Text="Skor usia pakai memakai nilai terendah dan tertinggi dari seluruh bahan valid dalam kategori dinding atau atap. Hasil pencarian tidak mengubah acuan ini."
                                        FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" />
                         </StackPanel>
 
                         <!-- Ambang Label -->
                         <StackPanel>
-                            <c:TrackedText Text="Ambang Kesesuaian" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
+                            <c:CssText AutomationProperties.HeadingLevel="Level3" Text="Ambang Kesesuaian" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
                             <c:CssText Text="Cocok untuk skor ≥ 75. Perlu Pertimbangan untuk skor 55 hingga kurang dari 75. Tidak Disarankan untuk skor di bawah 55."
                                        FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" />
                         </StackPanel>
