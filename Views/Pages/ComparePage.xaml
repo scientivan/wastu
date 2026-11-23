@@ -159,7 +159,7 @@
                                     </StackPanel>
                                 </c:FlowGrid>
                             </Border>
-                            <c:CssText Text="{Binding Reason}" FontSize="12" Foreground="{StaticResource ReasonInk}" Leading="1.75" TextWrapping="Wrap" Margin="0,0,0,12" />
+                            <ContentPresenter Content="{Binding Reason}" ContentTemplate="{StaticResource MaterialReasonTemplate}" Margin="0,0,0,8" />
                             <c:CssText Text="{Binding Factor}" Strut="14" FontSize="12" Foreground="{StaticResource Muted}" />
                         </StackPanel>
                     </Border>
@@ -204,7 +204,7 @@
                                             <Border Width="48" Height="40" CornerRadius="5" Background="{Binding Thumb}" />
                                             <c:CssText Text="{Binding Name}" Leading="1.5" FontWeight="700" Margin="10,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap" />
                                         </StackPanel>
-                                        <c:CssText Text="{Binding Reason}" FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" Margin="58,6,0,0" TextWrapping="Wrap" />
+                                        <ContentPresenter Content="{Binding Reason}" ContentTemplate="{StaticResource MaterialReasonTemplate}" Margin="58,8,0,0" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Margin="12,14" VerticalAlignment="Center">
                                         <StackPanel Orientation="Horizontal">

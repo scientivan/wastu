@@ -219,7 +219,7 @@ public sealed class CompareCard(ItemKatalog item, Evaluasi e) : ViewData
     public TagData Tag { get; } = TagData.Kesesuaian(e.SkorKesesuaian);
     public string Score { get; } = Format.Angka(e.SkorKesesuaian);
     public string Emission { get; } = Format.Angka(e.EmisiAwal) + " ";
-    public string Reason { get; } = e.Alasan;
+    public string[] Reason { get; } = Format.AlasanMaterial(e.Alasan);
     public string Factor { get; } = $"Faktor emisi {item.Bahan.FaktorEmisi.ToString(System.Globalization.CultureInfo.InvariantCulture)} kgCO₂e/m²";
 }
 
@@ -232,6 +232,6 @@ public sealed class RankRow(ItemKatalog item, Evaluasi e, int index, int count) 
     public double BarWidth { get; } = 65 * Math.Clamp(e.SkorKesesuaian, 0, 100) / 100;
     public string Emission { get; } = Format.Angka(e.EmisiAwal) + " kgCO₂e";
     public TagData Tag { get; } = TagData.Kesesuaian(e.SkorKesesuaian);
-    public string Reason { get; } = e.Alasan;
+    public string[] Reason { get; } = Format.AlasanMaterial(e.Alasan);
     public Thickness RowBorder { get; } = new(0, 0, 0, index == count - 1 ? 0 : 1);
 }

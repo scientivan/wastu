@@ -13,6 +13,22 @@ namespace Wastu.Application.Tests;
 public sealed class ComparisonStateTests
 {
     [Fact]
+    public void AlasanMaterialMemisahkanEmpatKriteriaDanMerapikanAngkaEvaluasiTersimpan()
+    {
+        var alasan = Format.AlasanMaterial(
+            "Konduktivitas termal 0,45 W/mK tergolong rendah pada suhu rata-rata 26,961511086778017 C; " +
+            "Ketahanan lembap 4 memadai untuk curah hujan 2393,7599999999998 mm per tahun dan kelembapan 81,23851400675244 persen; " +
+            "Ketahanan korosi 4 memadai pada jarak 10,681771383700323 km dari pantai; jarak ke pantai sebagai proksi risiko udara bergaram; " +
+            "Usia pakai nominal 45 tahun tergolong panjang untuk kategori bahan ini.");
+
+        Assert.Collection(alasan,
+            termal => Assert.Contains("0,45 W/(m·K) tergolong rendah pada suhu rata-rata 26,96 °C", termal),
+            lembap => Assert.Contains("2.393,76 mm per tahun dan kelembapan 81,24%", lembap),
+            korosi => Assert.Contains("10,68 km dari pantai. Jarak ke pantai dipakai untuk memperkirakan risiko udara bergaram.", korosi),
+            usia => Assert.Equal("Usia pakai nominal 45 tahun tergolong panjang untuk kategori bahan ini.", usia));
+    }
+
+    [Fact]
     public async Task ReportBothComponentsKeepsEachCategoryRankAndRequiresMaterialForBoth()
     {
         var state = BuatState();
