@@ -4,6 +4,33 @@
             xmlns:c="clr-namespace:Wastu.Controls"
             xmlns:p="clr-namespace:Wastu.Views.Pages">
     <p:PageBase.Resources>
+        <BooleanToVisibilityConverter x:Key="AssumptionsVisibility" />
+        <Style x:Key="AssumptionsToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Foreground" Value="{StaticResource Green}" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusOutlineEntry}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="HitArea" Background="Transparent" CornerRadius="16">
+                            <Path Width="19" Height="19" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Stroke="{TemplateBinding Foreground}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  Data="M 10,1 A 9,9 0 1 1 10,19 A 9,9 0 1 1 10,1 M 10,9 L 10,14 M 10,6 L 10,6.1" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="HitArea" Property="Background" Value="{StaticResource LightHover}" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="HitArea" Property="Background" Value="{StaticResource ChipBg}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style x:Key="Th" TargetType="c:CssText">
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="600" />
@@ -27,7 +54,12 @@
         <Border Style="{StaticResource Panel}" Margin="0,0,0,22" Padding="20">
             <StackPanel>
                 <StackPanel Margin="0,0,0,14">
-                    <c:TrackedText Style="{StaticResource PanelTitle}" Text="Bobot Kriteria Kesesuaian" Margin="0,0,0,4" />
+                    <DockPanel LastChildFill="True" Margin="0,0,0,4">
+                        <ToggleButton x:Name="AssumptionsToggle" DockPanel.Dock="Right" Style="{StaticResource AssumptionsToggleStyle}"
+                                      AutomationProperties.Name="Asumsi perhitungan"
+                                      ToolTip="Tampilkan atau sembunyikan asumsi perhitungan" />
+                        <c:TrackedText Style="{StaticResource PanelTitle}" Text="Bobot Kriteria Kesesuaian" VerticalAlignment="Center" />
+                    </DockPanel>
                     <c:CssText Text="Atur bobot untuk proyek ini. Jumlah keempat bobot harus 100%." FontSize="12" Foreground="{StaticResource Muted}" Leading="1.4" />
                 </StackPanel>
 
@@ -65,57 +97,52 @@
                     </StackPanel>
                 </Grid>
 
+                <Border x:Name="AssumptionsDetails" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0"
+                        Margin="0,10,0,0" Padding="0,14,0,0"
+                        Visibility="{Binding IsChecked, ElementName=AssumptionsToggle, Converter={StaticResource AssumptionsVisibility}}">
+                    <StackPanel>
+                        <c:TrackedText Style="{StaticResource PanelTitle}" Text="Asumsi Perhitungan (v2.0)" Margin="0,0,0,12" />
+                        <StackPanel Margin="0,0,0,14">
+                            <c:TrackedText Text="Sensitivitas &amp; Beban Lembap" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
+                            <c:CssText Text="Beban lembap = α × r + (1 − α) × h. Nilai r berasal dari curah hujan tahunan dengan acuan 3.000 mm/tahun, dan h dari kelembapan relatif. Nilai awal α = 0,5 memberi keduanya pengaruh yang sama. Parameter ini terpisah dari empat bobot kriteria dan belum dikalibrasi secara ilmiah."
+                                       FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <!-- Konduktivitas Termal -->
+                        <StackPanel Margin="0,0,0,14">
+                            <c:TrackedText Text="Pita Konduktivitas Termal" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
+                            <c:CssText Text="Pita konduktivitas termal ideal default adalah 0,10 hingga 0,60 W/(m·K) pada suhu rata-rata ≤ 26 °C, dan bergeser secara linear hingga batas atas 0,30 W/(m·K) pada suhu ≥ 32 °C. Bahan dengan konduktivitas di bawah batas atau di dalam pita memperoleh skor penuh 100."
+                                       FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <!-- Korosi Pesisir -->
+                        <StackPanel Margin="0,0,0,14">
+                            <c:TrackedText Text="Risiko Korosi Pesisir" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
+                            <c:CssText Text="Jarak lokasi ke garis pantai menjadi perkiraan paparan udara bergaram, dengan acuan 50 km."
+                                       FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <!-- Normalisasi Usia Pakai -->
+                        <StackPanel Margin="0,0,0,14">
+                            <c:TrackedText Text="Normalisasi Usia Pakai" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
+                            <c:CssText Text="Skor usia pakai memakai nilai terendah dan tertinggi dari seluruh bahan valid dalam kategori dinding atau atap. Hasil pencarian tidak mengubah acuan ini."
+                                       FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <!-- Ambang Label -->
+                        <StackPanel>
+                            <c:TrackedText Text="Ambang Kesesuaian" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
+                            <c:CssText Text="Cocok untuk skor ≥ 75. Perlu Pertimbangan untuk skor 55 hingga kurang dari 75. Tidak Disarankan untuk skor di bawah 55."
+                                       FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
                 <!-- Pesan Read-only luring jika ModeBacaSaja -->
                 <Border x:Name="WeightReadOnlyBanner" Visibility="Collapsed" Background="{StaticResource WarnBg}" CornerRadius="6" Padding="10,8" Margin="0,10,0,0">
                     <c:CssText Text="Mode luring baca-saja: pengaturan bobot dinonaktifkan." FontSize="12" Foreground="{StaticResource Red}" FontWeight="600" />
                 </Border>
             </StackPanel>
-        </Border>
-
-        <!-- Panel Transparansi Asumsi Perhitungan (F4-06, §9.1–9.2, X11) -->
-        <Border Style="{StaticResource Panel}" Margin="0,0,0,22" Padding="20">
-            <Expander Header="Asumsi Perhitungan (v2.0)" IsExpanded="False" Foreground="{StaticResource Ink}" FontSize="15" FontWeight="650">
-                <StackPanel Margin="0,14,0,0">
-                    <Border BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="0,14,0,0">
-                        <StackPanel>
-                            <!-- Beban Lembap -->
-                            <StackPanel Margin="0,0,0,14">
-                                <c:TrackedText Text="1. Sensitivitas &amp; Beban Lembap" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
-                                <c:CssText Text="Perhitungan beban menggunakan formula komposit terbobot: beban = α · r + (1-α) · h, dengan parameter default α = 0,5 dan acuan curah hujan 3.000 mm/tahun. Nilai α adalah proporsi sensitivitas curah hujan terhadap kelembapan relatif lokasi dan sepenuhnya terpisah dari 4 bobot kriteria penilaian. Model ini adalah model awal pengganti (bukan hasil kalibrasi ilmiah)."
-                                           FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" />
-                            </StackPanel>
-
-                            <!-- Konduktivitas Termal -->
-                            <StackPanel Margin="0,0,0,14">
-                                <c:TrackedText Text="2. Pita Konduktivitas Termal" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
-                                <c:CssText Text="Pita konduktivitas termal ideal default adalah 0,10 hingga 0,60 W/(m·K) pada suhu rata-rata ≤26°C, dan bergeser secara linear hingga batas atas 0,30 W/(m·K) pada suhu ≥32°C. Bahan dengan konduktivitas di bawah batas atau di dalam pita memperoleh skor penuh 100."
-                                           FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" />
-                            </StackPanel>
-
-                            <!-- Korosi Pesisir -->
-                            <StackPanel Margin="0,0,0,14">
-                                <c:TrackedText Text="3. Risiko Korosi Pesisir" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
-                                <c:CssText Text="Risiko korosi dihitung sebagai proksi jarak geometris garis pantai kontinu terhadap lokasi proyek dengan batas acuan 50 km (bukan hasil pengukuran salinitas udara langsung di lapangan)."
-                                           FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" />
-                            </StackPanel>
-
-                            <!-- Normalisasi Usia Pakai -->
-                            <StackPanel Margin="0,0,0,14">
-                                <c:TrackedText Text="4. Normalisasi Usia Pakai" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
-                                <c:CssText Text="Normalisasi usia pakai dihitung secara min–maks terhadap seluruh bahan valid dalam kategori komponen (dinding/atap), bukan hanya bahan hasil penapisan pencarian atau dua bahan yang sedang dibandingkan."
-                                           FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" />
-                            </StackPanel>
-
-                            <!-- Ambang Label -->
-                            <StackPanel>
-                                <c:TrackedText Text="5. Ambang Kategori Kesesuaian &amp; Versi Model" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
-                                <c:CssText Text="Ambang label kesesuaian konsisten: Cocok (skor ≥ 75), Perlu Pertimbangan (skor 55 hingga 74,99), dan Tidak Disarankan (skor &lt; 55). Seluruh perhitungan berbasis konfigurasi model v2.0."
-                                           FontSize="12" Foreground="{StaticResource Muted}" Leading="1.5" TextWrapping="Wrap" />
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-            </Expander>
         </Border>
 
         <!-- .compare-controls -->
