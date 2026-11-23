@@ -40,6 +40,7 @@ public sealed class ProyekDto
     public double JarakPesisir { get; set; }
     public int RevisiLokasi { get; set; } = 1;
     public string ZonaWaktu { get; set; } = "Asia/Jakarta";
+    // Menjaga makna snapshot lama dan kompatibilitas dengan aplikasi sebelum V2 menjadi bawaan.
     public bool GunakanBobotKustom { get; set; }
     public double BobotTermal { get; set; } = 0.25;
     public double BobotLembap { get; set; } = 0.25;

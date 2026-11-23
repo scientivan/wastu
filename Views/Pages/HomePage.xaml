@@ -132,7 +132,7 @@
                                                 </Grid>
                                             </StackPanel>
                                         </Border>
-                                        <c:CssText Text="{Binding Reason}" FontSize="12" Leading="1.5" Foreground="{StaticResource ReasonInk}" TextWrapping="Wrap" Margin="0,12,0,0" />
+                                        <ContentPresenter Content="{Binding Reason}" ContentTemplate="{StaticResource MaterialReasonTemplate}" Margin="0,12,0,0" />
                                     </StackPanel>
                                 </StackPanel>
                             </Border>

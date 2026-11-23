@@ -13,6 +13,22 @@ namespace Wastu.Application.Tests;
 public sealed class ComparisonStateTests
 {
     [Fact]
+    public void AlasanMaterialMemisahkanEmpatKriteriaDanMerapikanAngkaEvaluasiTersimpan()
+    {
+        var alasan = Format.AlasanMaterial(
+            "Konduktivitas termal 0,45 W/mK tergolong rendah pada suhu rata-rata 26,961511086778017 C; " +
+            "Ketahanan lembap 4 memadai untuk curah hujan 2393,7599999999998 mm per tahun dan kelembapan 81,23851400675244 persen; " +
+            "Ketahanan korosi 4 memadai pada jarak 10,681771383700323 km dari pantai; jarak ke pantai sebagai proksi risiko udara bergaram; " +
+            "Usia pakai nominal 45 tahun tergolong panjang untuk kategori bahan ini.");
+
+        Assert.Collection(alasan,
+            termal => Assert.Contains("0,45 W/(m·K) tergolong rendah pada suhu rata-rata 26,96 °C", termal),
+            lembap => Assert.Contains("2.393,76 mm per tahun dan kelembapan 81,24%", lembap),
+            korosi => Assert.Contains("10,68 km dari pantai. Jarak ke pantai dipakai untuk memperkirakan risiko udara bergaram.", korosi),
+            usia => Assert.Equal("Usia pakai nominal 45 tahun tergolong panjang untuk kategori bahan ini.", usia));
+    }
+
+    [Fact]
     public async Task ReportBothComponentsKeepsEachCategoryRankAndRequiresMaterialForBoth()
     {
         var state = BuatState();
@@ -112,12 +128,10 @@ public sealed class ComparisonStateTests
 
         state.Proyek.Add(new Bangunan { Id = 2 });
         state.ProyekAktifId = 2;
-        Assert.False(state.Aktif.GunakanBobotKustom);
         Assert.Equal(KriteriaBobot.Default, state.BobotAktif);
         state.ProyekAktifId = 1;
         Assert.Equal(valid, state.BobotAktif);
         state.ResetBobotAktif();
-        Assert.False(state.Aktif.GunakanBobotKustom);
         Assert.Equal(KriteriaBobot.Default, state.BobotAktif);
     }
 
@@ -145,14 +159,12 @@ public sealed class ComparisonStateTests
         pulihkan.Invoke(null, [hasil, dto]);
         Assert.Equal(state.Aktif.StableId, hasil.Aktif.StableId);
         Assert.Equal(state.Aktif.Komponen[0].Id, hasil.Aktif.Komponen[0].Id);
-        Assert.True(hasil.Aktif.GunakanBobotKustom);
         Assert.Equal(state.BobotAktif, hasil.BobotAktif);
 
         var legacy = System.Text.Json.JsonSerializer.Deserialize<StateDto>(
             """{"Proyek":[{"Id":1,"Kota":"Jakarta","Dinding":120}]}""")!;
         pulihkan.Invoke(null, [hasil, legacy]);
         Assert.Equal(KriteriaBobot.Default, hasil.BobotAktif);
-        Assert.False(hasil.Aktif.GunakanBobotKustom);
         Assert.NotEqual(Guid.Empty, hasil.Aktif.StableId);
         Assert.NotEqual(Guid.Empty, hasil.Aktif.Komponen[0].Id);
     }
@@ -197,7 +209,6 @@ public sealed class ComparisonStateTests
         var state = BuatState(scoring);
         typeof(AppState).GetProperty(nameof(AppState.ModeBacaSaja))!.SetValue(state, true);
         Assert.Throws<InvalidOperationException>(() => state.AturBobotPersentase(40, 30, 20, 10));
-        Assert.Throws<InvalidOperationException>(() => state.AturModeBobot(true));
         Assert.Throws<InvalidOperationException>(() => state.ResetBobotAktif());
         Assert.NotEmpty(state.Peringkat());
         Assert.Equal(0, repo.Percobaan);

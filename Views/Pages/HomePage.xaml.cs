@@ -122,7 +122,7 @@ public sealed class ActiveMaterial(Brush image, string name, string score, strin
     public string Name { get; } = name;
     public string Score { get; } = score;
     public string Emission { get; } = emission;
-    public string Reason { get; } = reason;
+    public string[] Reason { get; } = Format.AlasanMaterial(reason);
     public TagData Tag { get; } = tag;
     public double ImageHeight { get; } = imageHeight;
 

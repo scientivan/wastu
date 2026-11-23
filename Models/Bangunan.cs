@@ -27,7 +27,6 @@ public class Bangunan
     public double Longitude { get => _longitude; set => _longitude = value; }
     public int RevisiLokasi { get; set; } = 1;
     public string ZonaWaktu { get; set; } = "Asia/Jakarta";
-    public bool GunakanBobotKustom { get; set; } = false;
     public Domain.KriteriaBobot Bobot { get; set; } = Domain.KriteriaBobot.Default;
     public bool JadwalTersimpanDiDatabase { get; set; }
     public double FaktorPenuaanA { get; set; } = 0.5;

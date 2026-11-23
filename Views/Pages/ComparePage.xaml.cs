@@ -43,14 +43,7 @@ public partial class ComparePage : PageBase
         _syncingWeights = true;
         try
         {
-            bool kustom = S.Aktif.GunakanBobotKustom;
-            MvpWeightRadio.IsChecked = !kustom;
-            V2WeightRadio.IsChecked = kustom;
-
-            MvpWeightInfoPanel.Visibility = !kustom ? Visibility.Visible : Visibility.Collapsed;
-            V2WeightControlPanel.Visibility = kustom ? Visibility.Visible : Visibility.Collapsed;
-
-            var bobot = S.Aktif.Bobot;
+            var bobot = S.BobotAktif;
             ThermalWeightBox.Text = (bobot.Termal * 100).ToString("G15", CultureInfo.InvariantCulture);
             MoistureWeightBox.Text = (bobot.Lembap * 100).ToString("G15", CultureInfo.InvariantCulture);
             CorrosionWeightBox.Text = (bobot.Korosi * 100).ToString("G15", CultureInfo.InvariantCulture);
@@ -60,8 +53,6 @@ public partial class ComparePage : PageBase
             UpdateWeightSumIndicator();
 
             bool readOnly = S.ModeBacaSaja || S.ButuhPemulihan;
-            MvpWeightRadio.IsEnabled = !readOnly;
-            V2WeightRadio.IsEnabled = !readOnly;
             ThermalWeightBox.IsEnabled = !readOnly;
             MoistureWeightBox.IsEnabled = !readOnly;
             CorrosionWeightBox.IsEnabled = !readOnly;
@@ -73,17 +64,6 @@ public partial class ComparePage : PageBase
         finally
         {
             _syncingWeights = false;
-        }
-    }
-
-    private void WeightMode_Click(object sender, RoutedEventArgs e)
-    {
-        if (_refreshing || _syncingWeights || S.ModeBacaSaja) return;
-        if (sender is RadioButton rb && rb.Tag is string tag)
-        {
-            bool isCustom = tag == "v2";
-            S.AturModeBobot(isCustom);
-            Shell.Render();
         }
     }
 
@@ -239,7 +219,7 @@ public sealed class CompareCard(ItemKatalog item, Evaluasi e) : ViewData
     public TagData Tag { get; } = TagData.Kesesuaian(e.SkorKesesuaian);
     public string Score { get; } = Format.Angka(e.SkorKesesuaian);
     public string Emission { get; } = Format.Angka(e.EmisiAwal) + " ";
-    public string Reason { get; } = e.Alasan;
+    public string[] Reason { get; } = Format.AlasanMaterial(e.Alasan);
     public string Factor { get; } = $"Faktor emisi {item.Bahan.FaktorEmisi.ToString(System.Globalization.CultureInfo.InvariantCulture)} kgCO₂e/m²";
 }
 
@@ -252,6 +232,6 @@ public sealed class RankRow(ItemKatalog item, Evaluasi e, int index, int count) 
     public double BarWidth { get; } = 65 * Math.Clamp(e.SkorKesesuaian, 0, 100) / 100;
     public string Emission { get; } = Format.Angka(e.EmisiAwal) + " kgCO₂e";
     public TagData Tag { get; } = TagData.Kesesuaian(e.SkorKesesuaian);
-    public string Reason { get; } = e.Alasan;
+    public string[] Reason { get; } = Format.AlasanMaterial(e.Alasan);
     public Thickness RowBorder { get; } = new(0, 0, 0, index == count - 1 ? 0 : 1);
 }

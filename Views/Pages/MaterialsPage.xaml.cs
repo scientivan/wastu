@@ -26,7 +26,7 @@ public partial class MaterialsPage : PageBase
         WallTab.IsChecked = S.Jenis == JenisKomponen.Dinding;
         RoofTab.IsChecked = S.Jenis == JenisKomponen.Atap;
         SearchBox.Text = S.Cari;
-        WeightModeBadge.Text = S.Aktif?.GunakanBobotKustom == true ? "Bobot kustom aktif" : "Bobot sama (25%)";
+        WeightModeBadge.Text = S.BobotAktif != Domain.KriteriaBobot.Default ? "Bobot kustom aktif" : "Bobot sama (25%)";
         _refreshing = false;
 
         var area = S.Luas;
@@ -178,9 +178,8 @@ public sealed class MaterialCard : ViewData
         Kind = item.Jenis == JenisKomponen.Atap ? "MATERIAL ATAP" : "MATERIAL DINDING";
         Name = item.Bahan.Nama;
         Tag = e is not null ? TagData.Kesesuaian(e.SkorKesesuaian) : new TagData("Katalog", Palette.TagBg, Palette.TagFg);
-        Reason = e is not null
-            ? (e.Alasan.Split(';')[0].TrimEnd('.') + ".")
-            : "Bahan siap dievaluasi untuk proyek Anda.";
+        Reason = e is null ? "Bahan siap dievaluasi untuk proyek Anda."
+            : Format.AlasanMaterial(e.Alasan).FirstOrDefault() ?? "";
         Source = item.Bahan.DataSource;
         Score = e is not null ? (Format.Angka(e.SkorKesesuaian) + "/100") : "-";
         ScoreBrush = (e is not null && e.SkorKesesuaian < 55) ? Palette.Red : Palette.Score;

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace Wastu.Services;
 
@@ -9,6 +10,27 @@ public static class Format
 
     // Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 })
     public static string Angka(double nilai) => nilai.ToString("#,##0.#", Id);
+
+    public static string[] AlasanMaterial(string alasan)
+    {
+        // Evaluasi yang sudah tersimpan memakai titik koma sebagai pemisah kriteria.
+        var ringkas = Regex.Replace(alasan, @"-?\d+,\d+", cocok =>
+        {
+            if (!double.TryParse(cocok.Value, NumberStyles.Float, Id, out double nilai) ||
+                !double.IsFinite(nilai) || (nilai != 0 && Math.Round(nilai, 2) == 0))
+                return cocok.Value;
+            return nilai.ToString("#,##0.##", Id);
+        });
+        ringkas = Regex.Replace(ringkas, @"(?<=\d) C\b", " °C")
+            .Replace(" W/mK", " W/(m·K)", StringComparison.Ordinal)
+            .Replace(" persen", "%", StringComparison.Ordinal)
+            .Replace("; jarak ke pantai sebagai proksi risiko udara bergaram",
+                ". Jarak ke pantai dipakai untuk memperkirakan risiko udara bergaram", StringComparison.Ordinal);
+        return Regex.Split(ringkas, @";\s*(?=Ketahanan lembap|Ketahanan korosi|Usia pakai nominal)")
+            .Where(baris => !string.IsNullOrWhiteSpace(baris))
+            .Select(baris => baris.Trim().TrimEnd('.') + ".")
+            .ToArray();
+    }
 
     // toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
     public static string Tanggal(DateTime tanggal) => tanggal.ToString("d MMMM yyyy", Id);

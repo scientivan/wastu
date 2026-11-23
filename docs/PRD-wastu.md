@@ -183,7 +183,7 @@ Rencana revisi Wastu mencakup implementasi fungsional penuh dari F1 sampai F7 hi
 - Untuk komponen terpilih, sistem menampilkan daftar bahan terurut berdasarkan skor kesesuaian iklim (§11.1) secara menurun. Jika skor identik, urutan kedua adalah emisi terendah, diikuti kestabilan nama/ID bahan.
 - Setiap baris menampilkan skor kesesuaian (0–100) dan kgCO2e berdampingan, bukan pada tab terpisah.
 - Setiap bahan disertai alasan penilaian dalam kalimat (contoh: "Ketahanan lembap rendah untuk curah hujan tahunan tinggi di lokasi Anda").
-- Pada mode MVP, empat bobot kriteria bernilai tetap 0,25 masing-masing (slider bobot dinonaktifkan) (§PRD-R01).
+- Pada rilis MVP, empat bobot kriteria bernilai tetap 0,25 masing-masing (§PRD-R01). Pada rilis V2, pengaturan bobot tersedia langsung di halaman Bandingkan.
 - Pada mode V2, pengguna dapat mengatur bobot kriteria kustom (dengan validasi strictly finite, non-negatif, jumlah tepat 100%, dan tombol reset ke default) dan melihat peringkat bahan diperbarui secara instan di memori tanpa memanggil ulang API iklim (§PRD-R01).
 - Ambang rekomendasi label terpusat: skor $< 55$ ditandai visual sebagai **"Tidak disarankan"** (bahan tetap ditampilkan, tidak disembunyikan); skor $55 \le \text{skor} < 75$ berlabel **"Perlu pertimbangan"**; skor $\ge 75$ berlabel **"Cocok"** (§PRD-R10).
 
@@ -367,8 +367,8 @@ Skor kesesuaian per bahan dihitung sebagai jumlah berbobot dari empat sub-skor (
 $$\text{skor\_kesesuaian} = w_{\text{termal}} \cdot s_{\text{termal}} + w_{\text{lembap}} \cdot s_{\text{lembap}} + w_{\text{korosi}} \cdot s_{\text{korosi}} + w_{\text{usia}} \cdot s_{\text{usia}}$$
 
 dengan syarat $\sum w = 1{,}0$ (atau total $100\%$).
-- **Mode MVP:** Keempat bobot bernilai tetap $0{,}25$ masing-masing (slider bobot dinonaktifkan) (§PRD-R01).
-- **Mode V2:** Pengguna dapat menyesuaikan bobot kustom per-proyek. Sistem memvalidasi strictly: nilai finite, non-negatif ($w \ge 0$), dan total tepat bernilai $100\%$. **Dilarang melakukan normalisasi diam-diam** (auto-rescaling terselubung) jika total tidak 100%; sistem menampilkan pesan validasi secara instan di UI dan ranking dihitung langsung di memori tanpa memanggil ulang API iklim / request HTTP (§PRD-R01, §PRD-R11).
+- **Rilis MVP:** Keempat bobot bernilai tetap $0{,}25$ masing-masing (slider bobot dinonaktifkan) (§PRD-R01).
+- **Rilis V2:** Pengguna dapat langsung menyesuaikan bobot per proyek. Bobot awal dan reset memakai 25% per kriteria. Sistem memvalidasi strictly: nilai finite, non-negatif ($w \ge 0$), dan total tepat bernilai $100\%$. **Dilarang melakukan normalisasi diam-diam** (auto-rescaling terselubung) jika total tidak 100%; sistem menampilkan pesan validasi secara instan di UI dan ranking dihitung langsung di memori tanpa memanggil ulang API iklim / request HTTP (§PRD-R01, §PRD-R11).
 
 | Sub-skor | Dihitung dari | Model Perhitungan & Perilaku Monoton |
 |---|---|---|
