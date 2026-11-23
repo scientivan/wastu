@@ -101,7 +101,7 @@
                         Margin="0,10,0,0" Padding="0,14,0,0"
                         Visibility="{Binding IsChecked, ElementName=AssumptionsToggle, Converter={StaticResource AssumptionsVisibility}}">
                     <StackPanel>
-                        <c:CssText FontSize="15" FontWeight="650" Foreground="{StaticResource Ink}" AutomationProperties.HeadingLevel="Level2" Text="Asumsi Perhitungan (v2.0)" Margin="0,0,0,12" />
+                        <c:CssText FontSize="15" FontWeight="650" Foreground="{StaticResource Ink}" AutomationProperties.HeadingLevel="Level2" Text="Asumsi Perhitungan" Margin="0,0,0,12" />
                         <StackPanel Margin="0,0,0,14">
                             <c:CssText AutomationProperties.HeadingLevel="Level3" Text="Sensitivitas &amp; Beban Lembap" FontSize="13" FontWeight="700" Foreground="{StaticResource Ink}" Margin="0,0,0,4" />
                             <c:CssText Text="Beban lembap = α × r + (1 − α) × h. Nilai r berasal dari curah hujan tahunan dengan acuan 3.000 mm/tahun, dan h dari kelembapan relatif. Nilai awal α = 0,5 memberi keduanya pengaruh yang sama. Parameter ini terpisah dari empat bobot kriteria dan belum dikalibrasi secara ilmiah."
