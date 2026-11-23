@@ -162,19 +162,7 @@ public sealed partial class AppState
         return evaluasi;
     }
 
-    public KriteriaBobot BobotAktif => Aktif is { GunakanBobotKustom: true } p ? p.Bobot : KriteriaBobot.Default;
-
-    public void AturModeBobot(bool kustom)
-    {
-        TolakTulis();
-        if (Aktif is null) return;
-        Aktif.GunakanBobotKustom = kustom;
-        if (!kustom)
-        {
-            Aktif.Bobot = KriteriaBobot.Default;
-        }
-        Ubah();
-    }
+    public KriteriaBobot BobotAktif => Aktif?.Bobot ?? KriteriaBobot.Default;
 
     public string? AturBobotPersentase(double termalPct, double lembapPct, double korosiPct, double usiaPct)
     {
@@ -191,7 +179,6 @@ public sealed partial class AppState
             return "Isi keempat bobot dengan angka tidak negatif dan total tepat 100%.";
         }
         Aktif.Bobot = bobotBaru;
-        Aktif.GunakanBobotKustom = true;
         Ubah();
         return null;
     }
@@ -201,7 +188,6 @@ public sealed partial class AppState
         TolakTulis();
         if (Aktif is null) return;
         Aktif.Bobot = KriteriaBobot.Default;
-        Aktif.GunakanBobotKustom = false;
         Ubah();
     }
 
@@ -404,7 +390,6 @@ public sealed partial class AppState
             Longitude = bujur,
             RevisiLokasi = 1,
             ZonaWaktu = "Asia/Jakarta",
-            GunakanBobotKustom = false,
             Bobot = Domain.KriteriaBobot.Default,
             ProfilIklim = Katalog.ProfilBawaan(kota, pesisir)
         };
@@ -948,7 +933,6 @@ public sealed partial class AppState
                 Longitude = p.Bujur,
                 RevisiLokasi = p.RevisiLokasi > 0 ? p.RevisiLokasi : 1,
                 ZonaWaktu = !string.IsNullOrWhiteSpace(p.ZonaWaktu) ? p.ZonaWaktu : "Asia/Jakarta",
-                GunakanBobotKustom = p.GunakanBobotKustom,
                 JadwalTersimpanDiDatabase = p.JadwalTersimpanDiDatabase,
                 FaktorPenuaanA = double.IsFinite(p.FaktorPenuaanA) && p.FaktorPenuaanA > 0 && p.FaktorPenuaanA <= 1 ? p.FaktorPenuaanA : 0.5,
                 PrakiraanCache = p.PrakiraanCache,
@@ -991,7 +975,6 @@ public sealed partial class AppState
             }
             catch
             {
-                proyek.GunakanBobotKustom = false;
                 proyek.Bobot = Domain.KriteriaBobot.Default;
             }
 
@@ -1062,7 +1045,7 @@ public sealed partial class AppState
             JarakPesisir = p.ProfilIklim?.JarakPesisirKm ?? 0,
             RevisiLokasi = p.RevisiLokasi,
             ZonaWaktu = p.ZonaWaktu,
-            GunakanBobotKustom = p.GunakanBobotKustom,
+            GunakanBobotKustom = p.Bobot != KriteriaBobot.Default,
             JadwalTersimpanDiDatabase = p.JadwalTersimpanDiDatabase,
             FaktorPenuaanA = p.FaktorPenuaanA,
             PrakiraanCache = p.PrakiraanCache,

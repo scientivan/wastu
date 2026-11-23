@@ -61,7 +61,9 @@ internal static partial class DebugSnapshot
                 if (mode == "acceptance-backup") Check(App.State.DipulihkanDariCadangan, "Corrupt primary recovers valid backup");
                 window.ShowShell("compare");
                 await Idle(window);
-                Check(!VisibleNamed<RadioButton>("MvpWeightRadio").IsEnabled, "Read-only weight controls disabled");
+                Check(!VisibleNamed<TextBox>("ThermalWeightBox").IsEnabled
+                    && !VisibleNamed<Button>("ApplyWeightsBtn").IsEnabled
+                    && !VisibleNamed<Button>("ResetWeightsBtn").IsEnabled, "Read-only weight controls disabled");
                 await Shot("offline-compare");
                 var codes = App.State.Terpilih().Select(i => i.Kode).ToHashSet();
                 var exported = await App.State.Workflows.ExportAsync(ReportSnapshotFactory.Build(
@@ -206,7 +208,7 @@ internal static partial class DebugSnapshot
             Click(Labeled("Tutup"));
 
             window.ShowShell("compare");
-            Click(VisibleNamed<RadioButton>("V2WeightRadio"));
+            Check(VisibleNamed<TextBox>("ThermalWeightBox").IsEnabled, "Custom weight fields are available immediately");
             VisibleNamed<TextBox>("ThermalWeightBox").Text = "10";
             VisibleNamed<TextBox>("MoistureWeightBox").Text = "10";
             VisibleNamed<TextBox>("CorrosionWeightBox").Text = "10";
@@ -218,7 +220,9 @@ internal static partial class DebugSnapshot
             Check(App.State.BobotAktif.Usia == 0.7, "Valid custom weights applied through UI");
             await Shot("custom-weights");
             Click(VisibleNamed<Button>("ResetWeightsBtn"));
-            Check(!App.State.Aktif.GunakanBobotKustom, "Weight reset restores MVP");
+            Check(App.State.BobotAktif == KriteriaBobot.Default
+                && VisibleNamed<TextBox>("ThermalWeightBox").Text == "25"
+                && VisibleNamed<TextBox>("ThermalWeightBox").IsEnabled, "Reset restores equal weights and keeps the fields editable");
             window.ShowShell("sim");
             foreach (int index in new[] { 0, 2, 1 })
             {

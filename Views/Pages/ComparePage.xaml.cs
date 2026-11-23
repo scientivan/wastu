@@ -43,14 +43,7 @@ public partial class ComparePage : PageBase
         _syncingWeights = true;
         try
         {
-            bool kustom = S.Aktif.GunakanBobotKustom;
-            MvpWeightRadio.IsChecked = !kustom;
-            V2WeightRadio.IsChecked = kustom;
-
-            MvpWeightInfoPanel.Visibility = !kustom ? Visibility.Visible : Visibility.Collapsed;
-            V2WeightControlPanel.Visibility = kustom ? Visibility.Visible : Visibility.Collapsed;
-
-            var bobot = S.Aktif.Bobot;
+            var bobot = S.BobotAktif;
             ThermalWeightBox.Text = (bobot.Termal * 100).ToString("G15", CultureInfo.InvariantCulture);
             MoistureWeightBox.Text = (bobot.Lembap * 100).ToString("G15", CultureInfo.InvariantCulture);
             CorrosionWeightBox.Text = (bobot.Korosi * 100).ToString("G15", CultureInfo.InvariantCulture);
@@ -60,8 +53,6 @@ public partial class ComparePage : PageBase
             UpdateWeightSumIndicator();
 
             bool readOnly = S.ModeBacaSaja || S.ButuhPemulihan;
-            MvpWeightRadio.IsEnabled = !readOnly;
-            V2WeightRadio.IsEnabled = !readOnly;
             ThermalWeightBox.IsEnabled = !readOnly;
             MoistureWeightBox.IsEnabled = !readOnly;
             CorrosionWeightBox.IsEnabled = !readOnly;
@@ -73,17 +64,6 @@ public partial class ComparePage : PageBase
         finally
         {
             _syncingWeights = false;
-        }
-    }
-
-    private void WeightMode_Click(object sender, RoutedEventArgs e)
-    {
-        if (_refreshing || _syncingWeights || S.ModeBacaSaja) return;
-        if (sender is RadioButton rb && rb.Tag is string tag)
-        {
-            bool isCustom = tag == "v2";
-            S.AturModeBobot(isCustom);
-            Shell.Render();
         }
     }
 

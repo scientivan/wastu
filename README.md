@@ -45,7 +45,7 @@ Implementasi saat ini mencakup perubahan V2 berikut. Ketersediaan kode dan kelul
 | Katalog | Dataset kanonik 15 bahan dinding dan 10 bahan atap untuk mode lokal/PostgreSQL, sumber per properti, status perkiraan, dan refresh katalog. |
 | Iklim | Pengambilan historis berdasarkan lokasi, perlindungan respons terlambat ketika lokasi/proyek berubah, profil tersimpan, serta metadata sumber, periode, cache, dan proksi pesisir. |
 | Peringkat | Satu layanan skoring untuk halaman aplikasi, normalisasi usia terhadap kategori penuh, alasan setiap bahan, ambang 55/75, dan emisi awal berdampingan dengan skor. |
-| Bobot | Mode MVP memakai 25% per kriteria; mode V2 menyimpan bobot per proyek, menolak total selain 100%, mendukung reset, dan menghitung ulang tanpa mengambil iklim lagi. |
+| Bobot | Bobot kustom tersedia langsung dan disimpan per proyek. Total harus 100%. Reset memulihkan 25% per kriteria. Peringkat dihitung ulang tanpa mengambil iklim lagi. |
 | Riwayat evaluasi | Identitas proyek/komponen stabil dan batch berdasarkan hash input; render ulang memakai cache, penulisan berulang tidak menimpa batch lama, dan kegagalan penyimpanan dapat dicoba lagi. |
 | Simulasi | Penggantian hanya pada waktu 0 < t < H, faktor penuaan dapat diatur, grafik step mengikuti kalkulator domain, dan repository mendukung beberapa horizon. |
 | Jadwal | Prakiraan, cache enam jam, zona waktu proyek, status data tidak tersedia, pengaturan ambang, dan konfirmasi untuk mengunci hari berisiko. |
@@ -72,7 +72,7 @@ Berkas `.env` pada paket pengumpulan privat sudah berisi konfigurasi Supabase. L
 
 1. **Buat Proyek Baru:** Beri nama, tentukan lokasi (pilih kota atau koordinat), lalu pilih satu atau kedua komponen dan isi luas bidangnya.
 2. **Tinjau Profil Iklim:** Buka Profil Proyek untuk melihat sumber dan ringkasan iklim. Klik **Perbarui iklim** bila pengambilan awal gagal.
-3. **Bandingkan Bahan:** Cari material di Eksplor Material, pilih dua bahan sejenis, lalu baca skor, alasan, dan emisinya di Bandingkan. Mode V2 menerima empat persentase dengan total 100%.
+3. **Bandingkan Bahan:** Cari material di Eksplor Material, pilih dua bahan sejenis, lalu baca skor, alasan, dan emisinya di Bandingkan. Bobot per proyek dapat disesuaikan langsung dengan total 100%.
 4. **Simulasikan Emisi:** Pilih horizon 20, 30, atau 50 tahun untuk melihat grafik emisi dan jumlah penggantian.
 5. **Jadwalkan Pekerjaan:** Perbarui prakiraan, tambahkan pekerjaan dan rentang tanggal, lalu pilih hari dan kunci jika data cuaca tersedia. Baca peringatan sebelum menyetujui hari berisiko.
 6. **Simpan Laporan Rekomendasi:** Pilih Dinding, Atap, atau Keduanya sesuai proyek dan centang material yang ingin dimasukkan. Pilih horizon, lalu **Simpan PDF**. Riwayat menyediakan **Buka PDF** dan **Buat salinan** untuk laporan yang mempunyai snapshot.
