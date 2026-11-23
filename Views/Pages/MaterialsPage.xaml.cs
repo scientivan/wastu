@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using Wastu.Domain.Scoring;
 using Wastu.Models;
 using Wastu.Services;
 
@@ -114,18 +115,21 @@ public partial class MaterialsPage : PageBase
         var card = _cards.Find(c => c.Code == code);
         if (card is null) return;
 
-        TampilkanDetail(card.Item);
+        TampilkanDetail(card);
     }
 
-    private void TampilkanDetail(ItemKatalog item)
+    private void TampilkanDetail(MaterialCard card)
     {
+        var item = card.Item;
+        DetailReasons.Content = card.AlasanLengkap;
+        DetailReasonSection.Visibility = card.AlasanLengkap.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         DetailName.Text = item.Bahan.Nama;
         DetailKindBadge.Text = item.Jenis == JenisKomponen.Atap ? "ATAP" : "DINDING";
         DetailAssembly.Text = string.IsNullOrWhiteSpace(item.Bahan.SusunanKetebalan)
             ? "Susunan standar material tunggal"
             : item.Bahan.SusunanKetebalan;
 
-        DetailThermal.Text = $"{Format.Angka(item.Bahan.KonduktivitasTermal)} W/(m·K)";
+        DetailThermal.Text = $"{Format.Masukan(item.Bahan.KonduktivitasTermal)} W/(m·K)";
         DetailMoisture.Text = $"{item.Bahan.KetahananLembap} / 5";
         DetailCorrosion.Text = $"{item.Bahan.KetahananKorosi} / 5";
         DetailLifespan.Text = $"{Format.Angka(item.Bahan.UsiaPakaiTahun)} tahun";
@@ -178,8 +182,8 @@ public sealed class MaterialCard : ViewData
         Kind = item.Jenis == JenisKomponen.Atap ? "MATERIAL ATAP" : "MATERIAL DINDING";
         Name = item.Bahan.Nama;
         Tag = e is not null ? TagData.Kesesuaian(e.SkorKesesuaian) : new TagData("Katalog", Palette.TagBg, Palette.TagFg);
-        Reason = e is null ? "Bahan siap dievaluasi untuk proyek Anda."
-            : Format.AlasanMaterial(e.Alasan).FirstOrDefault() ?? "";
+        AlasanLengkap = e is null ? [] : FormatAlasanMaterial.KeBaris(e.Alasan);
+        Reason = AlasanLengkap.FirstOrDefault() ?? "Bahan siap dievaluasi untuk proyek Anda.";
         Source = item.Bahan.DataSource;
         Score = e is not null ? (Format.Angka(e.SkorKesesuaian) + "/100") : "-";
         ScoreBrush = (e is not null && e.SkorKesesuaian < 55) ? Palette.Red : Palette.Score;
@@ -194,6 +198,7 @@ public sealed class MaterialCard : ViewData
     public string Name { get; }
     public TagData Tag { get; }
     public string Reason { get; }
+    public string[] AlasanLengkap { get; }
     public string Source { get; }
     public string Score { get; }
     public Brush ScoreBrush { get; }

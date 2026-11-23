@@ -15,7 +15,7 @@ public sealed class ComparisonStateTests
     [Fact]
     public void AlasanMaterialMemisahkanEmpatKriteriaDanMerapikanAngkaEvaluasiTersimpan()
     {
-        var alasan = Format.AlasanMaterial(
+        var alasan = FormatAlasanMaterial.KeBaris(
             "Konduktivitas termal 0,45 W/mK tergolong rendah pada suhu rata-rata 26,961511086778017 C; " +
             "Ketahanan lembap 4 memadai untuk curah hujan 2393,7599999999998 mm per tahun dan kelembapan 81,23851400675244 persen; " +
             "Ketahanan korosi 4 memadai pada jarak 10,681771383700323 km dari pantai; jarak ke pantai sebagai proksi risiko udara bergaram; " +

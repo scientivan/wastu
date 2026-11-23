@@ -72,7 +72,7 @@ Berkas `.env` pada paket pengumpulan privat sudah berisi konfigurasi Supabase. L
 
 1. **Buat Proyek Baru:** Beri nama, tentukan lokasi (pilih kota atau koordinat), lalu pilih satu atau kedua komponen dan isi luas bidangnya.
 2. **Tinjau Profil Iklim:** Buka Profil Proyek untuk melihat sumber dan ringkasan iklim. Klik **Perbarui iklim** bila pengambilan awal gagal.
-3. **Bandingkan Bahan:** Cari material di Eksplor Material, pilih dua bahan sejenis, lalu baca skor, alasan, dan emisinya di Bandingkan. Bobot per proyek dapat disesuaikan langsung dengan total 100%.
+3. **Bandingkan Bahan:** Cari material di Eksplor Material dan buka **Detail bahan** untuk membaca alasannya per kriteria. Di Bandingkan, pilih dua bahan sejenis dan sesuaikan bobot per proyek dengan total 100%. Buka ikon info di panel bobot untuk melihat asumsi perhitungan.
 4. **Simulasikan Emisi:** Pilih horizon 20, 30, atau 50 tahun untuk melihat grafik emisi dan jumlah penggantian.
 5. **Jadwalkan Pekerjaan:** Perbarui prakiraan, tambahkan pekerjaan dan rentang tanggal, lalu pilih hari dan kunci jika data cuaca tersedia. Baca peringatan sebelum menyetujui hari berisiko.
 6. **Simpan Laporan Rekomendasi:** Pilih Dinding, Atap, atau Keduanya sesuai proyek dan centang material yang ingin dimasukkan. Pilih horizon, lalu **Simpan PDF**. Riwayat menyediakan **Buka PDF** dan **Buat salinan** untuk laporan yang mempunyai snapshot.

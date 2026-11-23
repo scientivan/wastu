@@ -3,6 +3,7 @@ using PdfSharp;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using Wastu.Domain;
+using Wastu.Domain.Scoring;
 
 namespace Wastu.Reporting;
 
@@ -233,9 +234,14 @@ public sealed class PdfReportBuilder
 
         foreach (var mat in snapshot.BahanTerpilih)
         {
-            var alasanLines = WrapText(gfx, mat.Alasan + (string.IsNullOrWhiteSpace(mat.SusunanKetebalan)
-                ? "" : " Susunan/acuan luas: " + mat.SusunanKetebalan), _fontSmall, wAlasan - 10);
-            if (alasanLines.Count == 0) alasanLines.Add("-");
+            const double tinggiBarisAlasan = 10.5;
+            const double jarakAntarKriteria = 3;
+            var bagianAlasan = new List<List<string>>();
+            foreach (var bagian in FormatAlasanMaterial.KeBaris(mat.Alasan))
+                bagianAlasan.Add(WrapText(gfx, bagian, _fontSmall, wAlasan - 10));
+            if (bagianAlasan.Count == 0) bagianAlasan.Add(["-"]);
+            if (!string.IsNullOrWhiteSpace(mat.SusunanKetebalan))
+                bagianAlasan.Add(WrapText(gfx, "Susunan/acuan luas: " + mat.SusunanKetebalan, _fontSmall, wAlasan - 10));
 
             // Add source summary if present
             var sumberSummary = mat.SumberProperti.Count > 0
@@ -245,8 +251,10 @@ public sealed class PdfReportBuilder
                 ? []
                 : WrapText(gfx, sumberSummary, _fontSmall, wAlasan - 10);
 
-            var totalLines = alasanLines.Count + (sumberLines.Count > 0 ? (sumberLines.Count + 1) : 0);
-            var rowHeight = Math.Max(26.0, totalLines * 10.5 + 8);
+            var tinggiAlasan = bagianAlasan.Sum(lines => lines.Count * tinggiBarisAlasan + jarakAntarKriteria);
+            var nameLines = WrapText(gfx, mat.Nama, _fontBodyBold, wNama - 8);
+            var rowHeight = Math.Max(Math.Max(38, nameLines.Count * 11 + 8),
+                tinggiAlasan + sumberLines.Count * 10 + 9);
 
             // Page break check
             if (currentY + rowHeight > MaxY)
@@ -276,7 +284,6 @@ public sealed class PdfReportBuilder
 
             // Column 3: Material Name
             var nameX = MarginLeft + wRank + wKomp + 4;
-            var nameLines = WrapText(gfx, mat.Nama, _fontBodyBold, wNama - 8);
             var ny = currentY + 12;
             foreach (var nl in nameLines)
             {
@@ -304,14 +311,17 @@ public sealed class PdfReportBuilder
             // Column 6: Alasan & Sumber
             var alasanX = MarginLeft + wRank + wKomp + wNama + wSkor + wEmisi + 6;
             var ay = currentY + 11;
-            foreach (var al in alasanLines)
+            foreach (var bagian in bagianAlasan)
             {
-                gfx.DrawString(al, _fontSmall, new XSolidBrush(PrimaryColor), new XPoint(alasanX, ay));
-                ay += 10.5;
+                foreach (var baris in bagian)
+                {
+                    gfx.DrawString(baris, _fontSmall, new XSolidBrush(PrimaryColor), new XPoint(alasanX, ay));
+                    ay += tinggiBarisAlasan;
+                }
+                ay += jarakAntarKriteria;
             }
             if (sumberLines.Count > 0)
             {
-                ay += 2;
                 foreach (var sl in sumberLines)
                 {
                     gfx.DrawString(sl, _fontSmall, new XSolidBrush(MutedColor), new XPoint(alasanX, ay));
